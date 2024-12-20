@@ -1,30 +1,55 @@
 import base64
 import yaml
 import argparse
-from dotenv import load_dotenv
 import os
 import sys
 from portal import PortalAPI
 from logger import Logger
 
+# Try to import dotenv and load the .env file if available
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
-
-# Load the .env file
-load_dotenv()
-
+# Load environment variables
 KONNECT_URL = os.getenv("KONNECT_URL")
 KONNECT_TOKEN = os.getenv("KONNECT_TOKEN")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
-# Initialize the singleton logger
+# Initialize the logger
 logger = Logger(name="konnect-portal-ops", level=LOG_LEVEL)
 
+# Initialize the argument parser
 def init_arg_parser():
-    parser = argparse.ArgumentParser(description="Koonect Dev Portal Ops")
-    parser.add_argument("--oas-spec", type=str, help="Path to the OAS spec file")
-    parser.add_argument("--konnect-portal-name", type=str, help="The Konnect portal name")
-    parser.add_argument("--konnect-token", type=str, help="The Konnect spat or kpat token", default=KONNECT_TOKEN)
-    parser.add_argument("--konnect-url", type=str, help="The Konnect URL", default=KONNECT_URL)
+    parser = argparse.ArgumentParser(
+        description="Konnect Dev Portal Ops CLI"
+    )
+    parser.add_argument(
+        "--oas-spec", 
+        type=str, 
+        required=True, 
+        help="Path to the OAS spec file"
+    )
+    parser.add_argument(
+        "--konnect-portal-name", 
+        type=str, 
+        required=True, 
+        help="The name of the Konnect portal to perform operations on"
+    )
+    parser.add_argument(
+        "--konnect-token", 
+        type=str, 
+        help="The Konnect spat or kpat token", 
+        default=KONNECT_TOKEN
+    )
+    parser.add_argument(
+        "--konnect-url", 
+        type=str, 
+        help="The Konnect API server URL",
+        default=KONNECT_URL
+    )
     return parser
 
 def main():
@@ -49,6 +74,12 @@ def main():
 
             api_description = yaml_data['info'].get('description', '').strip()
             logger.info(f"API Description: {api_description}")
+
+            api_deprecated = yaml_data.get('x-deprecated', False)
+            logger.info(f"API Deprecated: {api_deprecated}")
+
+            api_publish_status = yaml_data.get('x-publish-status', 'published')
+            logger.info(f"API Publish Status: {api_publish_status}")
 
             if not api_name or not api_version or not api_description:
                 raise ValueError("API name, version, and description must be provided in the spec")
@@ -84,7 +115,7 @@ def main():
         api.create_or_update_api_product_version_spec(api_product['id'], api_product_version['id'], oas_file_base64)
 
         # Ensure the API product version is published to the portal
-        api.publish_api_product_version_to_portal(portal_id, api_product_version['id'], api_product_version['name'], api_product['name'], args.konnect_portal_name)
+        api.publish_api_product_version_to_portal(portal, api_product_version, api_product, api_deprecated, api_publish_status)
 
     except Exception as e:
         logger.error(f"Error: {str(e)}")

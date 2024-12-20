@@ -5,6 +5,10 @@ info:
   version: "1.0.0"
 servers:
   - url: https://19e8-2001-1c08-70b-3100-b128-b5cf-52f0-4ab8.ngrok-free.app
+
+x-deprecated: true
+x-publish-status: unpublished # Can be either 'published' or 'unpublished'
+
 paths:
   /httpbin:
     get:
