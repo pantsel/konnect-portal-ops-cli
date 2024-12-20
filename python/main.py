@@ -50,6 +50,19 @@ def init_arg_parser():
         help="The Konnect API server URL",
         default=KONNECT_URL
     )
+
+    parser.add_argument(
+        "--deprecate",
+        action="store_true",
+        help="Deprecate the API product version"
+    )
+
+    parser.add_argument(
+        "--unpublish",
+        action="store_true",
+        help="Unpublish the API product version"
+    )
+
     return parser
 
 def main():
@@ -74,12 +87,6 @@ def main():
 
             api_description = yaml_data['info'].get('description', '').strip()
             logger.info(f"API Description: {api_description}")
-
-            api_deprecated = yaml_data.get('x-deprecated', False)
-            logger.info(f"API Deprecated: {api_deprecated}")
-
-            api_publish_status = yaml_data.get('x-publish-status', 'published')
-            logger.info(f"API Publish Status: {api_publish_status}")
 
             if not api_name or not api_version or not api_description:
                 raise ValueError("API name, version, and description must be provided in the spec")
@@ -114,8 +121,9 @@ def main():
         # Create or update the API product version spec
         api.create_or_update_api_product_version_spec(api_product['id'], api_product_version['id'], oas_file_base64)
 
-        # Ensure the API product version is published to the portal
-        api.publish_api_product_version_to_portal(portal, api_product_version, api_product, api_deprecated, api_publish_status)
+        # Create or update API product version in the portal
+        publish_status = "unpublished" if args.unpublish else "published"
+        api.create_or_update_portal_api_product_version(portal, api_product_version, api_product, args.deprecate, publish_status)
 
     except Exception as e:
         logger.error(f"Error: {str(e)}")

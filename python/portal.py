@@ -226,15 +226,28 @@ class PortalAPI:
         self.logger.debug(json.dumps(api_product_version_spec['body'], indent=2))
         return api_product_version_spec
 
-    def publish_api_product_version_to_portal(self, portal, api_product_version, api_product, deprecated=False, publish_status="published"):
-        self.logger.info(f"Publishing API product version {api_product_version['name']} for {api_product['name']} on {portal['name']}")
+    def create_or_update_portal_api_product_version(self, portal, api_product_version, api_product, deprecated=False, publish_status="published"):
+
+        if publish_status not in ["published", "unpublished"]:
+            raise ValueError("Invalid publish status. Must be 'published' or 'unpublished'")
+        if deprecated not in [True, False]:
+            raise ValueError("Invalid deprecation status. Must be True or False")
+        
+        if publish_status == "published":
+            self.logger.info(f"Publishing API product version {api_product_version['name']} for {api_product['name']} on {portal['name']}")
+        else:
+            self.logger.info(f"Unpublishing API product version {api_product_version['name']} for {api_product['name']} on {portal['name']}")
+
+        if deprecated:
+            self.logger.info(f"Deprecating API product version {api_product_version['name']} for {api_product['name']} on {portal['name']}")
+
         portal_product_version = self.search_portal_product_version(portal['id'], api_product_version['id'])
         if portal_product_version:
             if portal_product_version['deprecated'] != deprecated or portal_product_version['publish_status'] != publish_status:
                 portal_product_version = self.update_portal_product_version(portal['id'], api_product_version['id'], deprecated, publish_status)
                 action = "Updated"
             else:
-                self.logger.info(f"API product version {api_product_version['name']} for {api_product['name']} on {portal['name']} is already published")
+                self.logger.info(f"API product version {api_product_version['name']} for {api_product['name']} on {portal['name']} updated")
                 return
         else:
             portal_product_version = self.create_portal_product_version(portal['id'], api_product_version['id'], deprecated, publish_status)
