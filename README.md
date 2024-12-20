@@ -4,23 +4,30 @@ This repository contains examples of how to use the Konnect Portal Ops API.
 
 ## Setup
 
-In the `python` folder, copy the `.env.example` file to `.env` and fill in the required values.
+1. Navigate to the `python` folder.
+2. Copy the `.env.example` file to `.env` and fill in the required values:
 
-```bash
-cp .env.example .env
-```
+    ```bash
+    cp .env.example .env
+    ```
 
-Install required packages:
+3. Install the required packages:
 
-```bash
-pip install -r requirements.txt
-```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 ## Usage
 
-```bash
-$ python3 main.py --help
+To display the help message for the CLI tool, run:
 
+```bash
+python3 main.py --help
+```
+
+The usage information is as follows:
+
+```
 usage: main.py [-h] --oas-spec OAS_SPEC --konnect-portal-name KONNECT_PORTAL_NAME [--konnect-token KONNECT_TOKEN] [--konnect-url KONNECT_URL] [--deprecate] [--unpublish]
 
 Konnect Dev Portal Ops CLI
@@ -38,38 +45,37 @@ options:
   --unpublish           Unpublish the API product version
 ```
 
-Publish oas.yaml to Konnect Developer Portals:
+### Publish Spec to a Portal
+
+To publish an API product and its related associations to the specified portal, run the following command. The API product and version information will be extracted from the OAS spec file, and the specified spec will be attached to the API product version, which will then be published on the specified portal.
+
+```bash
+python3 main.py --oas-spec=../oasv1.yaml --konnect-portal-name=dev_portal
+```
+
+### Publish a New Version of an Existing API
+
+To publish a new version of an existing API product to the specified portal, ensure that the OAS spec file has the same `info.title` as the existing API product on the portal and a different `info.version`. If these conditions are not met, a new API product and its related associations will be created and published on the specified portal.
 
 ```bash
 # Dev portal
-$ python3 main.py --oas_spec=../oasv1.yaml --konnect-portal-name=dev_portal
-
-# Prod portal
-$ python3 main.py --oas_spec=../oasv1.yaml --konnect-portal-name=prod_portal
+python3 main.py --oas-spec=../oasv2.yaml --konnect-portal-name=dev_portal
 ```
 
-Publish a new version of an existing API (oas2.yaml) to Konnect Portals:
+### Deprecate an API Product Version on a Portal
+
+To deprecate the specified API product version on the specified portal, run the following command:
 
 ```bash
-# Dev portal
-$ python3 main.py --oas_spec=../oasv2.yaml --konnect-portal-name=dev_portal
-
-# Prod portal
-$ python3 main.py --oas_spec=../oasv2.yaml --konnect-portal-name=prod_portal
-```
-
-Deprecating an API product version on a portal:
-
-```bash
-
 # Deprecate on Dev portal
-$ python3 main.py --oas_spec=../oasv1.yaml --konnect-portal-name=dev_portal --deprecate
+python3 main.py --oas-spec=../oasv1.yaml --konnect-portal-name=dev_portal --deprecate
 ```
 
-Unpublishing an API product version from a portal:
+### Unpublish an API Product Version from a Portal
+
+To unpublish the specified API product version from the specified portal, run the following command:
 
 ```bash
-
 # Unpublish on Dev portal
-$ python3 main.py --oas_spec=../oasv1.yaml --konnect-portal-name=dev_portal --unpublish
+python3 main.py --oas-spec=../oasv1.yaml --konnect-portal-name=dev_portal --unpublish
 ```
