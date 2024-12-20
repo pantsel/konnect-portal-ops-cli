@@ -5,22 +5,24 @@ from dotenv import load_dotenv
 import os
 import sys
 from portal import PortalAPI
+from logger import Logger
+
+
 
 # Load the .env file
 load_dotenv()
 
 KONNECT_URL = os.getenv("KONNECT_URL")
 KONNECT_TOKEN = os.getenv("KONNECT_TOKEN")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
-PORTALS = {
-    "dev": os.getenv("KONNECT_DEV_PORTAL_ID"),
-    "prod": os.getenv("KONNECT_PROD_PORTAL_ID")
-}
+# Initialize the singleton logger
+logger = Logger(name="konnect-portal-ops", level=LOG_LEVEL)
 
 def init_arg_parser():
-    parser = argparse.ArgumentParser(description="Process OAS spec and environment.")
-    parser.add_argument("--oas_spec", type=str, help="Path to the OAS spec file")
-    parser.add_argument("--environment", type=str, choices=PORTALS.keys(), help="Environment (dev or prod)")
+    parser = argparse.ArgumentParser(description="Koonect Dev Portal Ops")
+    parser.add_argument("--oas-spec", type=str, help="Path to the OAS spec file")
+    parser.add_argument("--konnect-portal-name", type=str, help="The Konnect portal name")
     parser.add_argument("--konnect-token", type=str, help="The Konnect spat or kpat token", default=KONNECT_TOKEN)
     parser.add_argument("--konnect-url", type=str, help="The Konnect URL", default=KONNECT_URL)
     return parser
@@ -28,26 +30,47 @@ def init_arg_parser():
 def main():
     parser = init_arg_parser()
     args = parser.parse_args()
-
-    environment = args.environment
-    portal_id = PORTALS[environment]
-    product_version_spec = args.oas_spec
-    oas_file_base64 = ""
     api = PortalAPI(args.konnect_url, args.konnect_token)
 
+    product_version_spec = args.oas_spec
+    portal_name = args.konnect_portal_name
+
     try:
+        logger.info(f"Reading OAS file: {product_version_spec}")
         with open(product_version_spec, 'rb') as file:
             oas_file = file.read()
             yaml_data = yaml.safe_load(oas_file)
+
             api_name = yaml_data['info'].get('title', '').strip()
+            logger.info(f"API Name: {api_name}")
+
             api_version = yaml_data['info'].get('version', '').strip()
+            logger.info(f"API Version: {api_version}")
+
             api_description = yaml_data['info'].get('description', '').strip()
+            logger.info(f"API Description: {api_description}")
 
             if not api_name or not api_version or not api_description:
                 raise ValueError("API name, version, and description must be provided in the spec")
             oas_file_base64 = base64.b64encode(oas_file).decode('utf-8')
     except Exception as e:
-        print(f"Error reading or parsing OAS file: {str(e)}")
+        logger.error(f"Error reading or parsing OAS file: {str(e)}")
+        sys.exit(1)
+
+    try:
+        portal = api.find_portal_by_name(portal_name)
+
+        logger.info(f"Fetching Konnect Portal information for {portal_name}")
+
+        if not portal:
+            logger.error(f"Portal with name {portal_name} not found")
+            sys.exit(1)
+
+        portal_id = portal['id']
+
+        logger.info(f"Using {portal_name} ({portal_id}) for subsequent operations")
+    except Exception as e:
+        logger.error(f"Failed to get Konnect Portal information: {str(e)}")
         sys.exit(1)
 
     try:
@@ -55,15 +78,16 @@ def main():
         api_product = api.create_or_update_api_product(api_name, api_description, portal_id)
 
         # Create or update the API product version
-        api_product_version = api.create_or_update_api_product_version(api_product['body']['id'], api_version)
+        api_product_version = api.create_or_update_api_product_version(api_product, api_version)
 
         # Create or update the API product version spec
-        api.create_or_update_api_product_version_spec(api_product['body']['id'], api_product_version['body']['id'], oas_file_base64)
+        api.create_or_update_api_product_version_spec(api_product['id'], api_product_version['id'], oas_file_base64)
 
         # Ensure the API product version is published to the portal
-        api.publish_api_product_version_to_portal(portal_id, api_product_version['body']['id'], api_product_version['body']['name'], api_product['body']['name'], environment)
+        api.publish_api_product_version_to_portal(portal_id, api_product_version['id'], api_product_version['name'], api_product['name'], args.konnect_portal_name)
+
     except Exception as e:
-        print(f"Error: {str(e)}")
+        logger.error(f"Error: {str(e)}")
         sys.exit(1)
 
 if __name__ == "__main__":

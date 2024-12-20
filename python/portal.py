@@ -1,10 +1,16 @@
 import requests
 import json
+from logger import Logger
+
 
 class PortalAPI:
+
     def __init__(self, base_url, token):
         self.base_url = base_url
         self.token = token
+
+        # Get the singleton logger instance
+        self.logger = Logger()
 
     # Makes an HTTP request and handles errors
     def make_http_request(self, url, method='GET', params=None, data=None, json=None, headers=None):
@@ -247,7 +253,9 @@ class PortalAPI:
             )
             if 'error' in api_product:
                 raise Exception(api_product['error'])
-            print("Updated API product:", json.dumps(api_product['body'], indent=2))
+            
+            self.logger.info(f"Updated API product: {api_product['body']['name']} ({api_product['body']['id']})")
+            
         else:
             api_product = self.create_api_product(
                 api_name,
@@ -256,30 +264,36 @@ class PortalAPI:
             )
             if 'error' in api_product:
                 raise Exception(api_product['error'])
-            print("Created new API product:", json.dumps(api_product['body'], indent=2))
-        return api_product
+            self.logger.info(f"Created new API product: {api_product['body']['name']} ({api_product['body']['id']})")
+
+        self.logger.debug(json.dumps(api_product['body'], indent=2))
+
+        return api_product['body']
 
     # Creates or updates an API product version
-    def create_or_update_api_product_version(self, api_product_id, product_version):
-        existing_api_product_version = self.fetch_api_product_version_by_name(api_product_id, product_version)
+    def create_or_update_api_product_version(self, api_product, product_version):
+        existing_api_product_version = self.fetch_api_product_version_by_name(api_product['id'], product_version)
         if existing_api_product_version:
             api_product_version = self.update_api_product_version(
-                api_product_id,
+                api_product['id'],
                 existing_api_product_version['id'],
                 product_version
             )
             if 'error' in api_product_version:
                 raise Exception(api_product_version['error'])
-            print(f"Updated API product version for {api_product_id}:", json.dumps(api_product_version['body'], indent=2))
+            self.logger.info(f"Updated API product version: {api_product_version['body']['name']} ({api_product_version['body']['id']})")
         else:
             api_product_version = self.create_api_product_version(
-                api_product_id,
+                api_product['id'],
                 product_version
             )
             if 'error' in api_product_version:
                 raise Exception(api_product_version['error'])
-            print(f"Created new API product version for {api_product_id}:", json.dumps(api_product_version['body'], indent=2))
-        return api_product_version
+            self.logger.info(f"Created new API product version: {api_product_version['body']['name']} ({api_product_version['body']['id']})")
+
+        self.logger.debug(json.dumps(api_product_version['body'], indent=2))
+        
+        return api_product_version['body']
 
     # Creates or updates a specification for an API product version
     def create_or_update_api_product_version_spec(self, api_product_id, api_product_version_id, oas_file_base64):
@@ -293,7 +307,7 @@ class PortalAPI:
             )
             if 'error' in api_product_version_spec:
                 raise Exception(api_product_version_spec['error'])
-            print(f"Updated API product version spec for {api_product_id}:", json.dumps(api_product_version_spec['body'], indent=2))
+            self.logger.info(f"Updated spec for API product version: {api_product_version_id}")
         else:
             api_product_version_spec = self.create_api_product_version_spec(
                 api_product_id,
@@ -302,16 +316,39 @@ class PortalAPI:
             )
             if 'error' in api_product_version_spec:
                 raise Exception(api_product_version_spec['error'])
-            print(f"Created new API product version spec for {api_product_id}:", json.dumps(api_product_version_spec['body'], indent=2))
+            self.logger.info(f"Create spec for API product version: {api_product_id}")
+
+        self.logger.debug(json.dumps(api_product_version_spec['body'], indent=2))
+
         return api_product_version_spec
 
     # Ensures that a version of an API product is published to the required portal
-    def publish_api_product_version_to_portal(self, portal_id, api_product_version_id, api_product_version_name, api_product_name, environment):
+    def publish_api_product_version_to_portal(self, portal_id, api_product_version_id, api_product_version_name, api_product_name, portal_name):
+        self.logger.info(f"Publishing API product version {api_product_version_name} for {api_product_name} on {portal_name}")
         portal_product_version = self.search_portal_product_version(portal_id, api_product_version_id)
         if portal_product_version:
-            print(f"API product version {api_product_version_name} for {api_product_name} on {environment} is already published")
+            self.logger.info(f"API product version {api_product_version_name} for {api_product_name} on {portal_name} is already published")
         else:
             portal_product_version = self.create_portal_product_version(portal_id, api_product_version_id)
             if 'error' in portal_product_version:
                 raise Exception(portal_product_version['error'])
-            print(f"Published API product version {api_product_version_name} for {api_product_name} on {environment}:", json.dumps(portal_product_version['body'], indent=2))
+            self.logger.info(f"Published API product version {api_product_version_name} for {api_product_name} on {portal_name}")
+
+    # Find a portal by its name
+    def find_portal_by_name(self, portal_name):
+        response = self.make_http_request(
+            f"{self.base_url}/v2/portals",
+            method="GET",
+            params= {
+                "filter[name]": portal_name
+            },
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.token}"
+            }
+        )
+
+        if response['status_code'] == 200:
+            portal = response['body']['data']
+            return portal[0] if portal else None
+        return None
