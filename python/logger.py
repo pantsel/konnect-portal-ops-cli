@@ -47,9 +47,6 @@ class Logger:
 
         # Avoid duplicate handlers
         if not logger.handlers:
-            # File handler
-            file_handler = logging.FileHandler(log_file)
-            file_handler.setLevel(level)
 
             # Console handler
             console_handler = logging.StreamHandler()
@@ -60,19 +57,11 @@ class Logger:
                 fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                 datefmt='%Y-%m-%d %H:%M:%S'
             )
-
-            # Plain formatter for file
-            plain_formatter = logging.Formatter(
-                fmt='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                datefmt='%Y-%m-%d %H:%M:%S'
-            )
             
             # Set formatters
             console_handler.setFormatter(colored_formatter)
-            file_handler.setFormatter(plain_formatter)
 
             # Add handlers
-            logger.addHandler(file_handler)
             logger.addHandler(console_handler)
 
         return logger
