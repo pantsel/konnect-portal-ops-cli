@@ -306,7 +306,7 @@ class PortalAPI:
         return api_product_version_spec
 
     # Ensures that a version of an API product is published to a portal
-    def ensure_version_published_to_portal(self, portal_id, api_product_version_id, api_product_version_name, api_product_name, environment):
+    def publish_api_product_version_to_portal(self, portal_id, api_product_version_id, api_product_version_name, api_product_name, environment):
         portal_product_version = self.search_portal_product_version(portal_id, api_product_version_id)
         if portal_product_version:
             print(f"API product version {api_product_version_name} for {api_product_name} on {environment} is already published")

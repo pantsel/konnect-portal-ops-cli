@@ -61,7 +61,7 @@ def main():
         api.create_or_update_api_product_version_spec(api_product['body']['id'], api_product_version['body']['id'], oas_file_base64)
 
         # Ensure the API product version is published to the portal
-        api.ensure_version_published_to_portal(portal_id, api_product_version['body']['id'], api_product_version['body']['name'], api_product['body']['name'], environment)
+        api.publish_api_product_version_to_portal(portal_id, api_product_version['body']['id'], api_product_version['body']['name'], api_product['body']['name'], environment)
     except Exception as e:
         print(f"Error: {str(e)}")
         sys.exit(1)
