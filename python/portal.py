@@ -305,7 +305,7 @@ class PortalAPI:
             print(f"Created new API product version spec for {api_product_id}:", json.dumps(api_product_version_spec['body'], indent=2))
         return api_product_version_spec
 
-    # Ensures that a version of an API product is published to a portal
+    # Ensures that a version of an API product is published to the required portal
     def publish_api_product_version_to_portal(self, portal_id, api_product_version_id, api_product_version_name, api_product_name, environment):
         portal_product_version = self.search_portal_product_version(portal_id, api_product_version_id)
         if portal_product_version:
