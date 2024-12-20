@@ -18,22 +18,22 @@ pip install -r requirements.txt
 
 ## Usage
 
-Publish oas.yaml to Konnect Portals:
+Publish oas.yaml to Konnect Developer Portals:
 
 ```bash
 # Dev portal
-python3 main.py --oas_spec=../oas.yaml --environment=dev 
+python3 main.py --oas_spec=../oas.yaml --konnect-portal-name=dev_portal
 
 # Prod portal
-python3 main.py --oas_spec=../oas.yaml --environment=prod
+python3 main.py --oas_spec=../oas.yaml --konnect-portal-name=prod_portal
 ```
 
 Publish a new version of an existing API (oas2.yaml) to Konnect Portals:
 
 ```bash
 # Dev portal
-python3 main.py --oas_spec=../oas2.yaml --environment=dev
+python3 main.py --oas_spec=../oas2.yaml --konnect-portal-name=dev_portal
 
 # Prod portal
-python3 main.py --oas_spec=../oas2.yaml --environment=prod
+python3 main.py --oas_spec=../oas2.yaml --konnect-portal-name=prod_portal
 ```
