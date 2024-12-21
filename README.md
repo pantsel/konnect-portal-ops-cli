@@ -2,6 +2,8 @@
 
 This script is a command-line tool designed to perform various operations on **Konnect Dev Portals**, such as publishing, deprecating, unpublishing, or deleting API products and their versions based on OpenAPI Specification (OAS) files.
 
+The script requires Konnect Developer Portals to be set up and pre-configured. It uses the Konnect APIs to interact with the portals and perform API Product related operations.
+
 ## Disclaimer
 
 Heads up! This script is still a work in progress, so some features might not be fully supported yet. Feel free to give it a try, but please use it responsibly. If something doesn’t work as expected, let us know—or better yet, contribute!
