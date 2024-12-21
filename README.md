@@ -121,9 +121,9 @@ python main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml --delete --yes
 ```
 
-## Configuration Variables
+## CLI Configuration Variables
 
-The script supports the following variables for configuration in a `yaml` file:  
+The CLI supports the following variables for configuration in a `yaml` file:  
 
 | Variable        | Description                            |
 | --------------- | -------------------------------------- |
