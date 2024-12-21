@@ -54,16 +54,27 @@ python main.py [options]
 ### Examples
 
 #### Publish an API Product  
-python main.py --oas-spec ../oasv1.yaml --konnect-portal-name my-portal 
 
+```bash
+$ python main.py --oas-spec ../oasv1.yaml --konnect-portal-name my-portal 
+```
 #### Publish a new version of the API Product
-python main.py --oas-spec ../oasv2.yaml --konnect-portal-name my-portal 
+
+```bash
+python main.py --oas-spec ../oasv2.yaml --konnect-portal-name my-portal
+```
 
 #### Deprecate an API Version  
-python main.py --oas-spec ./oasv1.yaml --konnect-portal-name my-portal --deprecate  
+
+```bash
+python main.py --oas-spec ./oasv1.yaml --konnect-portal-name my-portal --deprecate
+```
 
 #### Delete an API Product  
-python main.py --oas-spec ./oasv1.yaml --delete --yes  
+
+```bash
+python main.py --oas-spec ./oasv1.yaml --delete --yes
+```
 
 ## Environment Variables
 
