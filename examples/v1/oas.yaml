@@ -1,10 +1,10 @@
 openapi: 3.0.3
 info:
   title: HTTPBin API
-  description: A simple API spec for a GET request to /httpbin.
+  description: A simple API spec for requests to /httpbin.
   version: "1.0.0"
 servers:
-  - url: https://19e8-2001-1c08-70b-3100-b128-b5cf-52f0-4ab8.ngrok-free.app
+  - url: https://example.com
 
 tags:
   - name: HTTPBin
@@ -19,13 +19,6 @@ paths:
         - basicAuth: []
       tags:
         - HTTPBin
-      parameters:
-        - name: ngrok-skip-browser-warning
-          in: header
-          required: false
-          schema:
-            type: string
-          description: A custom header sent with the request.
       responses:
         '200':
           description: Successful response

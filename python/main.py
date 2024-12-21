@@ -28,17 +28,9 @@ def confirm_deletion(api_name: str) -> bool:
     confirmation = input(f"Are you sure you want to delete the API product '{api_name}'? This action cannot be undone. (yes/No): ")
     return confirmation.strip().lower() == 'yes'
 
-def handle_api_product_deletion(args: argparse.Namespace, konnect: KonnectApi, api_name: str) -> None:
-    if not args.delete:
-        return
-
-    if not args.yes and not confirm_deletion(api_name):
-        logger.info("Delete operation cancelled.")
-        sys.exit(0)
-
+def delete_api_portal(konnect: KonnectApi, api_name: str) -> None:
     try:
         konnect.delete_api_product(api_name)
-        sys.exit(0)
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         sys.exit(1)
@@ -97,15 +89,27 @@ def read_config_file(config_file: str) -> dict:
         logger.error(f"Error reading config file: {str(e)}")
         sys.exit(1)
 
+def should_delete_api_product(args: argparse.Namespace, api_name: str) -> bool:
+    if not args.delete:
+        return False
+
+    if not args.yes and not confirm_deletion(api_name):
+        logger.info("Delete operation cancelled.")
+        sys.exit(0)
+    
+    return True
+
 def main() -> None:
     args = get_parser_args()
     config = read_config_file(args.config) if args.config else {}
     konnect = KonnectApi(args.konnect_url if args.konnect_url else config.get("konnect_url"), args.konnect_token if args.konnect_token else config.get("konnect_token"))
     api_info, oas_file_base64 = read_oas_document(args.oas_spec)
 
-    handle_api_product_deletion(args, konnect, api_info['title'])
+    if should_delete_api_product(args, api_info['title']):
+        delete_api_portal(konnect, api_info['title'])
+        sys.exit(0)
 
-    portal = find_konnect_portal(konnect, args.konnect_portal_name if args.konnect_portal_name else config.get("konnect_portal_name"))
+    portal = find_konnect_portal(konnect, args.konnect_portal_name)
 
     handle_api_product_publication(args, konnect, api_info, oas_file_base64, portal)
 
