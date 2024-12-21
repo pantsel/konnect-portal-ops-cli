@@ -182,9 +182,22 @@ class KonnectApi:
 
         def process_existing_documents(api_product_id: str, existing_slugs: Dict[str, str], data: Dict[str, Any], file_name: str) -> None:
             if data['slug'] in existing_slugs:
-                self.logger.info(f"Updating document: {file_name}")
-                self.api_product_client.update_api_product_document(api_product_id, existing_slugs[data['slug']], data)
+                
+                existing_doc = self.api_product_client.get_api_product_document(api_product_id, existing_slugs[data['slug']])
+                has_content_changed = (
+                    existing_doc['title'] != data['title'] or 
+                    utils.encode_content(existing_doc['content']) != data['content'] or 
+                    existing_doc['status'] != data['status']
+                )
+                
+                if (has_content_changed):
+                    self.logger.info(f"Updating document: {file_name}")
+                    self.api_product_client.update_api_product_document(api_product_id, existing_slugs[data['slug']], data)
+                else:
+                    self.logger.info(f"No changes detected for document: {file_name}")
+                
                 del existing_slugs[data['slug']]
+            
             else:
                 self.logger.info(f"Creating document: {file_name}")
                 self.api_product_client.create_api_product_document(api_product_id, data)
