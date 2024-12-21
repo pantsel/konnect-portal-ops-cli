@@ -8,7 +8,7 @@ The Konnect developer portals needs to be set up and pre-configured.
 
 ## Disclaimer
 
-Heads up! This script is still a work in progress, so some features might not be fully supported yet. Feel free to give it a try, but please use it responsibly. If something doesn’t work as expected, let us know—or better yet, contribute!
+Heads up! This tool is still a work in progress, so some features might not be fully supported yet. Feel free to give it a try, but please use it responsibly. If something doesn’t work as expected, let us know—or better yet, contribute!
 
 ## Features
 
