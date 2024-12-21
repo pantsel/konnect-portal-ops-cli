@@ -103,6 +103,7 @@ The script supports the following variables for configuration in a `yaml` file:
 And the following environment variables:
 
 | Variable        | Description                                                                 |
+| --------------- | --------------------------------------------------------------------------- |
 | `LOG_LEVEL`     | Logging verbosity level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). Default: `INFO`. |  
 
 ## How It Works
