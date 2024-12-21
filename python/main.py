@@ -7,15 +7,6 @@ from logger import Logger
 from konnect import KonnectApi
 import constants
 
-# Try to import dotenv and load the .env file if available
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-
-KONNECT_URL = os.getenv("KONNECT_URL")
-KONNECT_TOKEN = os.getenv("KONNECT_TOKEN")
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
 logger = Logger(name=constants.APP_NAME, level=LOG_LEVEL)
@@ -24,12 +15,13 @@ def get_parser_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Konnect Dev Portal Ops CLI")
     parser.add_argument("--oas-spec", type=str, required=True, help="Path to the OAS spec file")
     parser.add_argument("--konnect-portal-name", type=str, required=not any(arg in sys.argv for arg in ["--delete"]), help="The name of the Konnect portal to perform operations on")
-    parser.add_argument("--konnect-token", type=str, default=KONNECT_TOKEN, help="The Konnect spat or kpat token")
-    parser.add_argument("--konnect-url", type=str, default=KONNECT_URL, help="The Konnect API server URL")
+    parser.add_argument("--konnect-token", type=str, help="The Konnect spat or kpat token", default=None, required=not any(arg in sys.argv for arg in ["--config"]))
+    parser.add_argument("--konnect-url", type=str, help="The Konnect API server URL", default=None, required=not any(arg in sys.argv for arg in ["--config"]))
     parser.add_argument("--deprecate", action="store_true", help="Deprecate the API product version on the specified portal")
     parser.add_argument("--unpublish", action="store_true", help="Unpublish the API product version from the specified portal")
     parser.add_argument("--delete", action="store_true", help="Delete the API product and related associations from ALL portals")
     parser.add_argument("--yes", action="store_true", help="Skip the confirmation prompts (useful for non-interactive environments).")
+    parser.add_argument("--config", type=str, help="Path to the configuration file", required=not any(arg in sys.argv for arg in ["--konnect-token", "--konnect-url"]))
     return parser.parse_args()
 
 def confirm_deletion(api_name: str) -> bool:
@@ -97,14 +89,23 @@ def read_oas_document(spec: str) -> tuple:
         logger.error(f"Error reading or parsing OAS file: {str(e)}")
         sys.exit(1)
 
+def read_config_file(config_file: str) -> dict:
+    try:
+        with open(config_file, 'r') as file:
+            return yaml.safe_load(file)
+    except Exception as e:
+        logger.error(f"Error reading config file: {str(e)}")
+        sys.exit(1)
+
 def main() -> None:
     args = get_parser_args()
-    konnect = KonnectApi(args.konnect_url, args.konnect_token)
+    config = read_config_file(args.config) if args.config else {}
+    konnect = KonnectApi(args.konnect_url if args.konnect_url else config.get("konnect_url"), args.konnect_token if args.konnect_token else config.get("konnect_token"))
     api_info, oas_file_base64 = read_oas_document(args.oas_spec)
 
     handle_api_product_deletion(args, konnect, api_info['title'])
 
-    portal = find_konnect_portal(konnect, args.konnect_portal_name)
+    portal = find_konnect_portal(konnect, args.konnect_portal_name if args.konnect_portal_name else config.get("konnect_portal_name"))
 
     handle_api_product_publication(args, konnect, api_info, oas_file_base64, portal)
 
