@@ -77,12 +77,20 @@ class KonnectApi:
     def create_or_update_api_product_version(self, api_product: Dict[str, Any], version_name: str) -> Dict[str, Any]:
         existing_api_product_version = self.find_api_product_version_by_name(api_product['id'], version_name)
         if existing_api_product_version:
-            api_product_version = self.api_product_client.update_api_product_version(
-                api_product['id'],
-                existing_api_product_version['id'],
-                {"name": version_name}
-            )
-            action = "Updated"
+            # if existing_api_product_version['name'] != version_name:
+            #     api_product_version = self.api_product_client.update_api_product_version(
+            #         api_product['id'],
+            #         existing_api_product_version['id'],
+            #         {"name": version_name}
+            #     )
+            #     action = "Updated"
+            # else:
+            #     api_product_version = existing_api_product_version
+            #     action = "No changes detected for"
+
+            # If a version with the same name exists, then we're done.
+            api_product_version = existing_api_product_version
+            action = "No changes detected for"
         else:
             api_product_version = self.api_product_client.create_api_product_version(
                 api_product['id'],
@@ -102,13 +110,17 @@ class KonnectApi:
         existing_api_product_version_spec = existing_api_product_version_specs['data'][0] if existing_api_product_version_specs['data'] else None
 
         if existing_api_product_version_spec:
-            api_product_version_spec = self.api_product_client.update_api_product_version_spec(
-                api_product_id,
-                api_product_version_id,
-                existing_api_product_version_spec['id'],
-                {"content": oas_file_base64}
-            )
-            action = "Updated"
+            if utils.encode_content(existing_api_product_version_spec['content']) != oas_file_base64:
+                api_product_version_spec = self.api_product_client.update_api_product_version_spec(
+                    api_product_id,
+                    api_product_version_id,
+                    existing_api_product_version_spec['id'],
+                    {"content": oas_file_base64}
+                )
+                action = "Updated"
+            else:
+                api_product_version_spec = existing_api_product_version_spec
+                action = "No changes detected for"
         else:
             api_product_version_spec = self.api_product_client.create_api_product_version_spec(
                 api_product_id,
