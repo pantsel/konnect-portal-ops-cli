@@ -62,24 +62,30 @@ $ python main.py [options]
 
 ### Examples
 
-#### Publish an API Product  
+#### Publish an API Product to a Portal
 
 ```bash
 $ python main.py --oas-spec ../oasv1.yaml --konnect-portal-name my-portal 
 ```
-#### Publish a new version of the API Product
+#### Publish a new version of the API Product to a Portal
 
 ```bash
 python main.py --oas-spec ../oasv2.yaml --konnect-portal-name my-portal
 ```
 
-#### Deprecate an API Version  
+#### Deprecate an API Version on a Portal
 
 ```bash
 python main.py --oas-spec ./oasv1.yaml --konnect-portal-name my-portal --deprecate
 ```
 
-#### Delete an API Product  
+#### Unpublish an API Version from a Portal
+
+```bash
+python main.py --oas-spec ./oasv1.yaml --konnect-portal-name my-portal --unpublish
+```
+
+#### Delete an API Product (and its associations) from all Portals
 
 ```bash
 python main.py --oas-spec ./oasv1.yaml --delete --yes
