@@ -51,22 +51,22 @@ $ python main.py [options]
 
 ### Arguments
 
-| Option                  | Required                                                | Description                                                          |
-| ----------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
-| `--oas-spec`            | **Yes**                                                 | Path to the OAS spec file.                                           |
-| `--docs`                | No                                                      | Path to the API product documents folder.                            |
-| `--konnect-portal-name` | **Yes** (except for `--delete`)                         | Name of the Konnect portal to perform operations on.                 |
-| `--konnect-token`       | **Yes** (except for `--config`)                         | The Konnect spat or kpat token.                                      |
-| `--konnect-url`         | **Yes** (except for `--config`)                         | The Konnect API server URL.                                          |
-| `--deprecate`           | No                                                      | Deprecate the API product version on the portal.                     |
-| `--unpublish`           | No                                                      | Unpublish the API product version from the portal.                   |
-| `--delete`              | No                                                      | Delete the API product and it's associations.                        |
-| `--yes`                 | No                                                      | Skip confirmation prompts (useful for non-interactive environments). |
-| `--config`              | **Yes** (except for `--konnect-token`, `--konnect-url`) | Path to the configuration file.                                      |
+| Option                          | Required                                                | Description                                                          |
+| ------------------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
+| `--oas-spec`                    | **Yes**                                                 | Path to the OAS spec file.                                           |
+| `--docs`                        | No                                                      | Path to the API product documents folder.                            |
+| `--konnect-portal-name`         | **Yes** (except for `--delete`)                         | Name of the Konnect portal to perform operations on.                 |
+| `--konnect-token`               | **Yes** (except for `--config`)                         | The Konnect spat or kpat token.                                      |
+| `--konnect-url`                 | **Yes** (except for `--config`)                         | The Konnect API server URL.                                          |
+| `--deprecate`                   | No                                                      | Deprecate the API product version on the portal.                     |
+| `--unpublish {product,version}` | No                                                      | Unpublish the API product or version from the portal.                |
+| `--delete`                      | No                                                      | Delete the API product and it's associations.                        |
+| `--yes`                         | No                                                      | Skip confirmation prompts (useful for non-interactive environments). |
+| `--config`                      | **Yes** (except for `--konnect-token`, `--konnect-url`) | Path to the configuration file.                                      |
 
 ### Examples
 
-#### Publish an API Product to a Portal
+#### Publish an API Product and version to a Portal
 
 ```bash
 $ python main.py --config .config.yaml \
@@ -94,7 +94,17 @@ python main.py --config .config.yaml \
 ```bash
 python main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
-   --konnect-portal-name my-portal --unpublish
+   --konnect-portal-name my-portal \
+   --unpublish version
+```
+
+#### Unpublish an API Product from a Portal
+
+```bash
+python main.py --config .config.yaml \
+   --oas-spec ../examples/oasv1.yaml \
+   --konnect-portal-name my-portal \
+   --unpublish product
 ```
 
 #### Managing API Products documentation

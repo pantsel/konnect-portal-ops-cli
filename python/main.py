@@ -12,14 +12,14 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = Logger(name=constants.APP_NAME, level=LOG_LEVEL)
 
 def get_parser_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Konnect Dev Portal Ops CLI")
+    parser = argparse.ArgumentParser(description="Konnect Dev Portal Ops CLI", allow_abbrev=False)
     parser.add_argument("--oas-spec", type=str, required=True, help="Path to the OAS spec file")
     parser.add_argument("--docs", type=str, help="Path to the documentation folder", default=None)
     parser.add_argument("--konnect-portal-name", type=str, required=not any(arg in sys.argv for arg in ["--delete"]), help="The name of the Konnect portal to perform operations on")
     parser.add_argument("--konnect-token", type=str, help="The Konnect spat or kpat token", default=None, required=not any(arg in sys.argv for arg in ["--config"]))
     parser.add_argument("--konnect-url", type=str, help="The Konnect API server URL", default=None, required=not any(arg in sys.argv for arg in ["--config"]))
     parser.add_argument("--deprecate", action="store_true", help="Deprecate the API product version on the specified portal")
-    parser.add_argument("--unpublish", action="store_true", help="Unpublish the API product version from the specified portal")
+    parser.add_argument("--unpublish", action="append", choices=["product", "version"], help="Unpublish the API product or version from the specified portal. Can be specified multiple times.")
     parser.add_argument("--delete", action="store_true", help="Delete the API product and related associations from ALL portals")
     parser.add_argument("--yes", action="store_true", help="Skip the confirmation prompts (useful for non-interactive environments).")
     parser.add_argument("--config", type=str, help="Path to the configuration file", required=not any(arg in sys.argv for arg in ["--konnect-token", "--konnect-url"]))
@@ -53,7 +53,9 @@ def find_konnect_portal(konnect: KonnectApi, portal_name: str) -> dict:
 
 def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi, api_info: dict, oas_file_base64: str, portal: dict) -> None:
     try:
-        api_product = konnect.create_or_update_api_product(api_info['title'], api_info['description'], portal['id'])
+
+        unpublish_product = "product" in args.unpublish if args.unpublish else False
+        api_product = konnect.create_or_update_api_product(api_info['title'], api_info['description'], portal['id'], unpublish_product)
 
         if args.docs:
             konnect.create_or_update_api_product_documents(api_product['id'], args.docs)
@@ -61,8 +63,9 @@ def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi
         api_product_version = konnect.create_or_update_api_product_version(api_product, api_info['version'])
         konnect.create_or_update_api_product_version_spec(api_product['id'], api_product_version['id'], oas_file_base64)
         
-        publish_status = "unpublished" if args.unpublish else "published"
-        konnect.create_or_update_portal_api_product_version(portal, api_product_version, api_product, args.deprecate, publish_status)
+        version_publish_status = "unpublished" if args.unpublish and "version" in args.unpublish else "published"
+        konnect.create_or_update_portal_api_product_version(portal, api_product_version, api_product, args.deprecate, version_publish_status)
+    
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         sys.exit(1)

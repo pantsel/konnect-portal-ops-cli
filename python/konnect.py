@@ -33,26 +33,39 @@ class KonnectApi:
         response = self.portal_client.list_portal_product_versions(portal_id, {"filter[product_version_id]": product_version_id})
         return response['data'][0] if response['data'] else None
 
-    def create_or_update_api_product(self, api_name: str, api_description: str, portal_id: str) -> Dict[str, Any]:
+    def create_or_update_api_product(self, api_name: str, api_description: str, portal_id: str, unpublish: bool) -> Dict[str, Any]:
         existing_api_product = self.find_api_product_by_name(api_name)
+        # Copy the existing portal IDs to a new list to modify it without affecting the original
+        new_portal_ids = existing_api_product['portal_ids'][:] if existing_api_product else []
+
         if existing_api_product:
-            if portal_id not in existing_api_product['portal_ids']:
-                existing_api_product['portal_ids'].append(portal_id)
-            api_product = self.api_product_client.update_api_product(
-                existing_api_product['id'],
-                {
-                    "name": api_name,
-                    "description": api_description,
-                    "portal_ids": existing_api_product['portal_ids']
-                }
-            )
-            action = "Updated"
+            
+            if unpublish:
+                if portal_id in new_portal_ids:
+                    new_portal_ids.remove(portal_id)
+            else:
+                if portal_id not in new_portal_ids:
+                    new_portal_ids.append(portal_id)
+            
+            if existing_api_product['description'] != api_description or new_portal_ids != existing_api_product['portal_ids']:
+                api_product = self.api_product_client.update_api_product(
+                    existing_api_product['id'],
+                    {
+                        "name": api_name,
+                        "description": api_description,
+                        "portal_ids": new_portal_ids
+                    }
+                )
+                action = "Updated"
+            else:
+                api_product = existing_api_product
+                action = "No changes detected for"
         else:
             api_product = self.api_product_client.create_api_product(
                 {
                     "name": api_name,
                     "description": api_description,
-                    "portal_ids": [portal_id]
+                    "portal_ids": [portal_id if not unpublish else None],
                 }
             )
             action = "Created new"
@@ -284,6 +297,13 @@ class KonnectApi:
                 process_existing_documents(api_product_id, existing_slugs, data, file_name)
 
         # Delete documents that are not in the input folder
-        for slug, doc_id in existing_slugs.items():
+        # Sort existing_documents slugs to ensure child documents are deleted before their parents
+        sorted_existing_slugs = sorted(
+            [(doc['slug'], doc['id']) for doc in existing_documents['data'] if doc['slug'].split('/')[-1] in existing_slugs],
+            key=lambda item: item[0].count('/'),  # Sort by the number of slashes in the slug (indicating hierarchy depth)
+            reverse=True  # Ensure child documents (more slashes) come before parent documents (fewer slashes)
+        )
+
+        for slug, doc_id in sorted_existing_slugs:
             self.logger.info(f"Deleting document: {slug}")
             self.api_product_client.delete_api_product_document(api_product_id, doc_id)
