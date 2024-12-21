@@ -12,8 +12,8 @@ Heads up! This script is still a work in progress, so some features might not be
 
 - **Publish or update API products** on a Konnect Dev Portal.  
 - **Deprecate or unpublish API versions**.  
-- **Delete API products** and their associations across all portals.  
-- Manage **API product documentation** on the portal.
+- **Delete API products** and their associations.  
+- Manage **API product documentation**.
 - Supports **non-interactive modes** for automation.  
 
 ## Requirements
