@@ -6,6 +6,7 @@ from clients import ApiProductClient, PortalManagementClient
 import constants
 from typing import Optional, Dict, Any
 import utils
+import uuid
 
 
 class KonnectApi:
