@@ -1,4 +1,3 @@
-import base64
 import yaml
 import argparse
 import os
@@ -6,6 +5,7 @@ import sys
 from logger import Logger
 from konnect import KonnectApi
 import constants
+import utils
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
@@ -29,7 +29,7 @@ def confirm_deletion(api_name: str) -> bool:
     confirmation = input(f"Are you sure you want to delete the API product '{api_name}'? This action cannot be undone. (yes/No): ")
     return confirmation.strip().lower() == 'yes'
 
-def delete_api_portal(konnect: KonnectApi, api_name: str) -> None:
+def delete_api_product(konnect: KonnectApi, api_name: str) -> None:
     try:
         konnect.delete_api_product(api_name)
     except Exception as e:
@@ -56,7 +56,7 @@ def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi
         api_product = konnect.create_or_update_api_product(api_info['title'], api_info['description'], portal['id'])
 
         if args.docs:
-            konnect.create_or_update_api_product_document(api_product['id'], args.docs)
+            konnect.create_or_update_api_product_documents(api_product['id'], args.docs)
 
         api_product_version = konnect.create_or_update_api_product_version(api_product, api_info['version'])
         konnect.create_or_update_api_product_version_spec(api_product['id'], api_product_version['id'], oas_file_base64)
@@ -70,26 +70,25 @@ def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi
 def read_oas_document(spec: str) -> tuple:
     try:
         logger.info(f"Reading OAS file: {spec}")
-        with open(spec, 'rb') as file:
-            oas_file = file.read()
-            yaml_data = yaml.safe_load(oas_file)
+        oas_file = utils.read_file_content(spec)
 
-            api_info = yaml_data.get('info', {})
-            logger.info(f"API Info: {api_info}")
+        yaml_data = yaml.safe_load(oas_file)
+        api_info = yaml_data.get('info', {})
+        logger.info(f"API Info: {api_info}")
 
-            if not api_info['title'] or not api_info["description"] or not api_info["version"]:
-                raise ValueError("API title, version, and description must be provided in the spec")
-            
-            oas_file_base64 = base64.b64encode(oas_file).decode('utf-8')
-            return api_info, oas_file_base64
+        if not api_info['title'] or not api_info["description"] or not api_info["version"]:
+            raise ValueError("API title, version, and description must be provided in the spec")
+        
+        oas_file_base64 = utils.encode_content(oas_file)
+        return api_info, oas_file_base64
     except Exception as e:
         logger.error(f"Error reading or parsing OAS file: {str(e)}")
         sys.exit(1)
 
 def read_config_file(config_file: str) -> dict:
     try:
-        with open(config_file, 'r') as file:
-            return yaml.safe_load(file)
+        file = utils.read_file_content(config_file)
+        return yaml.safe_load(file)
     except Exception as e:
         logger.error(f"Error reading config file: {str(e)}")
         sys.exit(1)
@@ -111,7 +110,7 @@ def main() -> None:
     api_info, oas_file_base64 = read_oas_document(args.oas_spec)
 
     if should_delete_api_product(args, api_info['title']):
-        delete_api_portal(konnect, api_info['title'])
+        delete_api_product(konnect, api_info['title'])
         sys.exit(0)
 
     portal = find_konnect_portal(konnect, args.konnect_portal_name)

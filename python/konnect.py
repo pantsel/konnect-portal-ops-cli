@@ -5,6 +5,7 @@ from logger import Logger
 from clients import ApiProductClient, PortalManagementClient
 import constants
 from typing import Optional, Dict, Any
+import utils
 
 
 class KonnectApi:
@@ -164,38 +165,38 @@ class KonnectApi:
         else:
             self.logger.warning(f"API product {api_name} not found. Nothing to delete.")
 
-    def create_or_update_api_product_document(self, api_product_id: str, directory: str) -> Dict[str, Any]:
-        '''Example payload for documentation:
-        {
-            "slug": "api-product-document",
-            "status": "published",
-            "title": "API Product Document",
-            "content": "IyBBUEkgUHJvZHVjdCBEb2N1bWVudCBIZWFkZXIKQVBJIHByb2R1Y3QgZG9jdW1lbnQgY29udGVudA=="
-        }
-        '''
+    # @TODO: Find a way to support parent-child relationships between documents
+    def create_or_update_api_product_documents(self, api_product_id: str, directory: str) -> Dict[str, Any]:
+        
+        self.logger.info(f"Processing documents in {directory}")
+
+        def generate_document_data(file_name: str, content: str) -> Dict[str, Any]:
+            title_slug = os.path.splitext(file_name)[0].replace('__unpublished', '')
+            title_slug = '_'.join(title_slug.split('_')[1:]) if title_slug[0].isdigit() else title_slug
+            return {
+                'title': title_slug.replace('_', ' ').replace('-', ' ').title(),
+                'slug': title_slug.replace('_', '-').replace(' ', '-').lower(),
+                'content': utils.encode_content(content),
+                'status': "unpublished" if "__unpublished" in file_name else "published"
+            }
+
+        def process_existing_documents(api_product_id: str, existing_slugs: Dict[str, str], data: Dict[str, Any], file_name: str) -> None:
+            if data['slug'] in existing_slugs:
+                self.logger.info(f"Updating document: {file_name}")
+                self.api_product_client.update_api_product_document(api_product_id, existing_slugs[data['slug']], data)
+                del existing_slugs[data['slug']]
+            else:
+                self.logger.info(f"Creating document: {file_name}")
+                self.api_product_client.create_api_product_document(api_product_id, data)
 
         existing_documents = self.api_product_client.list_api_product_documents(api_product_id)
         existing_slugs = {doc['slug']: doc['id'] for doc in existing_documents['data']}
 
-        for file in sorted(os.listdir(directory)):
-            if file.endswith(".md"):
-                with open(os.path.join(directory, file), 'r') as f:
-                    content = f.read()
-                    data = {}
-                    title_slug = os.path.splitext(file)[0].replace('__unpublished', '')
-                    title_slug = '_'.join(title_slug.split('_')[1:]) if title_slug[0].isdigit() else title_slug
-                    data['title'] = title_slug.replace('_', ' ').replace('-', ' ').title()
-                    data['slug'] = title_slug.replace('_', '-').replace(' ', '-').lower()
-                    data['content'] = base64.b64encode(content.encode()).decode('utf-8')
-                    data['status'] = "unpublished" if "__unpublished" in file else "published"
-
-                    if data['slug'] in existing_slugs:
-                        self.logger.info(f"Updating document: {file}")
-                        self.api_product_client.update_api_product_document(api_product_id, existing_slugs[data['slug']], data)
-                        del existing_slugs[data['slug']]
-                    else:
-                        self.logger.info(f"Creating document: {file}")
-                        self.api_product_client.create_api_product_document(api_product_id, data)
+        for file_name in sorted(os.listdir(directory)):
+            if file_name.endswith(".md"):
+                content = utils.read_file_content(os.path.join(directory, file_name))
+                data = generate_document_data(file_name, content)
+                process_existing_documents(api_product_id, existing_slugs, data, file_name)
 
         # Delete documents that are not in the input folder
         for slug, doc_id in existing_slugs.items():

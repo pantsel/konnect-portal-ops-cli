@@ -1,11 +1,3 @@
-# HTTPBin API Technical Documentation
-
-## Introduction
-
-The HTTPBin API offers a powerful and straightforward way to inspect request and response details. This technical documentation provides in-depth guidance on interacting with the API, suitable for developers and integrators.
-
----
-
 # 1. Authentication
 
 The HTTPBin API supports two authentication mechanisms:
