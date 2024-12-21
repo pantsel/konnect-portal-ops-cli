@@ -14,6 +14,7 @@ logger = Logger(name=constants.APP_NAME, level=LOG_LEVEL)
 def get_parser_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Konnect Dev Portal Ops CLI")
     parser.add_argument("--oas-spec", type=str, required=True, help="Path to the OAS spec file")
+    parser.add_argument("--docs", type=str, help="Path to the documentation folder", default=None)
     parser.add_argument("--konnect-portal-name", type=str, required=not any(arg in sys.argv for arg in ["--delete"]), help="The name of the Konnect portal to perform operations on")
     parser.add_argument("--konnect-token", type=str, help="The Konnect spat or kpat token", default=None, required=not any(arg in sys.argv for arg in ["--config"]))
     parser.add_argument("--konnect-url", type=str, help="The Konnect API server URL", default=None, required=not any(arg in sys.argv for arg in ["--config"]))
@@ -53,6 +54,10 @@ def find_konnect_portal(konnect: KonnectApi, portal_name: str) -> dict:
 def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi, api_info: dict, oas_file_base64: str, portal: dict) -> None:
     try:
         api_product = konnect.create_or_update_api_product(api_info['title'], api_info['description'], portal['id'])
+
+        if args.docs:
+            konnect.create_or_update_api_product_document(api_product['id'], args.docs)
+
         api_product_version = konnect.create_or_update_api_product_version(api_product, api_info['version'])
         konnect.create_or_update_api_product_version_spec(api_product['id'], api_product_version['id'], oas_file_base64)
         

@@ -1,4 +1,6 @@
 import json
+import os
+import base64
 from logger import Logger
 from clients import ApiProductClient, PortalManagementClient
 import constants
@@ -161,3 +163,35 @@ class KonnectApi:
             self.logger.info(f"API product {api_name} deleted successfully.")
         else:
             self.logger.warning(f"API product {api_name} not found. Nothing to delete.")
+
+    def create_or_update_api_product_document(self, api_product_id: str, directory: str) -> Dict[str, Any]:
+        '''Example payload for documentation:
+        {
+            "slug": "api-product-document",
+            "status": "published",
+            "title": "API Product Document",
+            "content": "IyBBUEkgUHJvZHVjdCBEb2N1bWVudCBIZWFkZXIKQVBJIHByb2R1Y3QgZG9jdW1lbnQgY29udGVudA=="
+        }
+        '''
+
+        for file in os.listdir(directory):
+            if file.endswith(".md"):
+                with open(os.path.join(directory, file), 'r') as f:
+                    content = f.read()
+                    data = {}
+                    title_slug = os.path.splitext(file)[0].replace('__unpublished', '')
+                    data['title'] = title_slug.replace('_', ' ').replace('-', ' ').title()
+                    data['slug'] = title_slug.replace('_', '-')
+                    data['content'] = base64.b64encode(content.encode()).decode('utf-8')
+                    data['status'] = "unpublished" if "__unpublished" in file else "published"
+
+                    # Get existing documents
+                    existing_documents = self.api_product_client.list_api_product_documents(api_product_id)
+                    if len(existing_documents['data']) > 0:
+                        for doc in existing_documents['data']:
+                            if doc['slug'] == data['slug']:
+                                self.logger.info(f"Updating document: {file}")
+                                return self.api_product_client.update_api_product_document(api_product_id, doc['id'], data)
+                    
+                    self.logger.info(f"Creating document: {file}")
+                    return self.api_product_client.create_api_product_document(api_product_id, data)
