@@ -1,81 +1,105 @@
-# Konnect Portal Ops Examples
+# Konnect Dev Portal Ops CLI
 
-This repository contains examples of how to use the Konnect Portal Ops API.
+This script is a command-line tool designed to perform various operations on **Konnect Dev Portals**, such as publishing, deprecating, unpublishing, or deleting API products and their versions based on OpenAPI Specification (OAS) files.
 
-## Setup
+## Features
 
-1. Navigate to the `python` folder.
-2. Copy the `.env.example` file to `.env` and fill in the required values:
+- **Publish or update API products** on a Konnect Dev Portal.  
+- **Deprecate or unpublish API versions**.  
+- **Delete API products** and their associations across all portals.  
+- Supports **non-interactive modes** for automation.  
 
-    ```bash
-    cp .env.example .env
-    ```
+## Requirements
 
-3. Install the required packages:
+- Python 3.7+  
+- Dependencies listed in [requirements.txt](#dependencies).  
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+## Installation
+
+1. Clone this repository:  
+   git clone https://github.com/your-repo/konnect-ops-cli.git  
+   cd konnect-ops-cli  
+
+2. Install dependencies:  
+   pip install -r requirements.txt  
+
+3. (Optional) Create a `.env` file in the root directory to set environment variables:  
+   KONNECT_URL=<your-konnect-url>  
+   KONNECT_TOKEN=<your-konnect-token>  
+   LOG_LEVEL=INFO  
 
 ## Usage
 
-To display the help message for the CLI tool, run:
+Run the script using the following command:  
 
-```bash
-python3 main.py --help
-```
+python konnect_ops.py [options]  
 
-The usage information is as follows:
+### Arguments
 
-```
-usage: main.py [-h] --oas-spec OAS_SPEC --konnect-portal-name KONNECT_PORTAL_NAME [--konnect-token KONNECT_TOKEN] [--konnect-url KONNECT_URL] [--deprecate] [--unpublish]
+| Option                   | Required            | Description                                                                 |  
+|--------------------------|---------------------|-----------------------------------------------------------------------------|  
+| `--oas-spec`             | **Yes**            | Path to the OAS spec file.                                                 |  
+| `--konnect-portal-name`  | **Yes** (except for `--delete`) | Name of the Konnect portal to perform operations on.                       |  
+| `--konnect-token`        | No                 | Konnect API token. Defaults to `KONNECT_TOKEN` from `.env`.                |  
+| `--konnect-url`          | No                 | Konnect API URL. Defaults to `KONNECT_URL` from `.env`.                    |  
+| `--deprecate`            | No                 | Deprecate the API product version on the portal.                           |  
+| `--unpublish`            | No                 | Unpublish the API product version from the portal.                         |  
+| `--delete`               | No                 | Delete the API product and associations from all portals.                  |  
+| `--yes`                  | No                 | Skip confirmation prompts (useful for non-interactive environments).       |  
 
-Konnect Dev Portal Ops CLI
+### Examples
 
-options:
-  -h, --help            show this help message and exit
-  --oas-spec OAS_SPEC   Path to the OAS spec file
-  --konnect-portal-name KONNECT_PORTAL_NAME
-                        The name of the Konnect portal to perform operations on
-  --konnect-token KONNECT_TOKEN
-                        The Konnect spat or kpat token
-  --konnect-url KONNECT_URL
-                        The Konnect API server URL
-  --deprecate           Deprecate the API product version
-  --unpublish           Unpublish the API product version
-```
+#### Publish an API Product  
+python konnect_ops.py --oas-spec ./api-spec.yaml --konnect-portal-name my-portal  
 
-### Publish Spec to a Portal
+#### Deprecate an API Version  
+python konnect_ops.py --oas-spec ./api-spec.yaml --konnect-portal-name my-portal --deprecate  
 
-To publish an API product and its related associations to the specified portal, run the following command. The API product and version information will be extracted from the OAS spec file, and the specified spec will be attached to the API product version, which will then be published on the specified portal.
+#### Delete an API Product  
+python konnect_ops.py --oas-spec ./api-spec.yaml --delete --yes  
 
-```bash
-python3 main.py --oas-spec=../oasv1.yaml --konnect-portal-name=dev_portal
-```
+## Environment Variables
 
-### Publish a New Version of an Existing API
+The script supports the following environment variables for configuration:  
 
-To publish a new version of an existing API product to the specified portal, ensure that the OAS spec file has the same `info.title` as the existing API product on the portal and a different `info.version`. If these conditions are not met, a new API product and its related associations will be created and published on the specified portal.
+| Variable        | Description                                                                 |  
+|-----------------|-----------------------------------------------------------------------------|  
+| `KONNECT_URL`   | Default Konnect API server URL.                                             |  
+| `KONNECT_TOKEN` | Default token for authenticating API requests.                              |  
+| `LOG_LEVEL`     | Logging verbosity level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). Default: `INFO`. |  
 
-```bash
-# Dev portal
-python3 main.py --oas-spec=../oasv2.yaml --konnect-portal-name=dev_portal
-```
+## How It Works
 
-### Deprecate an API Product Version on a Portal
+1. **Parse OAS Spec**: The script reads the provided OpenAPI Specification (OAS) file and extracts essential API metadata such as title, version, and description.  
+2. **Authentication**: The `KonnectApi` client is initialized using the provided or default token and URL.  
+3. **Operations**:  
+   - If the `--delete` flag is set, the script deletes the API product after confirmation.  
+   - Otherwise, the API product is created or updated, its spec is uploaded, and it is published or deprecated based on the provided flags.  
 
-To deprecate the specified API product version on the specified portal, run the following command:
+## Logging
 
-```bash
-# Deprecate on Dev portal
-python3 main.py --oas-spec=../oasv1.yaml --konnect-portal-name=dev_portal --deprecate
-```
+Logs are output to the console, and the verbosity is controlled by the `LOG_LEVEL` environment variable. Available levels are:  
 
-### Unpublish an API Product Version from a Portal
+- `DEBUG`: Detailed information for troubleshooting.  
+- `INFO`: General operational messages (default).  
+- `WARNING`: Non-critical issues.  
+- `ERROR`: Critical errors that prevent execution.  
 
-To unpublish the specified API product version from the specified portal, run the following command:
+## Dependencies
 
-```bash
-# Unpublish on Dev portal
-python3 main.py --oas-spec=../oasv1.yaml --konnect-portal-name=dev_portal --unpublish
-```
+The script requires the following Python libraries:  
+
+- `pyyaml`: For parsing YAML-based OAS files.  
+- `dotenv`: For loading environment variables from a `.env` file (optional).  
+- `logger`: Custom logging module (included in the repository).  
+- `konnect`: Konnect API client (included in the repository).  
+
+Install all dependencies using:  
+pip install -r requirements.txt  
+
+## Error Handling
+
+The script includes robust error handling and will:  
+
+- Log errors with a descriptive message.  
+- Exit with a non-zero status code in case of failures.  
