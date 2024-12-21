@@ -53,7 +53,7 @@ $ python main.py [options]
 | Option                  | Required                                                | Description                                                          |
 | ----------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
 | `--oas-spec`            | **Yes**                                                 | Path to the OAS spec file.                                           |
-| `--docs`                | No                                                      | Path to the API product documentation folder.                        |
+| `--docs`                | No                                                      | Path to the API product documents folder.                            |
 | `--konnect-portal-name` | **Yes**                                                 | Name of the Konnect portal to perform operations on.                 |
 | `--konnect-token`       | **Yes** (except for `--config`)                         | The Konnect spat or kpat token.                                      |
 | `--konnect-url`         | **Yes** (except for `--config`)                         | The Konnect API server URL.                                          |
