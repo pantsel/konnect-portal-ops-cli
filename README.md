@@ -67,30 +67,39 @@ $ python main.py [options]
 #### Publish an API Product to a Portal
 
 ```bash
-$ python main.py --config .config.yaml --oas-spec ../examples/v1/oasv.yaml --konnect-portal-name my-portal 
+$ python main.py --config .config.yaml \
+   --oas-spec ../examples/v1/oasv.yaml \
+   --konnect-portal-name my-portal 
 ```
 #### Publish a new version of the API Product to a Portal
 
 ```bash
-python main.py --config .config.yaml --oas-spec ../examples/v2.oasv.yaml --konnect-portal-name my-portal
+python main.py --config .config.yaml \
+   --oas-spec ../examples/v2.oasv.yaml \
+   --konnect-portal-name my-portal
 ```
 
 #### Deprecate an API Version on a Portal
 
 ```bash
-python main.py --config .config.yaml --oas-spec ../examples/v1/oas.yaml --konnect-portal-name my-portal --deprecate
+python main.py --config .config.yaml \
+   --oas-spec ../examples/v1/oas.yaml \
+   --konnect-portal-name my-portal --deprecate
 ```
 
 #### Unpublish an API Version from a Portal
 
 ```bash
-python main.py --config .config.yaml --oas-spec ../examples/v1/oasv.yaml --konnect-portal-name my-portal --unpublish
+python main.py --config .config.yaml \
+   --oas-spec ../examples/v1/oasv.yaml \
+   --konnect-portal-name my-portal --unpublish
 ```
 
 #### Completely delete an API Product and its associations
 
 ```bash
-python main.py --config .config.yaml --oas-spec ../examples/v1/oasv.yaml --delete --yes
+python main.py --config .config.yaml \
+   --oas-spec ../examples/v1/oasv.yaml --delete --yes
 ```
 
 ## Configuration Variables
