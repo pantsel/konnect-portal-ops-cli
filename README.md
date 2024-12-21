@@ -101,8 +101,7 @@ The script requires the following Python libraries:
 - `logger`: Custom logging module (included in the repository).  
 - `konnect`: Konnect API client (included in the repository).  
 
-Install all dependencies using:  
-`pip install -r requirements.txt` 
+Install all dependencies using: `pip install -r requirements.txt` 
 
 ## Error Handling
 
