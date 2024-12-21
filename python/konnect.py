@@ -165,21 +165,7 @@ class KonnectApi:
             self.logger.info(f"API product {api_name} deleted successfully.")
         else:
             self.logger.warning(f"API product {api_name} not found. Nothing to delete.")
-
-    def _generate_document_data(self, file_name: str, content: str, parent_document_id: str = None) -> Dict[str, Any]:
-        title_slug = os.path.splitext(file_name)[0].replace('__unpublished', '')
-        title_slug = '_'.join(title_slug.split('_')[1:]) if title_slug[0].isdigit() else title_slug
-        data = {
-            'title': title_slug.replace('_', ' ').replace('-', ' ').title(),
-            'slug': title_slug.replace('_', '-').replace(' ', '-').lower(),
-            'content': utils.encode_content(content),
-            'status': "unpublished" if "__unpublished" in file_name else "published"
-        }
-        if parent_document_id:
-            data['parent_document_id'] = parent_document_id
-        return data
         
-    # @TODO: Find a way to support parent-child relationships between documents
     def create_or_update_api_product_documents(self, api_product_id: str, directory: str) -> Dict[str, Any]:
         """
         Create or update API product documents based on the files in the specified directory.
@@ -191,7 +177,9 @@ class KonnectApi:
             Process existing documents to update or create new ones if necessary.
             """
             if data['slug'] in existing_slugs:
+                # Retrieve the existing document using the slug
                 existing_doc = self.api_product_client.get_api_product_document(api_product_id, existing_slugs[data['slug']])
+                
                 has_content_changed = (
                     existing_doc['title'] != data['title'] or 
                     utils.encode_content(existing_doc['content']) != data['content'] or 
@@ -202,7 +190,8 @@ class KonnectApi:
                 if has_content_changed:
                     self.logger.info(f"Updating document: {file_name}")
                     updated_doc = self.api_product_client.update_api_product_document(api_product_id, existing_slugs[data['slug']], data)
-                    # Update the existing_documents with the updated document
+                    
+                    # Update the existing_documents list with the updated document
                     for i, doc in enumerate(existing_documents['data']):
                         if doc['id'] == updated_doc['id']:
                             existing_documents['data'][i] = updated_doc
@@ -210,6 +199,7 @@ class KonnectApi:
                 else:
                     self.logger.info(f"No changes detected for document: {file_name}")
                 
+                # Remove the slug from existing_slugs to avoid deletion later
                 del existing_slugs[data['slug']]
                 
             else:
@@ -220,25 +210,69 @@ class KonnectApi:
 
         def get_parent_document_id(file_name: str, directory: str) -> Optional[str]:
             """
-            Get the parent document ID if the file has a parent.
+            Get the parent document ID based on the file name and directory.
+
+            Args:
+            file_name (str): The name of the file for which to find the parent document ID.
+            directory (str): The directory where the files are located.
+
+            Returns:
+            Optional[str]: The ID of the parent document if found, otherwise None.
             """
             parent_document_id = None
             if '_' in file_name:
+                # Extract the prefix from the file name (e.g., "1.1_child.md" -> "1.1")
                 prefix = file_name.split('_')[0]
                 if '.' in prefix:
+                    # Extract the parent prefix (e.g., "1.1" -> "1")
                     parent_prefix = prefix.split('.')[0]
+                    # Find the parent file name in the directory (e.g., "1_parent.md")
                     parent_file_name = next((f for f in os.listdir(directory) if f.startswith(f"{parent_prefix}_") and f.endswith(".md")), None)
                     
                     if parent_file_name:
+                        # Read the content of the parent file
                         parent_content = utils.read_file_content(os.path.join(directory, parent_file_name))
-                        parent_data = self._generate_document_data(parent_file_name, parent_content)
+                        # Generate document data for the parent file
+                        parent_data = generate_document_data(parent_file_name, parent_content)
+                        # Extract the slug for the parent document
                         parent_slug = parent_data['slug']
+                        # Find the parent document in the existing documents
                         parent_document = next((doc for doc in existing_documents['data'] if doc['slug'] == parent_slug), None)
+                        # Get the parent document ID if it exists
                         parent_document_id = parent_document['id'] if parent_document else None
 
-                        self.logger.info(f"File name: {file_name} | Parent Slug: {parent_slug} | Parent Document ID: {parent_document_id}")
+                        self.logger.debug(f"File name: {file_name} | Parent Slug: {parent_slug} | Parent Document ID: {parent_document_id}")
             return parent_document_id
 
+        def generate_document_data(file_name: str, content: str, parent_document_id: str = None) -> Dict[str, Any]:
+            """
+            Generate a dictionary containing document data based on the provided file name and content.
+
+            Args:
+                file_name (str): The name of the file, which may include special suffixes like '__unpublished'.
+                content (str): The content of the document to be encoded.
+                parent_document_id (str, optional): The ID of the parent document, if any. Defaults to None.
+
+            Returns:
+                Dict[str, Any]: A dictionary containing the document data with the following keys:
+                    - 'title' (str): The title of the document, derived from the file name.
+                    - 'slug' (str): The slug for the document, derived from the file name.
+                    - 'content' (str): The encoded content of the document.
+                    - 'status' (str): The publication status of the document, either 'unpublished' or 'published'.
+                    - 'parent_document_id' (str, optional): The ID of the parent document, if provided.
+            """
+            title_slug = os.path.splitext(file_name)[0].replace('__unpublished', '')
+            title_slug = '_'.join(title_slug.split('_')[1:]) if title_slug[0].isdigit() else title_slug
+            data = {
+                'title': title_slug.replace('_', ' ').replace('-', ' ').title(),
+                'slug': title_slug.replace('_', '-').replace(' ', '-').lower(),
+                'content': utils.encode_content(content),
+                'status': "unpublished" if "__unpublished" in file_name else "published"
+            }
+            if parent_document_id:
+                data['parent_document_id'] = parent_document_id
+            return data
+    
         existing_documents = self.api_product_client.list_api_product_documents(api_product_id)
         existing_slugs = {doc['slug'].split('/')[-1]: doc['id'] for doc in existing_documents['data']}
         
@@ -246,7 +280,7 @@ class KonnectApi:
             if file_name.endswith(".md"):
                 content = utils.read_file_content(os.path.join(directory, file_name))
                 parent_document_id = get_parent_document_id(file_name, directory)
-                data = self._generate_document_data(file_name, content, parent_document_id)
+                data = generate_document_data(file_name, content, parent_document_id)
                 process_existing_documents(api_product_id, existing_slugs, data, file_name)
 
         # Delete documents that are not in the input folder
