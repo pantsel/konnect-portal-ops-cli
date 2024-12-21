@@ -166,50 +166,87 @@ class KonnectApi:
         else:
             self.logger.warning(f"API product {api_name} not found. Nothing to delete.")
 
+    def _generate_document_data(self, file_name: str, content: str, parent_document_id: str = None) -> Dict[str, Any]:
+        title_slug = os.path.splitext(file_name)[0].replace('__unpublished', '')
+        title_slug = '_'.join(title_slug.split('_')[1:]) if title_slug[0].isdigit() else title_slug
+        data = {
+            'title': title_slug.replace('_', ' ').replace('-', ' ').title(),
+            'slug': title_slug.replace('_', '-').replace(' ', '-').lower(),
+            'content': utils.encode_content(content),
+            'status': "unpublished" if "__unpublished" in file_name else "published"
+        }
+        if parent_document_id:
+            data['parent_document_id'] = parent_document_id
+        return data
+        
     # @TODO: Find a way to support parent-child relationships between documents
     def create_or_update_api_product_documents(self, api_product_id: str, directory: str) -> Dict[str, Any]:
-        
+        """
+        Create or update API product documents based on the files in the specified directory.
+        """
         self.logger.info(f"Processing documents in {directory}")
 
-        def generate_document_data(file_name: str, content: str) -> Dict[str, Any]:
-            title_slug = os.path.splitext(file_name)[0].replace('__unpublished', '')
-            title_slug = '_'.join(title_slug.split('_')[1:]) if title_slug[0].isdigit() else title_slug
-            return {
-                'title': title_slug.replace('_', ' ').replace('-', ' ').title(),
-                'slug': title_slug.replace('_', '-').replace(' ', '-').lower(),
-                'content': utils.encode_content(content),
-                'status': "unpublished" if "__unpublished" in file_name else "published"
-            }
-
         def process_existing_documents(api_product_id: str, existing_slugs: Dict[str, str], data: Dict[str, Any], file_name: str) -> None:
+            """
+            Process existing documents to update or create new ones if necessary.
+            """
             if data['slug'] in existing_slugs:
-                
                 existing_doc = self.api_product_client.get_api_product_document(api_product_id, existing_slugs[data['slug']])
                 has_content_changed = (
                     existing_doc['title'] != data['title'] or 
                     utils.encode_content(existing_doc['content']) != data['content'] or 
-                    existing_doc['status'] != data['status']
+                    existing_doc['status'] != data['status'] or
+                    (data.get('parent_document_id') and existing_doc.get('parent_document_id') != data['parent_document_id'])
                 )
                 
-                if (has_content_changed):
+                if has_content_changed:
                     self.logger.info(f"Updating document: {file_name}")
-                    self.api_product_client.update_api_product_document(api_product_id, existing_slugs[data['slug']], data)
+                    updated_doc = self.api_product_client.update_api_product_document(api_product_id, existing_slugs[data['slug']], data)
+                    # Update the existing_documents with the updated document
+                    for i, doc in enumerate(existing_documents['data']):
+                        if doc['id'] == updated_doc['id']:
+                            existing_documents['data'][i] = updated_doc
+                            break
                 else:
                     self.logger.info(f"No changes detected for document: {file_name}")
                 
                 del existing_slugs[data['slug']]
-            
+                
             else:
                 self.logger.info(f"Creating document: {file_name}")
-                self.api_product_client.create_api_product_document(api_product_id, data)
+                new_doc = self.api_product_client.create_api_product_document(api_product_id, data)
+                # Add the new document to existing_documents
+                existing_documents['data'].append(new_doc)
+
+        def get_parent_document_id(file_name: str, directory: str) -> Optional[str]:
+            """
+            Get the parent document ID if the file has a parent.
+            """
+            parent_document_id = None
+            if '_' in file_name:
+                prefix = file_name.split('_')[0]
+                if '.' in prefix:
+                    parent_prefix = prefix.split('.')[0]
+                    parent_file_name = next((f for f in os.listdir(directory) if f.startswith(f"{parent_prefix}_") and f.endswith(".md")), None)
+                    
+                    if parent_file_name:
+                        parent_content = utils.read_file_content(os.path.join(directory, parent_file_name))
+                        parent_data = self._generate_document_data(parent_file_name, parent_content)
+                        parent_slug = parent_data['slug']
+                        parent_document = next((doc for doc in existing_documents['data'] if doc['slug'] == parent_slug), None)
+                        parent_document_id = parent_document['id'] if parent_document else None
+
+                        self.logger.info(f"File name: {file_name} | Parent Slug: {parent_slug} | Parent Document ID: {parent_document_id}")
+            return parent_document_id
 
         existing_documents = self.api_product_client.list_api_product_documents(api_product_id)
-        existing_slugs = {doc['slug']: doc['id'] for doc in existing_documents['data']}
-
-        for file_name in sorted(os.listdir(directory)):
+        existing_slugs = {doc['slug'].split('/')[-1]: doc['id'] for doc in existing_documents['data']}
+        
+        for file_name in sorted(os.listdir(directory), key=utils.sort_key_for_numbered_files):
             if file_name.endswith(".md"):
                 content = utils.read_file_content(os.path.join(directory, file_name))
-                data = generate_document_data(file_name, content)
+                parent_document_id = get_parent_document_id(file_name, directory)
+                data = self._generate_document_data(file_name, content, parent_document_id)
                 process_existing_documents(api_product_id, existing_slugs, data, file_name)
 
         # Delete documents that are not in the input folder
