@@ -38,7 +38,9 @@ Heads up! This script is still a work in progress, so some features might not be
 
 Run the script using the following command:  
 
-python main.py [options]  
+```shell
+$ python main.py [options]  
+```
 
 ### Arguments
 
