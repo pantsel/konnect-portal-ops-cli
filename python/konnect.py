@@ -174,24 +174,30 @@ class KonnectApi:
         }
         '''
 
-        for file in os.listdir(directory):
+        existing_documents = self.api_product_client.list_api_product_documents(api_product_id)
+        existing_slugs = {doc['slug']: doc['id'] for doc in existing_documents['data']}
+
+        for file in sorted(os.listdir(directory)):
             if file.endswith(".md"):
                 with open(os.path.join(directory, file), 'r') as f:
                     content = f.read()
                     data = {}
                     title_slug = os.path.splitext(file)[0].replace('__unpublished', '')
+                    title_slug = '_'.join(title_slug.split('_')[1:]) if title_slug[0].isdigit() else title_slug
                     data['title'] = title_slug.replace('_', ' ').replace('-', ' ').title()
-                    data['slug'] = title_slug.replace('_', '-')
+                    data['slug'] = title_slug.replace('_', '-').replace(' ', '-').lower()
                     data['content'] = base64.b64encode(content.encode()).decode('utf-8')
                     data['status'] = "unpublished" if "__unpublished" in file else "published"
 
-                    # Get existing documents
-                    existing_documents = self.api_product_client.list_api_product_documents(api_product_id)
-                    if len(existing_documents['data']) > 0:
-                        for doc in existing_documents['data']:
-                            if doc['slug'] == data['slug']:
-                                self.logger.info(f"Updating document: {file}")
-                                return self.api_product_client.update_api_product_document(api_product_id, doc['id'], data)
-                    
-                    self.logger.info(f"Creating document: {file}")
-                    return self.api_product_client.create_api_product_document(api_product_id, data)
+                    if data['slug'] in existing_slugs:
+                        self.logger.info(f"Updating document: {file}")
+                        self.api_product_client.update_api_product_document(api_product_id, existing_slugs[data['slug']], data)
+                        del existing_slugs[data['slug']]
+                    else:
+                        self.logger.info(f"Creating document: {file}")
+                        self.api_product_client.create_api_product_document(api_product_id, data)
+
+        # Delete documents that are not in the input folder
+        for slug, doc_id in existing_slugs.items():
+            self.logger.info(f"Deleting document: {slug}")
+            self.api_product_client.delete_api_product_document(api_product_id, doc_id)
