@@ -27,10 +27,12 @@ Heads up! This script is still a work in progress, so some features might not be
 2. Install dependencies:  
    pip install -r requirements.txt  
 
-3. (Optional) Create a `.env` file in the root directory to set environment variables:  
-   KONNECT_URL=<your-konnect-url>  
-   KONNECT_TOKEN=<your-konnect-token>  
-   LOG_LEVEL=INFO  
+3. (Optional) Create a `.env` file in the root directory to set environment variables: 
+   ```
+    KONNECT_URL=<your-konnect-url>  
+    KONNECT_TOKEN=<your-konnect-token>  
+    LOG_LEVEL=INFO
+   ```  
 
 ## Usage
 
