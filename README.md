@@ -87,7 +87,7 @@ python main.py --oas-spec ./oasv1.yaml --konnect-portal-name my-portal --depreca
 python main.py --oas-spec ./oasv1.yaml --konnect-portal-name my-portal --unpublish
 ```
 
-#### Delete an API Product (and its associations) from all Portals
+#### Completely delete an API Product and its associations
 
 ```bash
 python main.py --oas-spec ./oasv1.yaml --delete --yes
