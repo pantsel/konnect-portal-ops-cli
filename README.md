@@ -109,7 +109,7 @@ And the following environment variables:
 ## How It Works
 
 1. **Parse OAS Spec**: The script reads the provided OpenAPI Specification (OAS) file and extracts essential API metadata such as title, version, and description.  
-2. **Authentication**: The `KonnectApi` client is initialized using the provided or default token and URL.  
+2. **Authentication**: The `KonnectApi` client is initialized using the provided token and Konnect URL.  
 3. **Operations**:  
    - If the `--delete` flag is set, the script deletes the API product after confirmation.  
    - Otherwise, the API product is created or updated, its spec is uploaded, and it is published or deprecated based on the provided flags.  
