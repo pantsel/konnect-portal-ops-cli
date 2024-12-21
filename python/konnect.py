@@ -1,6 +1,6 @@
 import json
 from logger import Logger
-from clients import ApiProductClient, PortalClient
+from clients import ApiProductClient, PortalManagementClient
 import constants
 from typing import Optional, Dict, Any
 
@@ -11,14 +11,14 @@ class KonnectApi:
         self.token = token
         self.logger = Logger()
         self.api_product_client = ApiProductClient(f"{base_url}/v2", token)
-        self.portal_client = PortalClient(f"{base_url}/v2", token)
+        self.portal_client = PortalManagementClient(f"{base_url}/v2", token)
 
     def find_api_product_by_name(self, name: str) -> Optional[Dict[str, Any]]:
-        response = self.api_product_client.get_api_products({"filter[name]": name})
+        response = self.api_product_client.list_api_products({"filter[name]": name})
         return response['data'][0] if response['data'] else None
 
     def find_api_product_version_by_name(self, api_product_id: str, name: str) -> Optional[Dict[str, Any]]:
-        response = self.api_product_client.get_api_product_versions(api_product_id, {"filter[name]": name})
+        response = self.api_product_client.list_api_product_versions(api_product_id, {"filter[name]": name})
         return response['data'][0] if response['data'] else None
 
     def find_portal_by_name(self, portal_name: str) -> Optional[Dict[str, Any]]:
@@ -81,7 +81,7 @@ class KonnectApi:
         return api_product_version
 
     def create_or_update_api_product_version_spec(self, api_product_id: str, api_product_version_id: str, oas_file_base64: str) -> Dict[str, Any]:
-        existing_api_product_version_specs = self.api_product_client.get_api_product_version_specs(api_product_id, api_product_version_id)
+        existing_api_product_version_specs = self.api_product_client.list_api_product_version_specs(api_product_id, api_product_version_id)
         existing_api_product_version_spec = existing_api_product_version_specs['data'][0] if existing_api_product_version_specs['data'] else None
 
         if existing_api_product_version_spec:
