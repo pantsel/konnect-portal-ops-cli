@@ -102,7 +102,7 @@ The script requires the following Python libraries:
 - `konnect`: Konnect API client (included in the repository).  
 
 Install all dependencies using:  
-pip install -r requirements.txt  
+`pip install -r requirements.txt` 
 
 ## Error Handling
 
