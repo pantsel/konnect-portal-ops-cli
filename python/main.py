@@ -81,7 +81,7 @@ def read_oas_document(spec: str) -> tuple:
             logger.info(f"API Info: {api_info}")
 
             if not api_info['title'] or not api_info["description"] or not api_info["version"]:
-                raise ValueError("API name, version, and description must be provided in the spec")
+                raise ValueError("API title, version, and description must be provided in the spec")
             
             oas_file_base64 = base64.b64encode(oas_file).decode('utf-8')
             return api_info, oas_file_base64
