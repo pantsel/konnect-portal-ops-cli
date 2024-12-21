@@ -49,13 +49,4 @@ components:
       scheme: basic
     openIdAuth:
       type: openIdConnect
-      openIdConnectUrl: https://login.microsoftonline.com/96566719-5c4d-4e3a-8944-47eb10e03365/v2.0/.well-known/openid-configuration
-
-  headers:
-    DefaultHeaders:
-      type: object
-      properties:
-        ngrok-skip-browser-warning:
-          type: string
-          description: A custom header sent with every request.
-          example: "69420"
+      openIdConnectUrl: https://myidp.com/.well-known/openid-configuration
