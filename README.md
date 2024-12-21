@@ -21,18 +21,22 @@ Heads up! This script is still a work in progress, so some features might not be
 ## Installation
 
 1. Clone this repository:  
-   git clone https://github.com/your-repo/konnect-ops-cli.git  
-   cd konnect-ops-cli  
+   ```shell
+      $ git clone https://github.com/pantsel/konnect-portal-ops-examples
+      $ cd konnect-portal-ops-examples/python
+   ```
 
 2. Install dependencies:  
-   pip install -r requirements.txt  
-
-3. (Optional) Create a `.env` file in the root directory to set environment variables: 
+   ```shell
+      $ pip install -r requirements.txt
    ```
-    KONNECT_URL=<your-konnect-url>  
-    KONNECT_TOKEN=<your-konnect-token>  
-    LOG_LEVEL=INFO
-   ```  
+
+3. (Optional) Create a `yaml` config file to set the configuration variables.  
+   ```yaml
+      # .config.yaml
+      konnect_url: https://us.api.konghq.com
+      konnect_token: <your-konnect-token>
+   ```
 
 ## Usage
 
@@ -44,16 +48,17 @@ $ python main.py [options]
 
 ### Arguments
 
-| Option                   | Required            | Description                                                                 |  
-|--------------------------|---------------------|-----------------------------------------------------------------------------|  
-| `--oas-spec`             | **Yes**            | Path to the OAS spec file.                                                 |  
-| `--konnect-portal-name`  | **Yes** (except for `--delete`) | Name of the Konnect portal to perform operations on.                       |  
-| `--konnect-token`        | No                 | Konnect API token. Defaults to `KONNECT_TOKEN` from `.env`.                |  
-| `--konnect-url`          | No                 | Konnect API URL. Defaults to `KONNECT_URL` from `.env`.                    |  
-| `--deprecate`            | No                 | Deprecate the API product version on the portal.                           |  
-| `--unpublish`            | No                 | Unpublish the API product version from the portal.                         |  
-| `--delete`               | No                 | Delete the API product and associations from all portals.                  |  
-| `--yes`                  | No                 | Skip confirmation prompts (useful for non-interactive environments).       |  
+| Option                  | Required                                                | Description                                                          |
+| ----------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
+| `--oas-spec`            | **Yes**                                                 | Path to the OAS spec file.                                           |
+| `--konnect-portal-name` | **Yes**                                                 | Name of the Konnect portal to perform operations on.                 |
+| `--konnect-token`       | **Yes** (except for `--config`)                         | The Konnect spat or kpat token.                                      |
+| `--konnect-url`         | **Yes** (except for `--config`)                         | The Konnect API server URL.                                          |
+| `--deprecate`           | No                                                      | Deprecate the API product version on the portal.                     |
+| `--unpublish`           | No                                                      | Unpublish the API product version from the portal.                   |
+| `--delete`              | No                                                      | Delete the API product and associations from all portals.            |
+| `--yes`                 | No                                                      | Skip confirmation prompts (useful for non-interactive environments). |
+| `--config`              | **Yes** (except for `--konnect-token`, `--konnect-url`) | Path to the configuration file.                                      |
 
 ### Examples
 
@@ -80,14 +85,18 @@ python main.py --oas-spec ./oasv1.yaml --konnect-portal-name my-portal --depreca
 python main.py --oas-spec ./oasv1.yaml --delete --yes
 ```
 
-## Environment Variables
+## Configuration Variables
 
-The script supports the following environment variables for configuration:  
+The script supports the following variables for configuration in a `yaml` file:  
 
-| Variable        | Description                                                                 |  
-|-----------------|-----------------------------------------------------------------------------|  
-| `KONNECT_URL`   | Default Konnect API server URL.                                             |  
-| `KONNECT_TOKEN` | Default token for authenticating API requests.                              |  
+| Variable        | Description                            |
+| --------------- | -------------------------------------- |
+| `konnect_url`   | Konnect API server URL.                |
+| `konnect_token` | Token for authenticating API requests. |
+
+And the following environment variables:
+
+| Variable        | Description                                                                 |
 | `LOG_LEVEL`     | Logging verbosity level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). Default: `INFO`. |  
 
 ## How It Works
@@ -111,10 +120,8 @@ Logs are output to the console, and the verbosity is controlled by the `LOG_LEVE
 
 The script requires the following Python libraries:  
 
-- `pyyaml`: For parsing YAML-based OAS files.  
-- `dotenv`: For loading environment variables from a `.env` file (optional).  
-- `logger`: Custom logging module (included in the repository).  
-- `konnect`: Konnect API client (included in the repository).  
+- `PyYaml`: For parsing YAML-based files.  
+- `requests`: For making HTTP requests to the Konnect API.
 
 Install all dependencies using: `pip install -r requirements.txt` 
 
