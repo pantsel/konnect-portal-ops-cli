@@ -128,5 +128,5 @@ class ApiProductClient:
     self._handle_response(response)
 
 # Example usage:
-# api = KonnectAPI(base_url="https://us.api.konghq.com/v2", token="your_token_here")
+# api = ApiProductClient(base_url="https://us.api.konghq.com/v2", token="your_token_here")
 # api.create_api_product(data={"name": "API Product", "description": "Text describing the API product"})

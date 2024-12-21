@@ -286,3 +286,7 @@ class PortalManagementClient:
     url = f'{self.base_url}/portals/{portal_id}/identity-providers/{id}'
     response = requests.delete(url, headers=self.headers)
     return self._handle_response(response)
+  
+# Example usage:
+# portal_client = PortalManagementClient(base_url="https://us.api.konghq.com/v2", token="your_token_here")
+# portal_client.list_portals()
