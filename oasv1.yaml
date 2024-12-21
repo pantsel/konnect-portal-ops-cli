@@ -6,6 +6,9 @@ info:
 servers:
   - url: https://19e8-2001-1c08-70b-3100-b128-b5cf-52f0-4ab8.ngrok-free.app
 
+tags:
+  - name: HTTPBin
+
 paths:
   /httpbin:
     get:
@@ -14,6 +17,8 @@ paths:
       security:
         - openIdAuth: []
         - basicAuth: []
+      tags:
+        - HTTPBin
       parameters:
         - name: ngrok-skip-browser-warning
           in: header
