@@ -2,7 +2,7 @@
 
 A rather opinionated CLI tool for managing API products on Konnect Developer Portals.
 
-A command-line tool designed to perform various operations on **Konnect Dev Portals**, such as publishing, deprecating, unpublishing, or deleting API products and their versions based on OpenAPI Specification (OAS) files.
+The tool is designed to perform various operations on **Konnect Dev Portals**, such as publishing, deprecating, unpublishing, or deleting API products and their versions based on OpenAPI Specification (OAS) files.
 
 The script requires Konnect Developer Portals to be set up and pre-configured. It uses the Konnect APIs to interact with the portals and perform API Product related operations.
 
