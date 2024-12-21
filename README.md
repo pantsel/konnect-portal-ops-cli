@@ -53,6 +53,7 @@ $ python main.py [options]
 | Option                  | Required                                                | Description                                                          |
 | ----------------------- | ------------------------------------------------------- | -------------------------------------------------------------------- |
 | `--oas-spec`            | **Yes**                                                 | Path to the OAS spec file.                                           |
+| `--docs`                | No                                                      | Path to the API product documentation folder.                        |
 | `--konnect-portal-name` | **Yes**                                                 | Name of the Konnect portal to perform operations on.                 |
 | `--konnect-token`       | **Yes** (except for `--config`)                         | The Konnect spat or kpat token.                                      |
 | `--konnect-url`         | **Yes** (except for `--config`)                         | The Konnect API server URL.                                          |
@@ -68,14 +69,14 @@ $ python main.py [options]
 
 ```bash
 $ python main.py --config .config.yaml \
-   --oas-spec ../examples/v1/oasv.yaml \
+   --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal 
 ```
 #### Publish a new version of the API Product to a Portal
 
 ```bash
 python main.py --config .config.yaml \
-   --oas-spec ../examples/v2.oasv.yaml \
+   --oas-spec ../examples/oasv2.yaml \
    --konnect-portal-name my-portal
 ```
 
@@ -83,7 +84,7 @@ python main.py --config .config.yaml \
 
 ```bash
 python main.py --config .config.yaml \
-   --oas-spec ../examples/v1/oas.yaml \
+   --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal --deprecate
 ```
 
@@ -91,15 +92,33 @@ python main.py --config .config.yaml \
 
 ```bash
 python main.py --config .config.yaml \
-   --oas-spec ../examples/v1/oasv.yaml \
+   --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal --unpublish
+```
+
+#### Managing API Products documentation
+
+How it works:
+- All related API Product documents must be present in a directory.
+- All `.md` files in the directory are considered documentation files.
+- The ordering of the documents on Konnect is based on the file names.
+- By default, all documents get published. If you want to unpublish a document, add the `__unpublished` tag at the end of the file name.
+- Existing API Product documents that are not present in the documents folder will be deleted.
+
+For an example documents folder structure and use-cases, see the [examples/docs](examples/docs) directory.
+
+```bash
+python main.py --config .config.yaml \
+   --oas-spec ../examples/oasv1.yaml \
+   --docs ../examples/docs \
+   --konnect-portal-name my-portal
 ```
 
 #### Completely delete an API Product and its associations
 
 ```bash
 python main.py --config .config.yaml \
-   --oas-spec ../examples/v1/oasv.yaml --delete --yes
+   --oas-spec ../examples/oasv1.yaml --delete --yes
 ```
 
 ## Configuration Variables
@@ -113,9 +132,9 @@ The script supports the following variables for configuration in a `yaml` file:
 
 And the following environment variables:
 
-| Variable        | Description                                                                 |
-| --------------- | --------------------------------------------------------------------------- |
-| `LOG_LEVEL`     | Logging verbosity level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). Default: `INFO`. |  
+| Variable    | Description                                                                     |
+| ----------- | ------------------------------------------------------------------------------- |
+| `LOG_LEVEL` | Logging verbosity level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). Default: `INFO`. |
 
 ## How It Works
 
