@@ -2,6 +2,10 @@
 
 This script is a command-line tool designed to perform various operations on **Konnect Dev Portals**, such as publishing, deprecating, unpublishing, or deleting API products and their versions based on OpenAPI Specification (OAS) files.
 
+## Disclaimer
+
+Heads up! This script is still a work in progress, so some features might not be fully supported yet. Feel free to give it a try, but please use it responsibly. If something doesn’t work as expected, let us know—or better yet, contribute!
+
 ## Features
 
 - **Publish or update API products** on a Konnect Dev Portal.  
@@ -11,7 +15,7 @@ This script is a command-line tool designed to perform various operations on **K
 
 ## Requirements
 
-- Python 3.7+  
+- Python 3+  
 - Dependencies listed in [requirements.txt](#dependencies).  
 
 ## Installation
@@ -32,7 +36,7 @@ This script is a command-line tool designed to perform various operations on **K
 
 Run the script using the following command:  
 
-python konnect_ops.py [options]  
+python main.py [options]  
 
 ### Arguments
 
@@ -50,13 +54,16 @@ python konnect_ops.py [options]
 ### Examples
 
 #### Publish an API Product  
-python konnect_ops.py --oas-spec ./api-spec.yaml --konnect-portal-name my-portal  
+python main.py --oas-spec ../oasv1.yaml --konnect-portal-name my-portal 
+
+#### Publish a new version of the API Product
+python main.py --oas-spec ../oasv2.yaml --konnect-portal-name my-portal 
 
 #### Deprecate an API Version  
-python konnect_ops.py --oas-spec ./api-spec.yaml --konnect-portal-name my-portal --deprecate  
+python main.py --oas-spec ./oasv1.yaml --konnect-portal-name my-portal --deprecate  
 
 #### Delete an API Product  
-python konnect_ops.py --oas-spec ./api-spec.yaml --delete --yes  
+python main.py --oas-spec ./oasv1.yaml --delete --yes  
 
 ## Environment Variables
 
