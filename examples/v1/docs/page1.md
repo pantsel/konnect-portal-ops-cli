@@ -72,4 +72,4 @@ Retrieves data from the HTTPBin endpoint.
 - Scheme: Basic
 
 #### 2. OpenID Connect (`openIdAuth`)
-- OpenID Connect URL: [OpenID Configuration](https://myidp.com/.well-known/openid-configuration)
+- OpenID Connect URL: https://myidp.com/.well-known/openid-configuration
