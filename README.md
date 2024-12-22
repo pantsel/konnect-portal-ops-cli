@@ -21,7 +21,8 @@ Ensure that the Konnect Developer Portals are set up and pre-configured before u
 ## Requirements
 
 - Python 3+  
-- Dependencies listed in [requirements.txt](#dependencies).  
+- `PyYaml`: For parsing YAML-based files.  
+- `requests`: For making HTTP requests to the Konnect API.
 
 ## How It Works
 
@@ -192,18 +193,9 @@ Logs are output to the console, and the verbosity is controlled by the `LOG_LEVE
 - `WARNING`: Non-critical issues.  
 - `ERROR`: Critical errors that prevent execution.  
 
-## Dependencies
-
-The script requires the following Python libraries:  
-
-- `PyYaml`: For parsing YAML-based files.  
-- `requests`: For making HTTP requests to the Konnect API.
-
-Install all dependencies using: `pip install -r requirements.txt` 
-
 ## Error Handling
 
-The script includes robust error handling and will:  
+The CLI includes robust error handling and will:  
 
 - Log errors with a descriptive message.  
 - Exit with a non-zero status code in case of failures.  
