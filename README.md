@@ -184,3 +184,11 @@ The script includes robust error handling and will:
 
 - Log errors with a descriptive message.  
 - Exit with a non-zero status code in case of failures.  
+
+## Testing
+
+To run the tests, use the following command from the root directory:  
+
+```shell
+$ PYTHONPATH=src pytest tests/ -vv
+```
