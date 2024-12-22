@@ -30,8 +30,8 @@ class KonnectApi:
         response = self.portal_client.list_portal_product_versions(portal_id, {"filter[product_version_id]": product_version_id})
         return response['data'][0] if response['data'] else None
 
-    def create_or_update_api_product(self, api_name: str, api_description: str, portal_id: str, unpublish: bool) -> Dict[str, Any]:
-        existing_api_product = self.find_api_product_by_name(api_name)
+    def create_or_update_api_product(self, api_title: str, api_description: str, portal_id: str, unpublish: bool) -> Dict[str, Any]:
+        existing_api_product = self.find_api_product_by_name(api_title)
         new_portal_ids = existing_api_product['portal_ids'][:] if existing_api_product else []
 
         if existing_api_product:
@@ -46,7 +46,7 @@ class KonnectApi:
                 api_product = self.api_product_client.update_api_product(
                     existing_api_product['id'],
                     {
-                        "name": api_name,
+                        "name": api_title,
                         "description": api_description,
                         "portal_ids": new_portal_ids
                     }
@@ -58,7 +58,7 @@ class KonnectApi:
         else:
             api_product = self.api_product_client.create_api_product(
                 {
-                    "name": api_name,
+                    "name": api_title,
                     "description": api_description,
                     "portal_ids": [portal_id if not unpublish else None],
                 }
@@ -71,7 +71,7 @@ class KonnectApi:
 
     def create_or_update_api_product_version(self, api_product: Dict[str, Any], version_name: str) -> Dict[str, Any]:
         
-        self.logger.info(f"Processing API product version")
+        self.logger.info(f"Processing API Product Version")
 
         existing_api_product_version = self.find_api_product_version_by_name(api_product['id'], version_name)
         if existing_api_product_version:
@@ -86,13 +86,13 @@ class KonnectApi:
             )
             action = "Created new"
 
-        self.logger.info(f"{action} API product version: {api_product_version['name']} ({api_product_version['id']})")
+        self.logger.info(f"{action} API Product Version: {api_product_version['name']} ({api_product_version['id']})")
         self.logger.debug(json.dumps(api_product_version, indent=2))
         return api_product_version
 
     def create_or_update_api_product_version_spec(self, api_product_id: str, api_product_version_id: str, oas_file_base64: str) -> Dict[str, Any]:
 
-        self.logger.info(f"Processing API product version spec")
+        self.logger.info(f"Processing API Product Version Spec")
 
         existing_api_product_version_specs = self.api_product_client.list_api_product_version_specs(api_product_id, api_product_version_id)
         existing_api_product_version_spec = existing_api_product_version_specs['data'][0] if existing_api_product_version_specs['data'] else None
@@ -120,14 +120,14 @@ class KonnectApi:
             )
             action = "Created new"
 
-        self.logger.info(f"{action} spec for API product version: {api_product_version_id}")
+        self.logger.info(f"{action} API Product Version Spec: {api_product_version_id}")
         self.logger.debug(json.dumps(api_product_version_spec, indent=2))
         return api_product_version_spec
 
-    def create_or_update_portal_api_product_version(self, portal: Dict[str, Any], api_product_version: Dict[str, Any], api_product: Dict[str, Any], options: Dict[str, Any]) -> None:
+    def create_or_update_portal_product_version(self, portal: Dict[str, Any], api_product_version: Dict[str, Any], api_product: Dict[str, Any], options: Dict[str, Any]) -> None:
         """
         Create or update a Portal Product Version.
-        This method handles the creation or updating of a portal product version based on the provided parameters.
+        This method handles the creation or updating of a Portal Product Version based on the provided parameters.
         It ensures that the product version is published or unpublished, deprecated or not, and updates the registration
         and authentication strategies as specified.
         Args:
@@ -159,12 +159,12 @@ class KonnectApi:
             raise ValueError("Invalid deprecation status. Must be True or False")
 
         if publish_status == "published":
-            self.logger.info(f"Publishing portal product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
+            self.logger.info(f"Publishing Portal Product Version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
         else:
-            self.logger.info(f"Unpublishing portal product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
+            self.logger.info(f"Unpublishing Portal Product Version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
 
         if deprecated:
-            self.logger.info(f"Deprecating portal product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
+            self.logger.info(f"Deprecating Portal Product Version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
 
         portal_product_version = self.find_portal_product_version(portal['id'], api_product_version['id'])
 
@@ -188,7 +188,7 @@ class KonnectApi:
                 )
                 action = "Updated"
             else:
-                self.logger.info(f"Portal product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}' is up to date. No further action required.")
+                self.logger.info(f"Portal Product Version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}' is up to date.")
                 return
         else:
             portal_product_version = self.portal_client.create_portal_product_version(
@@ -204,7 +204,7 @@ class KonnectApi:
             )
             action = "Published"
 
-        self.logger.info(f"{action} portal product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
+        self.logger.info(f"{action} Portal Product Version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
 
     def delete_api_product(self, api_name: str) -> None:
         api_product = self.find_api_product_by_name(api_name)

@@ -67,7 +67,7 @@ def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi
         konnect.create_or_update_api_product_version_spec(api_product['id'], api_product_version['id'], oas_file_base64)
         
         version_publish_status = "unpublished" if args.unpublish and "version" in args.unpublish else "published"
-        konnect.create_or_update_portal_api_product_version(
+        konnect.create_or_update_portal_product_version(
             portal=portal,
             api_product_version=api_product_version,
             api_product=api_product,
