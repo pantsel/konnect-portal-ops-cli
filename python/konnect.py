@@ -1,12 +1,11 @@
 import json
 import os
-import base64
 from logger import Logger
 from clients import ApiProductClient, PortalManagementClient
 import constants
-from typing import Optional, Dict, Any
+from typing import List, Optional, Dict, Any
 import utils
-import uuid
+from helpers.api_product_documents import parse_directory
 
 
 class KonnectApi:
@@ -20,7 +19,7 @@ class KonnectApi:
     def find_api_product_by_name(self, name: str) -> Optional[Dict[str, Any]]:
         response = self.api_product_client.list_api_products({"filter[name]": name})
         return response['data'][0] if response['data'] else None
-
+    
     def find_api_product_version_by_name(self, api_product_id: str, name: str) -> Optional[Dict[str, Any]]:
         response = self.api_product_client.list_api_product_versions(api_product_id, {"filter[name]": name})
         return response['data'][0] if response['data'] else None
@@ -191,131 +190,55 @@ class KonnectApi:
         else:
             self.logger.warning(f"API product {api_name} not found. Nothing to delete.")
         
-    def create_or_update_api_product_documents(self, api_product_id: str, directory: str) -> Dict[str, Any]:
-        """
-        Create or update API product documents based on the files in the specified directory.
-        """
-        self.logger.info(f"Processing documents in {directory}")
+    def _sync_pages(self, local_pages: List[Dict[str, str]], remote_pages: List[Dict[str, str]], api_product_id: str) -> None:
+        """Synchronize local pages with the remote portal."""
+        slug_to_id = {page['slug']: page['id'] for page in remote_pages}
 
-        def process_existing_documents(api_product_id: str, existing_slugs: Dict[str, str], data: Dict[str, Any], file_name: str) -> None:
-            """
-            Process existing documents to update or create new ones if necessary.
-            """
-            if data['slug'] in existing_slugs:
-                # Retrieve the existing document using the slug
-                existing_doc = self.api_product_client.get_api_product_document(api_product_id, existing_slugs[data['slug']])
-                
-                has_content_changed = (
-                    existing_doc['title'] != data['title'] or 
-                    utils.encode_content(existing_doc['content']) != data['content'] or 
-                    existing_doc['status'] != data['status'] or
-                    (data.get('parent_document_id') and existing_doc.get('parent_document_id') != data['parent_document_id'])
-                )
-                
-                if has_content_changed:
-                    self.logger.info(f"Updating document: {file_name}")
-                    updated_doc = self.api_product_client.update_api_product_document(api_product_id, existing_slugs[data['slug']], data)
-                    
-                    # Update the existing_documents list with the updated document
-                    for i, doc in enumerate(existing_documents['data']):
-                        if doc['id'] == updated_doc['id']:
-                            existing_documents['data'][i] = updated_doc
-                            break
-                else:
-                    self.logger.info(f"No changes detected for document: {file_name}")
-                
-                # Remove the slug from existing_slugs to avoid deletion later
-                del existing_slugs[data['slug']]
-                
+        # Handle creation and updates
+        for page in local_pages:
+            parent_id = slug_to_id.get(page['parent_slug']) if page['parent_slug'] else None
+            existing_page_from_list = next((p for p in remote_pages if p['slug'].split('/')[-1] == page['slug'].split('/')[-1]), None)
+
+            # existing_page_from_list doesn't have the content field.
+            # We need to fetch the page from the API.
+            existing_page = self.api_product_client.get_api_product_document(api_product_id, existing_page_from_list['id']) if existing_page_from_list else None
+
+            if not existing_page:
+                self.logger.info(f"Creating page: {page['title']} ({page['slug']})")
+                page = self.api_product_client.create_api_product_document(api_product_id, {
+                    "slug": page['slug'],
+                    "title": page['title'],
+                    "content": page['content'],
+                    "status":  page['status'],
+                    "parent_document_id": parent_id
+                })
+                slug_to_id[page['slug']] = page['id']
+            elif utils.encode_content(existing_page['content']) != page['content'] or existing_page.get('parent_document_id') != parent_id or existing_page.get('status') != page['status']:
+                self.logger.info(f"Updating page: {page['title']} ({page['slug']})")
+                self.api_product_client.update_api_product_document(api_product_id, existing_page['id'], {
+                    "slug": page['slug'],
+                    "title": page['title'],
+                    "content": page['content'],
+                    "status": page['status'],
+                    "parent_document_id": parent_id
+                })
             else:
-                self.logger.info(f"Creating document: {file_name}")
-                new_doc = self.api_product_client.create_api_product_document(api_product_id, data)
-                # Add the new document to existing_documents
-                existing_documents['data'].append(new_doc)
+                self.logger.info(f"No changes detected for page: {page['title']} ({page['slug']})")
 
-        def get_parent_document_id(file_name: str, directory: str) -> Optional[str]:
-            """
-            Get the parent document ID based on the file name and directory.
+        # Handle deletions
+        local_slugs = {page['slug'] for page in local_pages}
+        for remote_page in remote_pages:
+            if remote_page['slug'].split('/')[-1] not in local_slugs:
+                self.logger.warning(f"Deleting page: {remote_page['title']} ({remote_page['slug']})")
+                self.api_product_client.delete_api_product_document(api_product_id, remote_page['id'])
 
-            Args:
-            file_name (str): The name of the file for which to find the parent document ID.
-            directory (str): The directory where the files are located.
+    def sync_api_product_documents(self, api_product_id: str, directory: str) -> Dict[str, Any]:
 
-            Returns:
-            Optional[str]: The ID of the parent document if found, otherwise None.
-            """
-            parent_document_id = None
-            if '_' in file_name:
-                # Extract the prefix from the file name (e.g., "1.1_child.md" -> "1.1")
-                prefix = file_name.split('_')[0]
-                if '.' in prefix:
-                    # Extract the parent prefix (e.g., "1.1" -> "1")
-                    parent_prefix = prefix.split('.')[0]
-                    # Find the parent file name in the directory (e.g., "1_parent.md")
-                    parent_file_name = next((f for f in os.listdir(directory) if f.startswith(f"{parent_prefix}_") and f.endswith(".md")), None)
-                    
-                    if parent_file_name:
-                        # Read the content of the parent file
-                        parent_content = utils.read_file_content(os.path.join(directory, parent_file_name))
-                        # Generate document data for the parent file
-                        parent_data = generate_document_data(parent_file_name, parent_content)
-                        # Extract the slug for the parent document
-                        parent_slug = parent_data['slug']
-                        # Find the parent document in the existing documents
-                        parent_document = next((doc for doc in existing_documents['data'] if doc['slug'] == parent_slug), None)
-                        # Get the parent document ID if it exists
-                        parent_document_id = parent_document['id'] if parent_document else None
+        directory = os.path.join(os.getcwd(), directory)
+        local_pages = parse_directory(directory)
 
-                        self.logger.debug(f"File name: {file_name} | Parent Slug: {parent_slug} | Parent Document ID: {parent_document_id}")
-            return parent_document_id
-
-        def generate_document_data(file_name: str, content: str, parent_document_id: str = None) -> Dict[str, Any]:
-            """
-            Generate a dictionary containing document data based on the provided file name and content.
-
-            Args:
-                file_name (str): The name of the file, which may include special suffixes like '__unpublished'.
-                content (str): The content of the document to be encoded.
-                parent_document_id (str, optional): The ID of the parent document, if any. Defaults to None.
-
-            Returns:
-                Dict[str, Any]: A dictionary containing the document data with the following keys:
-                    - 'title' (str): The title of the document, derived from the file name.
-                    - 'slug' (str): The slug for the document, derived from the file name.
-                    - 'content' (str): The encoded content of the document.
-                    - 'status' (str): The publication status of the document, either 'unpublished' or 'published'.
-                    - 'parent_document_id' (str, optional): The ID of the parent document, if provided.
-            """
-            title_slug = os.path.splitext(file_name)[0].replace('__unpublished', '')
-            title_slug = '_'.join(title_slug.split('_')[1:]) if title_slug[0].isdigit() else title_slug
-            data = {
-                'title': title_slug.replace('_', ' ').replace('-', ' ').title(),
-                'slug': title_slug.replace('_', '-').replace(' ', '-').lower(),
-                'content': utils.encode_content(content),
-                'status': "unpublished" if "__unpublished" in file_name else "published"
-            }
-            if parent_document_id:
-                data['parent_document_id'] = parent_document_id
-            return data
-    
         existing_documents = self.api_product_client.list_api_product_documents(api_product_id)
-        existing_slugs = {doc['slug'].split('/')[-1]: doc['id'] for doc in existing_documents['data']}
-        
-        for file_name in sorted(os.listdir(directory), key=utils.sort_key_for_numbered_files):
-            if file_name.endswith(".md"):
-                content = utils.read_file_content(os.path.join(directory, file_name))
-                parent_document_id = get_parent_document_id(file_name, directory)
-                data = generate_document_data(file_name, content, parent_document_id)
-                process_existing_documents(api_product_id, existing_slugs, data, file_name)
+        remote_pages = existing_documents['data']
 
-        # Delete documents that are not in the input folder
-        # Sort existing_documents slugs to ensure child documents are deleted before their parents
-        sorted_existing_slugs = sorted(
-            [(doc['slug'], doc['id']) for doc in existing_documents['data'] if doc['slug'].split('/')[-1] in existing_slugs],
-            key=lambda item: item[0].count('/'),  # Sort by the number of slashes in the slug (indicating hierarchy depth)
-            reverse=True  # Ensure child documents (more slashes) come before parent documents (fewer slashes)
-        )
-
-        for slug, doc_id in sorted_existing_slugs:
-            self.logger.info(f"Deleting document: {slug}")
-            self.api_product_client.delete_api_product_document(api_product_id, doc_id)
+        self.logger.info(f"Processing documents in {directory}")
+        self._sync_pages(local_pages, remote_pages, api_product_id)

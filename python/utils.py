@@ -18,3 +18,7 @@ def sort_key_for_numbered_files(filename):
         minor = float(match.group(2)) if match.group(2) else 0  # The number after the dot, default to 0
         return (major, minor)
     return (float('inf'),)  # Files without numeric prefixes go at the end
+
+def slugify(title: str) -> str:
+    """Convert a title into a slug-friendly format."""
+    return re.sub(r'[^a-zA-Z0-9\s-]', '', title).lower().strip().replace(' ', '-')

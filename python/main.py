@@ -58,7 +58,7 @@ def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi
         api_product = konnect.create_or_update_api_product(api_info['title'], api_info['description'], portal['id'], unpublish_product)
 
         if args.docs:
-            konnect.create_or_update_api_product_documents(api_product['id'], args.docs)
+            konnect.sync_api_product_documents(api_product['id'], args.docs)
 
         api_product_version = konnect.create_or_update_api_product_version(api_product, api_info['version'])
         konnect.create_or_update_api_product_version_spec(api_product['id'], api_product_version['id'], oas_file_base64)
