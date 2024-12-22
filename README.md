@@ -23,6 +23,36 @@ Heads up! This tool is still a work in progress, so some features might not be f
 - Python 3+  
 - Dependencies listed in [requirements.txt](#dependencies).  
 
+## How It Works
+
+The CLI tool requires two primary inputs:
+- The path to an OpenAPI Specification (OAS) file.
+- The name of the Konnect portal to perform operations on.
+
+It then parses the OAS file to extract essential information for identifying the API Product and its version:
+
+- The `info.title` field in the OAS file serves as the API Product name, acting as the primary identifier for idempotent operations.
+- The `info.description` field in the OAS file provides the API Product description.
+- The `info.version` field in the OAS file denotes the API Product Version name, which is the primary identifier for version-specific idempotent operations.
+
+Finally, the tool executes the following operations:
+1. Creates or updates the API Product on the Portal.
+2. Creates or updates the associated API Product Version.
+3. Attaches the OAS file to the API Product Version.
+4. Publishes the API Product and its Version on the Portal.
+5. If a documents folder is provided, the tool synchronizes its contents with the API Product documentation on the Portal. This includes publishing new documents, updating existing ones, and removing documents that are no longer present in the folder.
+
+Flow:
+
+```mermaid
+graph LR
+    A[Parse OAS File] --> B[Create or Update API Product]
+    B --> C[Create or Update API Product Version]
+    C --> D[Attach OAS File to API Product Version]
+    D --> E[Publish API Product and Version]
+    E --> F[Sync API Product Documentation]
+```
+
 ## Installation
 
 1. Clone this repository:  
@@ -152,13 +182,6 @@ And the following environment variables:
 | ----------- | ------------------------------------------------------------------------------- |
 | `LOG_LEVEL` | Logging verbosity level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). Default: `INFO`. |
 
-## How It Works
-
-1. **Parse OAS Spec**: The script reads the provided OpenAPI Specification (OAS) file and extracts essential API metadata such as title, version, and description.  
-2. **Authentication**: The `KonnectApi` client is initialized using the provided token and Konnect URL.  
-3. **Operations**:  
-   - If the `--delete` flag is set, the script deletes the API product after confirmation.  
-   - Otherwise, the API product is created or updated, its spec is uploaded, and it is published or deprecated based on the provided flags.
 
 ## Logging
 
