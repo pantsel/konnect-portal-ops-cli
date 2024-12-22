@@ -89,7 +89,7 @@ $ python main.py --config .config.yaml \
 #### Deprecate an API Version on a Portal
 
 ```bash
-$python main.py --config .config.yaml \
+$ python main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal --deprecate
 ```
