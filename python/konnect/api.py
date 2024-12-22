@@ -124,36 +124,71 @@ class KonnectApi:
         self.logger.debug(json.dumps(api_product_version_spec, indent=2))
         return api_product_version_spec
 
-    def create_or_update_portal_api_product_version(self, portal: Dict[str, Any], api_product_version: Dict[str, Any], api_product: Dict[str, Any], deprecated: bool = False, publish_status: str = "published") -> None:
+    def create_or_update_portal_api_product_version(self, portal: Dict[str, Any], api_product_version: Dict[str, Any], api_product: Dict[str, Any], options: Dict[str, Any]) -> None:
+        """
+        Create or update a Portal Product Version.
+        This method handles the creation or updating of a portal product version based on the provided parameters.
+        It ensures that the product version is published or unpublished, deprecated or not, and updates the registration
+        and authentication strategies as specified.
+        Args:
+            portal (Dict[str, Any]): The portal information containing the portal ID and name.
+            api_product_version (Dict[str, Any]): The API product version details including its ID and name.
+            api_product (Dict[str, Any]): The API product details including its name.
+            options (Dict[str, Any]): Additional options for the product version, including:
+                - publish_status (str): The publish status, either 'published' or 'unpublished'. Defaults to 'published'.
+                - deprecated (bool): The deprecation status. Defaults to False.
+                - application_registration_enabled (bool): Whether application registration is enabled. Defaults to False.
+                - auto_approve_registration (bool): Whether auto-approve registration is enabled. Defaults to False.
+                - auth_strategy_ids (List[str]): List of authentication strategy IDs. Defaults to an empty list.
+        Raises:
+            ValueError: If the publish status is not 'published' or 'unpublished'.
+            ValueError: If the deprecated status is not a boolean.
+        Returns:
+            None
+        """
                 
+        publish_status = options.get("publish_status", "published")
+        deprecated = options.get("deprecated", False)
+        application_registration_enabled = options.get("application_registration_enabled", False)
+        auto_approve_registration = options.get("auto_approve_registration", False)
+        auth_strategy_ids = options.get("auth_strategy_ids", [])
+
         if publish_status not in ["published", "unpublished"]:
             raise ValueError("Invalid publish status. Must be 'published' or 'unpublished'")
         if deprecated not in [True, False]:
             raise ValueError("Invalid deprecation status. Must be True or False")
 
         if publish_status == "published":
-            self.logger.info(f"Publishing API product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
+            self.logger.info(f"Publishing portal product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
         else:
-            self.logger.info(f"Unpublishing API product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
+            self.logger.info(f"Unpublishing portal product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
 
         if deprecated:
-            self.logger.info(f"Deprecating API product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
+            self.logger.info(f"Deprecating portal product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
 
         portal_product_version = self.find_portal_product_version(portal['id'], api_product_version['id'])
 
         if portal_product_version:
-            if portal_product_version['deprecated'] != deprecated or portal_product_version['publish_status'] != publish_status:
+            if (portal_product_version['deprecated'] != deprecated or 
+                portal_product_version['publish_status'] != publish_status or
+                portal_product_version['application_registration_enabled'] != application_registration_enabled or
+                portal_product_version['auto_approve_registration'] != auto_approve_registration or
+                [strategy['id'] for strategy in portal_product_version['auth_strategies']] != auth_strategy_ids):
+                
                 portal_product_version = self.portal_client.update_portal_product_version(
                     portal['id'],
                     api_product_version['id'],
                     {
                         "deprecated": deprecated,
-                        "publish_status": publish_status
+                        "publish_status": publish_status,
+                        "application_registration_enabled": application_registration_enabled,
+                        "auto_approve_registration": auto_approve_registration,
+                        "auth_strategy_ids": auth_strategy_ids
                     }
                 )
                 action = "Updated"
             else:
-                self.logger.info(f"API product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}' is up to date. No further action required.")
+                self.logger.info(f"Portal product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}' is up to date. No further action required.")
                 return
         else:
             portal_product_version = self.portal_client.create_portal_product_version(
@@ -162,14 +197,14 @@ class KonnectApi:
                     "product_version_id": api_product_version['id'],
                     "deprecated": deprecated,
                     "publish_status": publish_status,
-                    "application_registration_enabled": False,  # @TODO: Make this configurable
-                    "auto_approve_registration": False,  # @TODO: Make this configurable
-                    "auth_strategy_ids": [],  # @TODO: Make this configurable
+                    "application_registration_enabled": application_registration_enabled,
+                    "auto_approve_registration": auto_approve_registration,
+                    "auth_strategy_ids": auth_strategy_ids
                 }
             )
             action = "Published"
 
-        self.logger.info(f"{action} API product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
+        self.logger.info(f"{action} portal product version '{api_product_version['name']}' for '{api_product['name']}' on '{portal['name']}'")
 
     def delete_api_product(self, api_name: str) -> None:
         api_product = self.find_api_product_by_name(api_name)

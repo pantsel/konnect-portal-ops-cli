@@ -19,6 +19,9 @@ def get_parser_args() -> argparse.Namespace:
     parser.add_argument("--konnect-token", type=str, help="The Konnect spat or kpat token", default=None, required=not any(arg in sys.argv for arg in ["--config"]))
     parser.add_argument("--konnect-url", type=str, help="The Konnect API server URL", default=None, required=not any(arg in sys.argv for arg in ["--config"]))
     parser.add_argument("--deprecate", action="store_true", help="Deprecate the API product version on the specified portal")
+    parser.add_argument("--application-registration-enabled", action="store_true", help="Enable application registration for the API product on the specified portal")
+    parser.add_argument("--auto-aprove-registration", action="store_true", help="Auto approve application registration for the API product on the specified portal")
+    parser.add_argument("--auth-strategy-ids", type=str, help="Comma separated list of auth strategy IDs to associate with the API product on the specified portal")
     parser.add_argument("--unpublish", action="append", choices=["product", "version"], help="Unpublish the API product or version from the specified portal. Can be specified multiple times.")
     parser.add_argument("--delete", action="store_true", help="Delete the API product and related associations from ALL portals")
     parser.add_argument("--yes", action="store_true", help="Skip the confirmation prompts (useful for non-interactive environments).")
@@ -64,7 +67,18 @@ def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi
         konnect.create_or_update_api_product_version_spec(api_product['id'], api_product_version['id'], oas_file_base64)
         
         version_publish_status = "unpublished" if args.unpublish and "version" in args.unpublish else "published"
-        konnect.create_or_update_portal_api_product_version(portal, api_product_version, api_product, args.deprecate, version_publish_status)
+        konnect.create_or_update_portal_api_product_version(
+            portal=portal,
+            api_product_version=api_product_version,
+            api_product=api_product,
+            options={
+                "deprecated": args.deprecate,
+                "publish": version_publish_status,
+                "application_registration_enabled": args.application_registration_enabled,
+                "auto_approve_registration": args.auto_aprove_registration,
+                "auth_strategy_ids": args.auth_strategy_ids.split(",") if args.auth_strategy_ids else []
+            }
+        )
     
     except Exception as e:
         logger.error(f"Error: {str(e)}")
