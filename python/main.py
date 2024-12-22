@@ -39,13 +39,13 @@ def delete_api_product(konnect: KonnectApi, api_name: str) -> None:
 def find_konnect_portal(konnect: KonnectApi, portal_name: str) -> dict:
     try:
         portal = konnect.find_portal_by_name(portal_name)
-        logger.info(f"Fetching information for {portal_name}")
+        logger.info(f"Fetching Portal information for '{portal_name}'")
 
         if not portal:
             logger.error(f"Portal with name {portal_name} not found")
             sys.exit(1)
 
-        logger.info(f"Using {portal_name} ({portal['id']}) for subsequent operations")
+        logger.info(f"Using '{portal_name}' ({portal['id']}) for subsequent operations")
         return portal
     except Exception as e:
         logger.error(f"Failed to get Portal information: {str(e)}")

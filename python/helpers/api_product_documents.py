@@ -4,7 +4,38 @@ from typing import Any, Dict
 import helpers.utils as utils
 
 def parse_directory(directory: str) -> Dict[str, Any]:
-    """Parse the local directory to generate pages with parent-child relationships."""
+    """
+    Parse the directory to generate pages with metadata and parent-child relationships.
+    
+    File Naming Conventions:
+    - Leading numbers indicate order and hierarchy, e.g., "1_filename.md", "1.1_child_filename.md".
+    - "__unpublished" suffix indicates unpublished status.
+    - Underscores in filenames are replaced with spaces in the title.
+
+    Example Directory Structure:
+    /example_directory
+    ├── 1_introduction.md
+    ├── 1.1_getting_started.md
+    ├── 2_features.md
+    ├── 2.1_feature_one.md
+    ├── 2.2_feature_two__unpublished.md
+    └── 3_conclusion.md
+
+    Example Output:
+    [
+        {"slug": "1-introduction", "title": "Introduction", "content": "<encoded content>", "status": "published", "parent_slug": None},
+        {"slug": "1-1-getting-started", "title": "Getting started", "content": "<encoded content>", "status": "published", "parent_slug": "1-introduction"},
+        {"slug": "2-features", "title": "Features", "content": "<encoded content>", "status": "published", "parent_slug": None},
+        {"slug": "2-1-feature-one", "title": "Feature one", "content": "<encoded content>", "status": "published", "parent_slug": "2-features"},
+        {"slug": "2-2-feature-two", "title": "Feature two", "content": "<encoded content>", "status": "unpublished", "parent_slug": "2-features"},
+        {"slug": "3-conclusion", "title": "Conclusion", "content": "<encoded content>", "status": "published", "parent_slug": None}
+    ]
+
+    Args:
+        directory (str): Path to the directory containing markdown files.
+    Returns:
+        Dict[str, Any]: List of dictionaries, each representing a page with its metadata.
+    """
     
     def extract_sort_key(file_path):
         # Extracts sorting key from file name, e.g., "1.2_filename.md" -> (1, 2)
