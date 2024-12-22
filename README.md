@@ -158,7 +158,7 @@ And the following environment variables:
 2. **Authentication**: The `KonnectApi` client is initialized using the provided token and Konnect URL.  
 3. **Operations**:  
    - If the `--delete` flag is set, the script deletes the API product after confirmation.  
-   - Otherwise, the API product is created or updated, its spec is uploaded, and it is published or deprecated based on the provided flags.  
+   - Otherwise, the API product is created or updated, its spec is uploaded, and it is published or deprecated based on the provided flags.
 
 ## Logging
 
