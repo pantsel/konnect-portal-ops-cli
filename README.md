@@ -117,7 +117,7 @@ $ python main.py --config .config.yaml \
 How it works:
 - All related API Product documents must be present in a directory.
 - All `.md` files in the directory are considered documentation files.
-- The ordering of the documents on Konnect is based on the file names.
+- The ordering and inheritance of documents are based on the file names.
 - By default, all documents get published. If you want to unpublish a document, add the `__unpublished` tag at the end of the file name.
 - Existing API Product documents that are not present in the documents folder will be deleted.
 
