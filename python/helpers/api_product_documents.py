@@ -76,3 +76,22 @@ def parse_directory(directory: str) -> Dict[str, Any]:
         })
     
     return pages  # Return the list of pages with their metadata
+
+
+def get_slug_tail(slug: str) -> str:
+    """
+    Extracts the tail part of the given slug.
+
+    This method is needed because the Konnect API's list document operation 
+    returns a slug in the format of parent_doc_slug/doc_slug, depending on 
+    whether the document has a parent. This occurs regardless of whether 
+    only the doc_slug was specified when creating the document.
+
+    Args:
+        remote_page (dict): A dictionary representing the remote page, which
+                            contains a 'slug' key with the URL path as its value.
+
+    Returns:
+        str: The last segment of the slug URL path.
+    """
+    return slug.split('/')[-1]

@@ -2,10 +2,9 @@ import json
 import os
 from logger import Logger
 from clients import ApiProductClient, PortalManagementClient
-import constants
 from typing import List, Optional, Dict, Any
 import helpers.utils as utils
-from helpers.api_product_documents import parse_directory
+from helpers.api_product_documents import parse_directory, get_slug_tail
 
 class KonnectApi:
     def __init__(self, base_url: str, token: str) -> None:
@@ -187,7 +186,7 @@ class KonnectApi:
         # Handle creation and updates
         for page in local_pages:
             parent_id = slug_to_id.get(page['parent_slug']) if page['parent_slug'] else None
-            existing_page_from_list = next((p for p in remote_pages if p['slug'].split('/')[-1] == page['slug'].split('/')[-1]), None)
+            existing_page_from_list = next((p for p in remote_pages if get_slug_tail(p['slug']) == get_slug_tail(page['slug'])), None)
 
             existing_page = self.api_product_client.get_api_product_document(api_product_id, existing_page_from_list['id']) if existing_page_from_list else None
 
@@ -216,9 +215,10 @@ class KonnectApi:
         # Handle deletions
         local_slugs = {page['slug'] for page in local_pages}
         for remote_page in remote_pages:
-            if remote_page['slug'].split('/')[-1] not in local_slugs:
+            if get_slug_tail(remote_page['slug']) not in local_slugs:
                 self.logger.warning(f"Deleting page: '{remote_page['title']}' ({remote_page['slug']})")
                 self.api_product_client.delete_api_product_document(api_product_id, remote_page['id'])
+
 
     def sync_api_product_documents(self, api_product_id: str, directory: str) -> Dict[str, Any]:
         directory = os.path.join(os.getcwd(), directory)
