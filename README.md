@@ -1,14 +1,16 @@
 # Konnect Dev Portal Ops CLI
 
-A rather opinionated CLI tool for managing API products on Konnect Developer Portals.
+A rather opinionated CLI tool for managing API products on **Konnect Developer Portals**.
 
-The tool is designed to perform various operations on **Konnect Dev Portals**, such as publishing, deprecating, unpublishing, or deleting API products and their versions based on OpenAPI Specification (OAS) files.
+The tool is designed to perform various operations, such as publishing, deprecating, unpublishing, or deleting API products and their versions based on OpenAPI Specification (OAS) files.
 
-The Konnect developer portals needs to be set up and pre-configured.
+## Prerequisites
+
+Ensure that the Konnect Developer Portals are set up and pre-configured before using this tool.
 
 ## Disclaimer
 
-Heads up! This tool is still a work in progress, so some features might not be fully supported yet. Feel free to give it a try, but please use it responsibly. If something doesn’t work as expected, let us know—or better yet, contribute!
+The CLI is still under active development. Some features may not be fully supported yet. Use it responsibly and report any issues you encounter.
 
 ## Features
 
