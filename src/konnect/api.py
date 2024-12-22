@@ -1,13 +1,13 @@
 import json
 import os
-from logger import Logger
-from clients import ApiProductClient, PortalManagementClient
+from ..logger import Logger
+from ..clients import ApiProductClient, PortalManagementClient
 from typing import List, Optional, Dict, Any
-import helpers.utils as utils
-from helpers.api_product_documents import parse_directory, get_slug_tail
+from ..helpers import utils
+from ..helpers.api_product_documents import parse_directory, get_slug_tail
 
 class KonnectApi:
-    def __init__(self, base_url: str, token: str) -> None:
+    def __init__(self, base_url: str, token: str, api_product_client: Optional[ApiProductClient] = None, portal_client: Optional[PortalManagementClient] = None, logger: Optional[Logger] = None) -> None:
         self.base_url = base_url
         self.token = token
         self.logger = Logger()

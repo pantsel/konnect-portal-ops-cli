@@ -1,7 +1,7 @@
 import os
 import re
 from typing import Any, Dict
-import helpers.utils as utils
+from . import utils
 
 def parse_directory(directory: str) -> Dict[str, Any]:
     """

@@ -28,7 +28,7 @@ Heads up! This tool is still a work in progress, so some features might not be f
 1. Clone this repository:  
    ```shell
       $ git clone https://github.com/pantsel/konnect-portal-ops-examples
-      $ cd konnect-portal-ops-examples/python
+      $ cd konnect-portal-ops-examples/src
    ```
 
 2. Install dependencies:  
@@ -81,7 +81,7 @@ $ python main.py --config .config.yaml \
 #### Publish a new version of the API Product to a Portal
 
 ```bash
-python main.py --config .config.yaml \
+$ python main.py --config .config.yaml \
    --oas-spec ../examples/oasv2.yaml \
    --konnect-portal-name my-portal
 ```
@@ -89,7 +89,7 @@ python main.py --config .config.yaml \
 #### Deprecate an API Version on a Portal
 
 ```bash
-python main.py --config .config.yaml \
+$python main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal --deprecate
 ```
@@ -97,7 +97,7 @@ python main.py --config .config.yaml \
 #### Unpublish an API Version from a Portal
 
 ```bash
-python main.py --config .config.yaml \
+$ python main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal \
    --unpublish version
@@ -106,7 +106,7 @@ python main.py --config .config.yaml \
 #### Unpublish an API Product from a Portal
 
 ```bash
-python main.py --config .config.yaml \
+$ python main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal \
    --unpublish product
@@ -124,7 +124,7 @@ How it works:
 For an example documents folder structure and use-cases, see the [examples/docs](examples/docs) directory.
 
 ```bash
-python main.py --config .config.yaml \
+$ python main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --docs ../examples/docs \
    --konnect-portal-name my-portal
@@ -133,7 +133,7 @@ python main.py --config .config.yaml \
 #### Completely delete an API Product and its associations
 
 ```bash
-python main.py --config .config.yaml \
+$ python main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml --delete --yes
 ```
 
