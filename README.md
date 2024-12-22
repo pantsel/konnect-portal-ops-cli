@@ -98,17 +98,17 @@ $ python main.py [options]
 | `--delete`                           | No                                                      | Delete the API product and it's associations.                        |
 | `--yes`                              | No                                                      | Skip confirmation prompts (useful for non-interactive environments). |
 | `--config`                           | **Yes** (except for `--konnect-token`, `--konnect-url`) | Path to the configuration file.                                      |
-
 ### Examples
 
-#### Publish an API Product and version to a Portal
+#### 🚀 Publish an API Product and Version to a Portal
 
 ```bash
 $ python main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal 
 ```
-#### Publish a new version of the API Product to a Portal
+
+#### 🚀 Publish a New Version of the API Product to a Portal
 
 ```bash
 $ python main.py --config .config.yaml \
@@ -116,7 +116,7 @@ $ python main.py --config .config.yaml \
    --konnect-portal-name my-portal
 ```
 
-#### Deprecate an API Version on a Portal
+#### ⚠️ Deprecate an API Version on a Portal
 
 ```bash
 $ python main.py --config .config.yaml \
@@ -124,7 +124,7 @@ $ python main.py --config .config.yaml \
    --konnect-portal-name my-portal --deprecate
 ```
 
-#### Unpublish an API Version from a Portal
+#### 🚫 Unpublish an API Version from a Portal
 
 ```bash
 $ python main.py --config .config.yaml \
@@ -133,7 +133,7 @@ $ python main.py --config .config.yaml \
    --unpublish version
 ```
 
-#### Unpublish an API Product from a Portal
+#### 🚫 Unpublish an API Product from a Portal
 
 ```bash
 $ python main.py --config .config.yaml \
@@ -142,7 +142,7 @@ $ python main.py --config .config.yaml \
    --unpublish product
 ```
 
-#### Managing API Products documentation
+#### 📚 Managing API Products Documentation
 
 How it works:
 - All related API Product documents must be present in a directory.
@@ -160,7 +160,7 @@ $ python main.py --config .config.yaml \
    --konnect-portal-name my-portal
 ```
 
-#### Completely delete an API Product and its associations
+#### 🗑️ Completely Delete an API Product and Its Associations
 
 ```bash
 $ python main.py --config .config.yaml \
