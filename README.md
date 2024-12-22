@@ -4,13 +4,11 @@ A rather opinionated CLI tool for managing API products on **Konnect Developer P
 
 The tool is designed to perform various operations, such as publishing, deprecating, unpublishing, or deleting API products and their versions based on OpenAPI Specification (OAS) files.
 
+> The CLI is still under active development. Some features may not be fully supported yet. Use it responsibly and report any issues you encounter.
+
 ## Prerequisites
 
 Ensure that the Konnect Developer Portals are set up and pre-configured before using this tool.
-
-## Disclaimer
-
-The CLI is still under active development. Some features may not be fully supported yet. Use it responsibly and report any issues you encounter.
 
 ## Features
 
