@@ -4,7 +4,7 @@ from logger import Logger
 from clients import ApiProductClient, PortalManagementClient
 import constants
 from typing import List, Optional, Dict, Any
-import utils
+import helpers.utils as utils
 from helpers.api_product_documents import parse_directory
 
 

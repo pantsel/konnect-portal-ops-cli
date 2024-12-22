@@ -5,7 +5,7 @@ import sys
 from logger import Logger
 from konnect import KonnectApi
 import constants
-import utils
+import helpers.utils as utils
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 

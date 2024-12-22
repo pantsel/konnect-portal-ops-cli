@@ -1,7 +1,7 @@
 import os
 import re
 from typing import Any, Dict
-import utils
+import helpers.utils as utils
 
 def parse_directory(directory: str) -> Dict[str, Any]:
     """Parse the local directory to generate pages with parent-child relationships."""
