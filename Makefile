@@ -42,6 +42,10 @@ uninstall:
 test:
 	PYTHONPATH=src pytest tests/ -vv
 
+. PHONY: deps
+deps:
+	pip install -r $(SRC_DIR)/requirements.txt
+
 .PHONY: all
 all: build
 
