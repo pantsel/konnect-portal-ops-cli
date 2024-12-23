@@ -8,7 +8,7 @@ with open("src/kptl/__init__.py") as f:
 setup(
     name="kptl",  # Replace with your package name
     version=version["__version__"],  # Dynamically fetch version from src/__init__.py
-    description="A description of your project goes here.",
+    description="A rather opinionated CLI for managing API Products in Kong Konnect.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     author="Panagis Tselentis",
