@@ -77,7 +77,6 @@ graph LR
 
    ```shell
    $ pip install kptl
-   $ kptl --version
    ```
 
 2. (Optional) Create a `yaml` config file to set the configuration variables.  
