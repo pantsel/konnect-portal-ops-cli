@@ -8,12 +8,12 @@ from kptl.helpers import utils
 from kptl.helpers.api_product_documents import parse_directory, get_slug_tail
 
 class KonnectApi:
-    def __init__(self, base_url: str, token: str, api_product_client: Optional[ApiProductClient] = None, portal_client: Optional[PortalManagementClient] = None, logger: Optional[Logger] = None) -> None:
+    def __init__(self, base_url: str, token: str, proxies: Optional[Dict[str, str]] = None, api_product_client: Optional[ApiProductClient] = None, portal_client: Optional[PortalManagementClient] = None, logger: Optional[Logger] = None) -> None:
         self.base_url = base_url
         self.token = token
         self.logger = Logger()
-        self.api_product_client = ApiProductClient(f"{base_url}/v2", token)
-        self.portal_client = PortalManagementClient(f"{base_url}/v2", token)
+        self.api_product_client = ApiProductClient(f"{base_url}/v2", token, proxies)
+        self.portal_client = PortalManagementClient(f"{base_url}/v2", token, proxies)
 
     def find_api_product_by_name(self, name: str) -> Optional[Dict[str, Any]]:
         response = self.api_product_client.list_api_products({"filter[name]": name})
@@ -254,7 +254,6 @@ class KonnectApi:
             if get_slug_tail(remote_page['slug']) not in local_slugs:
                 self.logger.warning(f"Deleting page: '{remote_page['title']}' ({remote_page['slug']})")
                 self.api_product_client.delete_api_product_document(api_product_id, remote_page['id'])
-
 
     def sync_api_product_documents(self, api_product_id: str, directory: str) -> Dict[str, Any]:
         directory = os.path.join(os.getcwd(), directory)

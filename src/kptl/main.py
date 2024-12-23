@@ -33,6 +33,8 @@ def get_parser_args() -> argparse.Namespace:
     parser.add_argument("--delete", action="store_true", help="Delete the API product and related associations")
     parser.add_argument("--yes", action="store_true", help="Skip the confirmation prompts (useful for non-interactive environments).")
     parser.add_argument("--config", type=str, help="Path to the configuration file", required=not any(arg in sys.argv for arg in ["--konnect-token", "--konnect-url"]))
+    parser.add_argument("--http-proxy", type=str, help="HTTP Proxy URL", default=None)
+    parser.add_argument("--https-proxy", type=str, help="HTTPS Proxy URL", default=None)
     return parser.parse_args()
 
 def confirm_deletion(api_name: str) -> bool:
@@ -130,7 +132,14 @@ def should_delete_api_product(args: argparse.Namespace, api_name: str) -> bool:
 def main() -> None:
     args = get_parser_args()
     config = read_config_file(args.config) if args.config else {}
-    konnect = KonnectApi(args.konnect_url if args.konnect_url else config.get("konnect_url"), args.konnect_token if args.konnect_token else config.get("konnect_token"))
+    konnect = KonnectApi(
+        token= args.konnect_token if args.konnect_token else config.get("konnect_token"),
+        base_url=args.konnect_url if args.konnect_url else config.get("konnect_url"),
+        proxies={
+            "http": args.http_proxy if args.http_proxy else config.get("http_proxy"),
+            "https": args.https_proxy if args.https_proxy else config.get("https_proxy")
+        }
+    )
     api_info, oas_file_base64 = read_oas_document(args.oas_spec)
 
     if should_delete_api_product(args, api_info['title']):
