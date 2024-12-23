@@ -79,9 +79,14 @@ graph LR
       $ git clone https://github.com/pantsel/konnect-portal-ops-cli
    ```
 
-2. Install dependencies:  
+2. Install locally:  
    ```shell
-      $ pip install -r src/kptl/requirements.txt
+      $ make install
+   ```
+
+3. Test the installation:  
+   ```shell
+      $ kptl --help
    ```
 
 3. (Optional) Create a `yaml` config file to set the configuration variables.  
@@ -96,7 +101,7 @@ graph LR
 Run the script using the following command:  
 
 ```shell
-$ python src/kptl/main.py [options]  
+$ kptl [options]  
 ```
 
 ### Arguments
@@ -122,7 +127,7 @@ $ python src/kptl/main.py [options]
 #### 🚀 Publish an API Product and Version to a Portal
 
 ```bash
-$ python src/kptl/main.py --config .config.yaml \
+$ kptl --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal 
 ```
@@ -130,7 +135,7 @@ $ python src/kptl/main.py --config .config.yaml \
 #### 🚀 Publish a New Version of the API Product to a Portal
 
 ```bash
-$ python src/kptl/main.py --config .config.yaml \
+$ kptl --config .config.yaml \
    --oas-spec ../examples/oasv2.yaml \
    --konnect-portal-name my-portal
 ```
@@ -138,7 +143,7 @@ $ python src/kptl/main.py --config .config.yaml \
 #### ⚠️ Deprecate an API Version on a Portal
 
 ```bash
-$ python src/kptl/main.py --config .config.yaml \
+$ kptl --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal --deprecate
 ```
@@ -146,7 +151,7 @@ $ python src/kptl/main.py --config .config.yaml \
 #### 🚫 Unpublish an API Version from a Portal
 
 ```bash
-$ python src/kptl/main.py --config .config.yaml \
+$ kptl --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal \
    --unpublish version
@@ -155,7 +160,7 @@ $ python src/kptl/main.py --config .config.yaml \
 #### 🚫 Unpublish an API Product from a Portal
 
 ```bash
-$ python src/kptl/main.py --config .config.yaml \
+$ kptl --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal \
    --unpublish product
@@ -173,7 +178,7 @@ How it works:
 For an example documents folder structure and use-cases, see the [examples/docs](examples/docs) directory.
 
 ```bash
-$ python src/kptl/main.py --config .config.yaml \
+$ kptl --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --docs ../examples/docs \
    --konnect-portal-name my-portal
@@ -182,7 +187,7 @@ $ python src/kptl/main.py --config .config.yaml \
 #### 🗑️ Completely Delete an API Product and Its Associations
 
 ```bash
-$ python src/kptl/main.py --config .config.yaml \
+$ kptl --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml --delete --yes
 ```
 
