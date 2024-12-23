@@ -1,5 +1,5 @@
 # Define the source directory and the main entry point
-SRC_DIR := src
+SRC_DIR := src/kptl
 MAIN_SCRIPT := $(SRC_DIR)/main.py
 
 # Define the output directory
@@ -23,6 +23,20 @@ package: clean
 build: package
 	@echo "Executable created in $(DIST_DIR)/$(EXECUTABLE)"
 
+.PHONY: install
+install:
+	python setup.py sdist bdist_wheel
+	pip install .
+	kptl --version
+	@echo "Local install complete, run 'kptl --help' to verify"
+
+.PHONY: uninstall
+uninstall:
+	pip uninstall kptl
+	@echo "Uninstall complete"
+
+
 # Default target
 .PHONY: all
 all: build
+
