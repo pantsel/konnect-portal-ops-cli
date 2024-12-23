@@ -76,7 +76,7 @@ graph LR
 
 1. Clone this repository:  
    ```shell
-      $ git clone https://github.com/pantsel/konnect-portal-ops-examples
+      $ git clone https://github.com/pantsel/konnect-portal-ops-cli
    ```
 
 2. Install dependencies:  
