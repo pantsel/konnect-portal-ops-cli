@@ -5,7 +5,6 @@ DIST_DIR := dist
 
 EXECUTABLE := kptl
 
-# Clean previous builds
 .PHONY: clean
 clean:
 	rm -rf $(DIST_DIR) build *.spec
@@ -43,8 +42,6 @@ uninstall:
 test:
 	PYTHONPATH=src pytest tests/ -vv
 
-
-# Default target
 .PHONY: all
 all: build
 
