@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
-from src.helpers.utils import encode_content
-from src.konnect.api import KonnectApi
+from src.kptl.helpers.utils import encode_content
+from src.kptl.konnect.api import KonnectApi
 
 @pytest.fixture
 def konnect_api():

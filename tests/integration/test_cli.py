@@ -4,7 +4,7 @@ import pytest
 
 @pytest.fixture
 def cli_command():
-    return ["python3", "src/main.py"]
+    return ["python3", "src/kptl/main.py"]
 
 def test_help(cli_command):
     result = subprocess.run(cli_command + ["--help"], capture_output=True, text=True)

@@ -1,5 +1,5 @@
 import pytest
-from src.helpers.utils import read_file_content, encode_content, sort_key_for_numbered_files, slugify
+from src.kptl.helpers.utils import read_file_content, encode_content, sort_key_for_numbered_files, slugify
 
 def test_read_file_content(tmpdir):
     # Create a temporary file

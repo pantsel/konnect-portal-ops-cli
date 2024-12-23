@@ -1,6 +1,6 @@
 import pytest
-from src.helpers.api_product_documents import get_slug_tail, parse_directory
-from src.helpers.utils import encode_content
+from src.kptl.helpers.api_product_documents import get_slug_tail, parse_directory
+from src.kptl.helpers.utils import encode_content
 
 @pytest.fixture
 def docs_directory(tmpdir):
