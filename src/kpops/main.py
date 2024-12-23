@@ -2,17 +2,24 @@ import yaml
 import argparse
 import os
 import sys
-from logger import Logger
-from konnect import KonnectApi
-import constants
-import helpers.utils as utils
+
+# Add `src` to sys.path dynamically if the script is run directly for easier local development
+if __name__ == "__main__" and __package__ is None:
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from kpops import logger, __version__
+from kpops import constants
+from kpops.konnect import KonnectApi
+from kpops.helpers import utils
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 
-logger = Logger(name=constants.APP_NAME, level=LOG_LEVEL)
+logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
 
 def get_parser_args() -> argparse.Namespace:
+
     parser = argparse.ArgumentParser(description="Konnect Dev Portal Ops CLI", allow_abbrev=False)
+    parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
     parser.add_argument("--oas-spec", type=str, required=True, help="Path to the OAS spec file")
     parser.add_argument("--docs", type=str, help="Path to the documentation folder", default=None)
     parser.add_argument("--konnect-portal-name", type=str, required=not any(arg in sys.argv for arg in ["--delete"]), help="The name of the Konnect portal to perform operations on")
