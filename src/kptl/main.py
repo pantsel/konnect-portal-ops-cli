@@ -7,10 +7,10 @@ import sys
 if __name__ == "__main__" and __package__ is None:
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from kportal_ops import logger, __version__
-from kportal_ops import constants
-from kportal_ops.konnect import KonnectApi
-from kportal_ops.helpers import utils
+from kptl import logger, __version__
+from kptl import constants
+from kptl.konnect import KonnectApi
+from kptl.helpers import utils
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 

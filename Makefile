@@ -6,7 +6,7 @@ MAIN_SCRIPT := $(SRC_DIR)/main.py
 DIST_DIR := dist
 
 # Define the name of the executable
-EXECUTABLE := kportal_ops
+EXECUTABLE := kptl
 
 # Clean previous builds
 .PHONY: clean

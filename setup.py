@@ -1,12 +1,12 @@
 from setuptools import setup, find_packages
 
-# Dynamically fetch version from kportal_ops/__init__.py
+# Dynamically fetch version from kptl/__init__.py
 version = {}
-with open("src/kportal_ops/__init__.py") as f:
+with open("src/kptl/__init__.py") as f:
     exec(f.read(), version)
 
 setup(
-    name="kportal_ops",  # Replace with your package name
+    name="kptl",  # Replace with your package name
     version=version["__version__"],  # Dynamically fetch version from src/__init__.py
     description="A description of your project goes here.",
     long_description=open("README.md").read(),
@@ -33,7 +33,7 @@ setup(
     python_requires=">=3.8",  # Specify minimum Python version
     entry_points={
         "console_scripts": [
-            "kportal_ops=kportal_ops.main:main",  # CLI command 'kportal_ops' runs kportal_ops.main.main()
+            "kptl=kptl.main:main",  # CLI command 'kptl' runs kptl.main.main()
         ]
     },
 )

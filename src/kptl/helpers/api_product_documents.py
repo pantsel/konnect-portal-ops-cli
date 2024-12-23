@@ -1,7 +1,7 @@
 import os
 import re
 from typing import Any, Dict
-from kportal_ops.helpers import utils
+from kptl.helpers import utils
 
 def parse_directory(directory: str) -> Dict[str, Any]:
     """
