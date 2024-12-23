@@ -6,7 +6,7 @@ MAIN_SCRIPT := $(SRC_DIR)/main.py
 DIST_DIR := dist
 
 # Define the name of the executable
-EXECUTABLE := kpops
+EXECUTABLE := kportal_ops
 
 # Clean previous builds
 .PHONY: clean

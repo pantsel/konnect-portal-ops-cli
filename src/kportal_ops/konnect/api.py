@@ -2,10 +2,10 @@ import json
 import os
 from typing import List, Optional, Dict, Any
 
-from kpops.logger import Logger
-from kpops.clients import ApiProductClient, PortalManagementClient
-from kpops.helpers import utils
-from kpops.helpers.api_product_documents import parse_directory, get_slug_tail
+from kportal_ops.logger import Logger
+from kportal_ops.clients import ApiProductClient, PortalManagementClient
+from kportal_ops.helpers import utils
+from kportal_ops.helpers.api_product_documents import parse_directory, get_slug_tail
 
 class KonnectApi:
     def __init__(self, base_url: str, token: str, api_product_client: Optional[ApiProductClient] = None, portal_client: Optional[PortalManagementClient] = None, logger: Optional[Logger] = None) -> None:
