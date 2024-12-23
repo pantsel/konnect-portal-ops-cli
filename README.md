@@ -223,5 +223,5 @@ The CLI includes robust error handling and will:
 To run the tests, use the following command from the root directory:  
 
 ```shell
-$ pytest tests/ -vv
+$ PYTHONPATH=src pytest tests/ -vv
 ```
