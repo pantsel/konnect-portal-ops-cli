@@ -1,10 +1,16 @@
 import subprocess
 import os
 import pytest
+from src.kptl import __version__
 
 @pytest.fixture
 def cli_command():
     return ["python3", "src/kptl/main.py"]
+
+def test_version(cli_command):
+    result = subprocess.run(cli_command + ["--version"], capture_output=True, text=True)
+    assert result.returncode == 0
+    assert __version__ in result.stdout
 
 def test_help(cli_command):
     result = subprocess.run(cli_command + ["--help"], capture_output=True, text=True)
