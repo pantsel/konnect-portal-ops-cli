@@ -111,6 +111,8 @@ $ kptl [options]
 | `--delete`                           | No                                                      | Delete the API product and it's associations.                        |
 | `--yes`                              | No                                                      | Skip confirmation prompts (useful for non-interactive environments). |
 | `--config`                           | **Yes** (except for `--konnect-token`, `--konnect-url`) | Path to the configuration file.                                      |
+| `--http-proxy`                       | No                                                      | HTTP proxy URL.                                                      |
+| `--https-proxy`                      | No                                                      | HTTPS proxy URL.                                                     |
 
 ### Examples
 
