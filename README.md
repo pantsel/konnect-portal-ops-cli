@@ -1,10 +1,32 @@
-# Konnect Dev Portal Ops CLI
+# Konnect Dev Portal Ops CLI <!-- omit in toc -->
 
 A rather opinionated CLI tool for managing API products on **Konnect Developer Portals**.
 
 The tool is designed to perform various operations, such as publishing, deprecating, unpublishing, or deleting API products and their versions based on OpenAPI Specification (OAS) files.
 
 > The CLI is still under active development. Some features may not be fully supported yet. Use it responsibly and report any issues you encounter.
+
+## Table of Contents <!-- omit in toc -->
+- [Prerequisites](#prerequisites)
+- [Features](#features)
+- [Requirements](#requirements)
+- [How It Works](#how-it-works)
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Arguments](#arguments)
+  - [Examples](#examples)
+    - [🚀 Publish an API Product and Version to a Portal](#-publish-an-api-product-and-version-to-a-portal)
+    - [🚀 Publish a New Version of the API Product to a Portal](#-publish-a-new-version-of-the-api-product-to-a-portal)
+    - [⚠️ Deprecate an API Version on a Portal](#️-deprecate-an-api-version-on-a-portal)
+    - [🚫 Unpublish an API Version from a Portal](#-unpublish-an-api-version-from-a-portal)
+    - [🚫 Unpublish an API Product from a Portal](#-unpublish-an-api-product-from-a-portal)
+    - [📚 Managing API Products Documentation](#-managing-api-products-documentation)
+    - [🗑️ Completely Delete an API Product and Its Associations](#️-completely-delete-an-api-product-and-its-associations)
+- [CLI Configuration](#cli-configuration)
+- [Logging](#logging)
+- [Error Handling](#error-handling)
+- [Testing](#testing)
+
 
 ## Prerequisites
 
