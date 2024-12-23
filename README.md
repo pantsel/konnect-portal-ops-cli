@@ -26,6 +26,7 @@ Ensure that the Konnect Developer Portals are set up before using this tool.
 - [CLI Configuration](#cli-configuration)
 - [Logging](#logging)
 - [Error Handling](#error-handling)
+- [Local Development](#local-development)
 - [Testing](#testing)
 
 ## Features
@@ -74,22 +75,14 @@ graph LR
 
 ## Installation
 
-1. Clone this repository:  
+1. Install the CLI using `pip`:
+
    ```shell
-      $ git clone https://github.com/pantsel/konnect-portal-ops-cli
+   $ pip install kptl
+   $ kptl --version
    ```
 
-2. Install locally:  
-   ```shell
-      $ make install
-   ```
-
-3. Test the installation:  
-   ```shell
-      $ kptl --help
-   ```
-
-3. (Optional) Create a `yaml` config file to set the configuration variables.  
+2. (Optional) Create a `yaml` config file to set the configuration variables.  
    ```yaml
       # .config.yaml
       konnect_url: https://us.api.konghq.com
@@ -222,6 +215,23 @@ The CLI includes robust error handling and will:
 
 - Log errors with a descriptive message.  
 - Exit with a non-zero status code in case of failures.  
+
+## Local Development
+
+1. Clone the repository:  
+   ```shell
+      $ git clone https://github.com/pantsel/konnect-portal-ops-cli
+   ```
+
+2. Install the dependencies:  
+   ```shell
+      $ make deps
+   ```
+
+3. Run the CLI directly:  
+   ```shell
+      $ python src/kptl/main.py [options]
+   ```
 
 ## Testing
 
