@@ -77,12 +77,11 @@ graph LR
 1. Clone this repository:  
    ```shell
       $ git clone https://github.com/pantsel/konnect-portal-ops-examples
-      $ cd konnect-portal-ops-examples/src
    ```
 
 2. Install dependencies:  
    ```shell
-      $ pip install -r requirements.txt
+      $ pip install -r src/kptl/requirements.txt
    ```
 
 3. (Optional) Create a `yaml` config file to set the configuration variables.  
@@ -97,7 +96,7 @@ graph LR
 Run the script using the following command:  
 
 ```shell
-$ python main.py [options]  
+$ python src/kptl/main.py [options]  
 ```
 
 ### Arguments
@@ -123,7 +122,7 @@ $ python main.py [options]
 #### 🚀 Publish an API Product and Version to a Portal
 
 ```bash
-$ python main.py --config .config.yaml \
+$ python src/kptl/main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal 
 ```
@@ -131,7 +130,7 @@ $ python main.py --config .config.yaml \
 #### 🚀 Publish a New Version of the API Product to a Portal
 
 ```bash
-$ python main.py --config .config.yaml \
+$ python src/kptl/main.py --config .config.yaml \
    --oas-spec ../examples/oasv2.yaml \
    --konnect-portal-name my-portal
 ```
@@ -139,7 +138,7 @@ $ python main.py --config .config.yaml \
 #### ⚠️ Deprecate an API Version on a Portal
 
 ```bash
-$ python main.py --config .config.yaml \
+$ python src/kptl/main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal --deprecate
 ```
@@ -147,7 +146,7 @@ $ python main.py --config .config.yaml \
 #### 🚫 Unpublish an API Version from a Portal
 
 ```bash
-$ python main.py --config .config.yaml \
+$ python src/kptl/main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal \
    --unpublish version
@@ -156,7 +155,7 @@ $ python main.py --config .config.yaml \
 #### 🚫 Unpublish an API Product from a Portal
 
 ```bash
-$ python main.py --config .config.yaml \
+$ python src/kptl/main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --konnect-portal-name my-portal \
    --unpublish product
@@ -174,7 +173,7 @@ How it works:
 For an example documents folder structure and use-cases, see the [examples/docs](examples/docs) directory.
 
 ```bash
-$ python main.py --config .config.yaml \
+$ python src/kptl/main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml \
    --docs ../examples/docs \
    --konnect-portal-name my-portal
@@ -183,7 +182,7 @@ $ python main.py --config .config.yaml \
 #### 🗑️ Completely Delete an API Product and Its Associations
 
 ```bash
-$ python main.py --config .config.yaml \
+$ python src/kptl/main.py --config .config.yaml \
    --oas-spec ../examples/oasv1.yaml --delete --yes
 ```
 
@@ -224,5 +223,5 @@ The CLI includes robust error handling and will:
 To run the tests, use the following command from the root directory:  
 
 ```shell
-$ PYTHONPATH=src pytest tests/ -vv
+$ pytest tests/ -vv
 ```
