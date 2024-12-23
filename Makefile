@@ -1,11 +1,8 @@
-# Define the source directory and the main entry point
 SRC_DIR := src/kptl
 MAIN_SCRIPT := $(SRC_DIR)/main.py
 
-# Define the output directory
 DIST_DIR := dist
 
-# Define the name of the executable
 EXECUTABLE := kptl
 
 # Clean previous builds
@@ -13,27 +10,38 @@ EXECUTABLE := kptl
 clean:
 	rm -rf $(DIST_DIR) build *.spec
 
-# Package the Python code
 .PHONY: package
 package: clean
 	pyinstaller --onefile --name $(EXECUTABLE) $(MAIN_SCRIPT)
 
-# Create executables for various distributions
 .PHONY: build
 build: package
 	@echo "Executable created in $(DIST_DIR)/$(EXECUTABLE)"
 
-.PHONY: install
-install:
+.PHONY: setup
+setup:
 	python setup.py sdist bdist_wheel
+	@echo "Setup complete"
+
+.PHONY: install
+install: setup
 	pip install .
 	kptl --version
 	@echo "Local install complete, run 'kptl --help' to verify"
+
+.PHONY: publish
+publish: setup
+	twine upload --non-interactive dist/*
+	@echo "Publish complete"
 
 .PHONY: uninstall
 uninstall:
 	pip uninstall kptl
 	@echo "Uninstall complete"
+
+.PHONY: test
+test:
+	PYTHONPATH=src pytest tests/ -vv
 
 
 # Default target

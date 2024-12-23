@@ -228,5 +228,5 @@ The CLI includes robust error handling and will:
 To run the tests, use the following command from the root directory:  
 
 ```shell
-$ PYTHONPATH=src pytest tests/ -vv
+$ make test
 ```
