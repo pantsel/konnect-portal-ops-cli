@@ -57,7 +57,7 @@ It then parses the OAS file to extract essential information for identifying the
 Finally, the tool executes the following operations:
 1. Creates or updates the API Product on the Portal.
 2. Creates or updates the associated API Product Version.
-3. Attaches the OAS file to the API Product Version.
+3. Ensures the OAS file is linked to the API Product Version.
 4. Publishes the API Product and its Version on the Portal.
 5. If a documents folder is provided, the tool synchronizes its contents with the API Product documentation on the Portal. This includes publishing new documents, updating existing ones, and removing documents that are no longer present in the folder.
 
@@ -171,7 +171,7 @@ $ kptl --config .config.yaml \
 How it works:
 - All related API Product documents must be present in a directory.
 - All `.md` files in the directory are considered documentation files.
-- The ordering and inheritance of documents are based on the file names.
+- The ordering and inheritance of documents are based on the file name prefixes (ex: `1_,1.1_,1.2_,2_,3_,3.1_`).
 - By default, all documents get published. If you want to unpublish a document, add the `__unpublished` tag at the end of the file name.
 - Existing API Product documents that are not present in the documents folder will be deleted.
 
