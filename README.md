@@ -24,8 +24,6 @@ Ensure that the Konnect Developer Portals are set up before using this tool.
     - [📚 Managing API Products Documentation](#-managing-api-products-documentation)
     - [🗑️ Completely Delete an API Product and Its Associations](#️-completely-delete-an-api-product-and-its-associations)
 - [CLI Configuration](#cli-configuration)
-- [Logging](#logging)
-- [Error Handling](#error-handling)
 - [Local Development](#local-development)
 - [Testing](#testing)
 
@@ -198,23 +196,6 @@ And the following environment variables:
 | Variable    | Description                                                                     |
 | ----------- | ------------------------------------------------------------------------------- |
 | `LOG_LEVEL` | Logging verbosity level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). Default: `INFO`. |
-
-
-## Logging
-
-Logs are output to the console, and the verbosity is controlled by the `LOG_LEVEL` environment variable. Available levels are:  
-
-- `DEBUG`: Detailed information for troubleshooting.  
-- `INFO`: General operational messages (default).  
-- `WARNING`: Non-critical issues.  
-- `ERROR`: Critical errors that prevent execution.  
-
-## Error Handling
-
-The CLI includes robust error handling and will:  
-
-- Log errors with a descriptive message.  
-- Exit with a non-zero status code in case of failures.  
 
 ## Local Development
 
