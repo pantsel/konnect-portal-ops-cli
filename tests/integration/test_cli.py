@@ -4,8 +4,9 @@ from src.kptl import __version__
 import yaml
 import time
 import requests
-from src.kptl.helpers.api_product_documents import create_slug_from_filename
+from src.kptl.helpers.api_product_documents import generate_title_and_slug
 import os
+import re
 
 # ==========================================
 # Constants
@@ -111,18 +112,26 @@ def test_valid_oas_spec(cli_command, tmp_path):
                 assert document["parent_document_id"] == parent_id
 
     def test_document_structure():
+
+        # Get the API Product ID
         response = requests.get(f"{TEST_SERVER_URL}/v2/api-products")
         api_product_id = response.json()["data"][0]["id"]
 
+        # Get the API Product Documents
         response = requests.get(f"{TEST_SERVER_URL}/v2/api-products/{api_product_id}/documents")
         documents = response.json()["data"]
-        assert len(documents) == 15
 
-        # Read filenames from examples/docs and generate slugs
+        # Read filenames from examples/docs and generate the expected slugs list
         filenames = os.listdir(DOCS_PATH)
-        expected_slugs = [create_slug_from_filename(filename)[2] for filename in filenames]
+        expected_slugs = []
+        for filename in filenames:
+            # ref: src/kptl/helpers/api_product_documents.py@parse_directory
+            match = re.match(r'^(\d+)(?:\.(\d+))?', os.path.basename(filename))
+            expected_slugs = expected_slugs + [generate_title_and_slug(filename, match)[1]]
 
         document_slugs = [doc["slug"] for doc in documents]
+
+        assert len(documents) == len(filenames)
 
         for expected_slug in expected_slugs:
             assert expected_slug in document_slugs
