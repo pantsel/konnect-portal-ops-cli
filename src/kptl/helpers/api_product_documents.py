@@ -49,16 +49,9 @@ def parse_directory(directory: str) -> Dict[str, Any]:
             content = f.read().strip()  # Read and strip content of the file
         
         file_name = os.path.basename(file_path)  # Get the file name
-        # Remove '__unpublished' and replace underscores with spaces, capitalize the title
-        title_with_numbers = os.path.splitext(file_name)[0].replace('__unpublished', '').replace('_', ' ').capitalize()
-        # Remove leading numbers from the title
-        title = re.sub(r'^\d+(?:\.\d+)?\s*', '', title_with_numbers).capitalize()
         
-        match = re.match(r'^(\d+)(?:\.(\d+))?', file_name)  # Match leading numbers
-        # Create slug prefix from matched numbers, e.g., "1.2_filename.md" -> "1-2"
-        slug_prefix = match.group(0).replace('.', '-') if match else ''
-        # Generate slug using the prefix and slugified title
-        slug = slug_prefix + '-' + utils.slugify(title)
+        title, match, slug = create_slug_from_filename(file_name)
+        
         # Determine parent slug if the file represents a child page
         parent_slug = parent_pages.get(match.group(1)) if match and match.group(2) else None
         
@@ -68,14 +61,27 @@ def parse_directory(directory: str) -> Dict[str, Any]:
         
         # Append the page information to the pages list
         pages.append({
-            "slug": slug.lstrip('-'),  # Cleanup: Remove leading '-' if exists. This is to handle cases where there is no leading number.
+            "slug": slug,  # Cleanup: Remove leading '-' if exists. This is to handle cases where there is no leading number.
             "title": title.title(), 
             "content": utils.encode_content(content), 
             "status": "unpublished" if "__unpublished" in file_name else "published",
             "parent_slug": parent_slug
         })
     
-    return pages  # Return the list of pages with their metadata
+    return pages 
+
+def create_slug_from_filename(file_name):
+    # Remove '__unpublished' and replace underscores with spaces, capitalize the title
+    title_with_numbers = os.path.splitext(file_name)[0].replace('__unpublished', '').replace('_', ' ').capitalize()
+        # Remove leading numbers from the title
+    title = re.sub(r'^\d+(?:\.\d+)?\s*', '', title_with_numbers).capitalize()
+        
+    match = re.match(r'^(\d+)(?:\.(\d+))?', file_name)  # Match leading numbers
+        # Create slug prefix from matched numbers, e.g., "1.2_filename.md" -> "1-2"
+    slug_prefix = match.group(0).replace('.', '-') if match else ''
+        # Generate slug using the prefix and slugified title
+    slug = slug_prefix + '-' + utils.slugify(title).lstrip('-') # Cleanup: Remove leading '-' if exists. This is to handle cases where there is no leading number.
+    return title,match,slug # Return the list of pages with their metadata
 
 
 def get_slug_tail(slug: str) -> str:

@@ -4,28 +4,42 @@ from src.kptl import __version__
 import yaml
 import time
 import requests
+from src.kptl.helpers.api_product_documents import create_slug_from_filename
+import os
 
-# Load OpenAPI Spec
+# ==========================================
+# Constants
+# ==========================================
+SPEC_V1_PATH = "examples/oasv1.yaml"
+SPEC_V2_PATH = "examples/oasv2.yaml"
+TEST_SERVER_URL = "http://localhost:8080"
+DOCS_PATH = "examples/docs"
+DOCS_EMPTY_PATH = "examples/docs_empty"
+
+# ==========================================
+# Helper Functions
+# ==========================================
 def load_openapi_spec(file_path):
     with open(file_path, "r") as f:
         return yaml.safe_load(f)
 
-spec_v1 = load_openapi_spec("examples/oasv1.yaml")
-spec_v2 = load_openapi_spec("examples/oasv2.yaml")
-test_server_url = "http://localhost:8080"
-
-@pytest.fixture(scope="session", autouse=True)
-def start_mock_server():
-    # Start the mock server
-    server_process = subprocess.Popen(["python3", "mock/app.py"])
-    # Wait for the server to start
-    for _ in range(10):
+def wait_for_the_server_to_start(retries=10):
+    for _ in range(retries):
         try:
-            response = requests.get(f"{test_server_url}/v2/portals")
+            response = requests.get(f"{TEST_SERVER_URL}/v2/portals")
             if response.status_code == 200:
                 break
         except requests.RequestException:
             time.sleep(1)
+
+# ==========================================
+# Fixtures
+# ==========================================
+@pytest.fixture(scope="session", autouse=True)
+def start_mock_server():
+    # Start the mock server
+    server_process = subprocess.Popen(["python3", "mock/app.py"])
+    wait_for_the_server_to_start()
 
     yield
 
@@ -37,6 +51,9 @@ def start_mock_server():
 def cli_command():
     return ["python3", "src/kptl/main.py"]
 
+# ==========================================
+# Tests
+# ==========================================
 def test_version(cli_command):
     result = subprocess.run(cli_command + ["--version"], capture_output=True, text=True)
     assert result.returncode == 0
@@ -67,135 +84,175 @@ def test_invalid_oas_spec(cli_command, tmp_path):
 
 def test_valid_oas_spec(cli_command, tmp_path):
     oas_spec = tmp_path / "oas.yaml"
-    oas_spec.write_text(yaml.dump(spec_v1))
+    oas_spec.write_text(yaml.dump(load_openapi_spec(SPEC_V1_PATH)))
 
     result = subprocess.run(
         cli_command + [
             "--oas-spec", str(oas_spec),
-            "--docs", "examples/docs",
+            "--docs", DOCS_PATH,
             "--konnect-portal-name", "test-portal",
             "--konnect-token", "test-token",
-            "--konnect-url", f"{test_server_url}"
+            "--konnect-url", TEST_SERVER_URL
         ],
         capture_output=True,
         text=True
     )
     assert result.returncode == 0
 
+    def check_document_status(documents, slug, expected_status):
+        for document in documents:
+            if document["slug"] == slug:
+                assert document["status"] == expected_status
+
+    def check_parent_document_id(documents, slug, parent_slug):
+        parent_id = next(doc["id"] for doc in documents if doc["slug"] == parent_slug)
+        for document in documents:
+            if document["slug"] == slug:
+                assert document["parent_document_id"] == parent_id
+
+    def test_document_structure():
+        response = requests.get(f"{TEST_SERVER_URL}/v2/api-products")
+        api_product_id = response.json()["data"][0]["id"]
+
+        response = requests.get(f"{TEST_SERVER_URL}/v2/api-products/{api_product_id}/documents")
+        documents = response.json()["data"]
+        assert len(documents) == 15
+
+        # Read filenames from examples/docs and generate slugs
+        filenames = os.listdir(DOCS_PATH)
+        expected_slugs = [create_slug_from_filename(filename)[2] for filename in filenames]
+
+        document_slugs = [doc["slug"] for doc in documents]
+
+        for expected_slug in expected_slugs:
+            assert expected_slug in document_slugs
+
+        check_document_status(documents, "0-5-api-philosophy", "unpublished")
+        check_document_status(documents, "httpbin-api-documentation", "unpublished")
+
+        check_parent_document_id(documents, "0-1-key-features", "0-introduction")
+        check_parent_document_id(documents, "0-2-use-cases", "0-introduction")
+        check_parent_document_id(documents, "0-3-architecture-overview", "0-introduction")
+        check_parent_document_id(documents, "0-4-supported-environments", "0-introduction")
+        check_parent_document_id(documents, "0-5-api-philosophy", "0-introduction")
+        check_parent_document_id(documents, "1-1-child-of-authentication", "1-authentication")
+
+    test_document_structure()
+
 def test_deprecate_portal_product_version(cli_command, tmp_path):
     oas_spec = tmp_path / "oas.yaml"
-    oas_spec.write_text(yaml.dump(spec_v1))
+    oas_spec.write_text(yaml.dump(load_openapi_spec(SPEC_V1_PATH)))
 
     result = subprocess.run(
         cli_command + [
             "--oas-spec", str(oas_spec),
             "--konnect-portal-name", "test-portal",
             "--konnect-token", "test-token",
-            "--konnect-url", f"{test_server_url}",
+            "--konnect-url", TEST_SERVER_URL,
             "--deprecate"
         ],
         capture_output=True,
         text=True
     )
 
-    response = requests.get(f"{test_server_url}/v2/portals")
+    response = requests.get(f"{TEST_SERVER_URL}/v2/portals")
     portal_id = response.json()["data"][0]["id"]
 
-    response = requests.get(f"{test_server_url}/v2/portals/{portal_id}/product-versions")
+    response = requests.get(f"{TEST_SERVER_URL}/v2/portals/{portal_id}/product-versions")
     assert response.json()["data"][0]["deprecated"] == True
 
     assert result.returncode == 0
 
 def test_add_new_api_product_version(cli_command, tmp_path):
     oas_spec = tmp_path / "oas.yaml"
-    oas_spec.write_text(yaml.dump(spec_v2))
+    oas_spec.write_text(yaml.dump(load_openapi_spec(SPEC_V2_PATH)))
 
     result = subprocess.run(
         cli_command + [
             "--oas-spec", str(oas_spec),
-            "--docs", "examples/docs",
+            "--docs", DOCS_PATH,
             "--konnect-portal-name", "test-portal",
             "--konnect-token", "test-token",
-            "--konnect-url", f"{test_server_url}"
+            "--konnect-url", TEST_SERVER_URL
         ],
         capture_output=True,
         text=True
     )
 
     # Get the API Product ID
-    response = requests.get(f"{test_server_url}/v2/api-products")
+    response = requests.get(f"{TEST_SERVER_URL}/v2/api-products")
     api_product_id = response.json()["data"][0]["id"]
 
     # Get the API Product Versions
-    response = requests.get(f"{test_server_url}/v2/api-products/{api_product_id}/product-versions")
+    response = requests.get(f"{TEST_SERVER_URL}/v2/api-products/{api_product_id}/product-versions")
     assert len(response.json()["data"]) == 2
 
     assert result.returncode == 0
 
 def test_delete_api_product_documents(cli_command, tmp_path):
     oas_spec = tmp_path / "oas.yaml"
-    oas_spec.write_text(yaml.dump(spec_v2))
+    oas_spec.write_text(yaml.dump(load_openapi_spec(SPEC_V2_PATH)))
 
     result = subprocess.run(
         cli_command + [
             "--oas-spec", str(oas_spec),
             "--konnect-portal-name", "test-portal",
-            "--docs", "examples/docs_empty",
+            "--docs", DOCS_EMPTY_PATH,
             "--konnect-token", "test-token",
-            "--konnect-url", f"{test_server_url}"
+            "--konnect-url", TEST_SERVER_URL
         ],
         capture_output=True,
         text=True
     )
 
     # Get the API Product ID
-    response = requests.get(f"{test_server_url}/v2/api-products")
+    response = requests.get(f"{TEST_SERVER_URL}/v2/api-products")
     api_product_id = response.json()["data"][0]["id"]
 
     # Get the API Product Documents
-    response = requests.get(f"{test_server_url}/v2/api-products/{api_product_id}/documents")
+    response = requests.get(f"{TEST_SERVER_URL}/v2/api-products/{api_product_id}/documents")
     assert len(response.json()["data"]) == 0
 
     assert result.returncode == 0
 
 def test_unpublish_api_product(cli_command, tmp_path):
     oas_spec = tmp_path / "oas.yaml"
-    oas_spec.write_text(yaml.dump(spec_v2))
+    oas_spec.write_text(yaml.dump(load_openapi_spec(SPEC_V2_PATH)))
 
     result = subprocess.run(
         cli_command + [
             "--oas-spec", str(oas_spec),
             "--konnect-portal-name", "test-portal",
             "--konnect-token", "test-token",
-            "--konnect-url", f"{test_server_url}",
+            "--konnect-url", TEST_SERVER_URL,
             "--unpublish", "product"
         ],
         capture_output=True,
         text=True
     )
 
-    response = requests.get(f"{test_server_url}/v2/api-products")
+    response = requests.get(f"{TEST_SERVER_URL}/v2/api-products")
     assert response.json()["data"][0]["portal_ids"] == []
 
     assert result.returncode == 0
 
 def test_delete_api_product(cli_command, tmp_path):
     oas_spec = tmp_path / "oas.yaml"
-    oas_spec.write_text(yaml.dump(spec_v2))
+    oas_spec.write_text(yaml.dump(load_openapi_spec(SPEC_V2_PATH)))
 
     result = subprocess.run(
         cli_command + [
             "--oas-spec", str(oas_spec),
             "--konnect-portal-name", "test-portal",
             "--konnect-token", "test-token",
-            "--konnect-url", f"{test_server_url}",
+            "--konnect-url", TEST_SERVER_URL,
             "--delete", "--yes"
         ],
         capture_output=True,
         text=True
     )
 
-    response = requests.get(f"{test_server_url}/v2/api-products")
+    response = requests.get(f"{TEST_SERVER_URL}/v2/api-products")
     assert len(response.json()["data"]) == 0
 
     assert result.returncode == 0
