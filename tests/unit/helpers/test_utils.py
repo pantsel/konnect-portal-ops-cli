@@ -1,8 +1,15 @@
+"""
+Unit tests for utility functions.
+"""
+
+from typing import List
 import pytest
 from src.kptl.helpers.utils import read_file_content, encode_content, sort_key_for_numbered_files, slugify
-from typing import List
 
 def test_read_file_content(tmpdir: pytest.TempPathFactory) -> None:
+    """
+    Test reading file content.
+    """
     # Create a temporary file
     file = tmpdir.join("test_file.txt")
     file.write("Test content")
@@ -13,6 +20,9 @@ def test_read_file_content(tmpdir: pytest.TempPathFactory) -> None:
     assert content == b"Test content"
 
 def test_encode_content() -> None:
+    """
+    Test encoding content.
+    """
     # Test encoding a string
     content: str = "test content"
     encoded_content: str = encode_content(content)
@@ -24,6 +34,9 @@ def test_encode_content() -> None:
     assert encoded_content_bytes == "dGVzdCBjb250ZW50"
 
 def test_sort_key_for_numbered_files() -> None:
+    """
+    Test sorting filenames with numeric prefixes.
+    """
     # Test sorting with numeric prefixes
     filenames: List[str] = ["1_file.md", "2.1_file.md", "2_file.md", "10_file.md", "file.md"]
     sorted_filenames: List[str] = sorted(filenames, key=sort_key_for_numbered_files)
@@ -35,6 +48,9 @@ def test_sort_key_for_numbered_files() -> None:
     assert sorted_filenames == ["file.md", "another_file.md"]
 
 def test_slugify() -> None:
+    """
+    Test slugifying a title.
+    """
     # Test slugifying a title
     title: str = "This is a Test Title!"
     slug: str = slugify(title)
