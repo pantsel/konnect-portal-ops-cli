@@ -93,17 +93,25 @@ def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi
         api_product_version = konnect.create_or_update_api_product_version(api_product, api_info['version'])
         konnect.create_or_update_api_product_version_spec(api_product['id'], api_product_version['id'], oas_file_base64)
         version_publish_status = "unpublished" if args.unpublish and "version" in args.unpublish else "published"
-        konnect.create_or_update_portal_product_version(
-            portal=portal,
-            api_product_version=api_product_version,
-            api_product=api_product,
-            options={
+        options = {
                 "deprecated": args.deprecate,
                 "publish_status": version_publish_status,
                 "application_registration_enabled": args.application_registration_enabled,
                 "auto_approve_registration": args.auto_aprove_registration,
                 "auth_strategy_ids": args.auth_strategy_ids.split(",") if args.auth_strategy_ids else []
             }
+        
+        if args.gateway_service_id and args.gateway_service_control_plane_id:
+            options["gateway_service"] = {
+                "id": args.gateway_service_id,
+                "control_plane_id": args.gateway_service_control_plane_id
+            }
+
+        konnect.create_or_update_portal_product_version(
+            portal=portal,
+            api_product_version=api_product_version,
+            api_product=api_product,
+            options=options
         )
     except Exception as e:
         logger.error(f"Error: {str(e)}")

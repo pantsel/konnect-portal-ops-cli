@@ -64,6 +64,38 @@ def test_missing_required_args(cli_command: List[str]) -> None:
     assert result.returncode != 0
     assert "the following arguments are required" in result.stderr
 
+def test_missing_gateway_service_args(cli_command: List[str]) -> None:
+    """Test missing gateway service arguments."""
+    result = subprocess.run(
+        cli_command + [
+            "--oas-spec", SPEC_V1_PATH,
+            "--konnect-portal-name", PORTAL_DEV,
+            "--konnect-token", "test-token",
+            "--konnect-url", TEST_SERVER_URL,
+            "--gateway-service-id", "test-id" # only --gateway-service-id is provided
+        ],
+        capture_output=True,
+        text=True,
+        check=False
+    )
+    assert result.returncode != 0
+    assert "the following arguments are required" in result.stderr
+
+    result = subprocess.run(
+        cli_command + [
+            "--oas-spec", SPEC_V1_PATH,
+            "--konnect-portal-name", PORTAL_DEV,
+            "--konnect-token", "test-token",
+            "--konnect-url", TEST_SERVER_URL,
+            "--gateway-service-control-plane-id", "test-id" # only --gateway-service-control-plane-id is provided
+        ],
+        capture_output=True,
+        text=True,
+        check=False
+    )
+    assert result.returncode != 0
+    assert "the following arguments are required" in result.stderr
+
 def test_invalid_spec(cli_command: List[str], tmp_path: pytest.TempPathFactory) -> None:
     """Test invalid OpenAPI spec."""
     spec = tmp_path / "oas.yaml"
