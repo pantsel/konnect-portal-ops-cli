@@ -211,7 +211,7 @@ And the following environment variables:
 
 3. Run the CLI directly:  
    ```shell
-      $ python src/kptl/main.py [options]
+      $ PYTHONPATH=src python src/kptl/main.py [options]
    ```
 
 ## Testing

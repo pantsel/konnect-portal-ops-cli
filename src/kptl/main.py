@@ -11,10 +11,6 @@ from kptl import constants
 from kptl.konnect import KonnectApi
 from kptl.helpers import utils
 
-# Add `src` to sys.path dynamically if the script is run directly for easier local development
-if __name__ == "__main__" and __package__ is None:
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
 
