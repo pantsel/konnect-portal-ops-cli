@@ -151,6 +151,66 @@ def test_publish_product_v1_to_dev_portal(cli_command: List[str], tmp_path: pyte
 
     konnect.check_product_document_structure(api_product["id"])
 
+def test_link_product_v1_to_gateway_service(cli_command: List[str], tmp_path: pytest.TempPathFactory) -> None:
+    """Test linking product v1 to gateway service."""
+    spec_v1 = tmp_path / "oas.yaml"
+    spec_v1.write_text(yaml.dump(load_openapi_spec(SPEC_V1_PATH)))
+
+    spec_v1_content = yaml.safe_load(spec_v1.read_text())
+    spec_v1_version = spec_v1_content.get("info", {}).get("version")
+
+    result = subprocess.run(
+        cli_command + [
+            "--oas-spec", str(spec_v1),
+            "--docs", DOCS_PATH,
+            "--konnect-portal-name", PORTAL_DEV,
+            "--konnect-token", "test-token",
+            "--konnect-url", TEST_SERVER_URL,
+            "--gateway-service-id", "test-id",
+            "--gateway-service-control-plane-id", "test-control-plane-id"
+        ],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+    assert result.returncode == 0
+
+    portal, api_product = konnect.get_portal_and_product(PORTAL_DEV)
+    assert portal["id"] in api_product["portal_ids"]
+
+    product_version = konnect.get_api_product_version_by_name(api_product["id"], spec_v1_version)
+    assert "gateway_service" in product_version
+    assert product_version["gateway_service"]["id"] == "test-id"
+    assert product_version["gateway_service"]["control_plane_id"] == "test-control-plane-id"
+
+def test_unlink_product_v1_from_gateway_service(cli_command: List[str], tmp_path: pytest.TempPathFactory) -> None:
+    """Test unlinking product v1 from gateway service."""
+    spec_v1 = tmp_path / "oas.yaml"
+    spec_v1.write_text(yaml.dump(load_openapi_spec(SPEC_V1_PATH)))
+
+    spec_v1_content = yaml.safe_load(spec_v1.read_text())
+    spec_v1_version = spec_v1_content.get("info", {}).get("version")
+
+    result = subprocess.run(
+        cli_command + [
+            "--oas-spec", str(spec_v1),
+            "--docs", DOCS_PATH,
+            "--konnect-portal-name", PORTAL_DEV,
+            "--konnect-token", "test-token",
+            "--konnect-url", TEST_SERVER_URL
+        ],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+    assert result.returncode == 0
+
+    portal, api_product = konnect.get_portal_and_product(PORTAL_DEV)
+    assert portal["id"] in api_product["portal_ids"]
+
+    product_version = konnect.get_api_product_version_by_name(api_product["id"], spec_v1_version)
+    assert "gateway_service" not in product_version or product_version["gateway_service"] is None
+
 def test_publish_product_v1_to_prod_portal(cli_command: List[str], tmp_path: pytest.TempPathFactory) -> None:
     """Test publishing product v1 to prod portal."""
     spec_v1 = tmp_path / "oas.yaml"

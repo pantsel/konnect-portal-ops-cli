@@ -84,14 +84,32 @@ def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi
     Handle the publication of the API product.
     """
     try:
+        # API Product management
         unpublish_product = "product" in args.unpublish if args.unpublish else False
         api_product = konnect.create_or_update_api_product(api_info['title'], api_info['description'], portal['id'], unpublish_product)
 
+        # API Product Documents management
         if args.docs:
             konnect.sync_api_product_documents(api_product['id'], args.docs)
 
-        api_product_version = konnect.create_or_update_api_product_version(api_product, api_info['version'])
+        # API Product Version management
+        gateway_service = None
+        if args.gateway_service_id and args.gateway_service_control_plane_id:
+            gateway_service = {
+                "id": args.gateway_service_id,
+                "control_plane_id": args.gateway_service_control_plane_id
+            }
+        
+        api_product_version = konnect.create_or_update_api_product_version(
+            api_product=api_product,
+            version_name=api_info['version'],
+            gateway_service=gateway_service
+        )
+        
+        # API Product Version Spec management
         konnect.create_or_update_api_product_version_spec(api_product['id'], api_product_version['id'], oas_file_base64)
+        
+        # Portal Product Version management
         version_publish_status = "unpublished" if args.unpublish and "version" in args.unpublish else "published"
         options = {
                 "deprecated": args.deprecate,
@@ -99,12 +117,6 @@ def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi
                 "application_registration_enabled": args.application_registration_enabled,
                 "auto_approve_registration": args.auto_aprove_registration,
                 "auth_strategy_ids": args.auth_strategy_ids.split(",") if args.auth_strategy_ids else []
-            }
-        
-        if args.gateway_service_id and args.gateway_service_control_plane_id:
-            options["gateway_service"] = {
-                "id": args.gateway_service_id,
-                "control_plane_id": args.gateway_service_control_plane_id
             }
 
         konnect.create_or_update_portal_product_version(

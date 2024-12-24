@@ -16,6 +16,7 @@ Ensure that the Konnect Developer Portals are set up before using this tool.
   - [Arguments](#arguments)
   - [Examples](#examples)
     - [🚀 Publish an API Product and Version to a Portal](#-publish-an-api-product-and-version-to-a-portal)
+    - [🔗 Link a Gateway Service to an API Product Version](#-link-a-gateway-service-to-an-api-product-version)
     - [🚀 Publish a New Version of the API Product to a Portal](#-publish-a-new-version-of-the-api-product-to-a-portal)
     - [⚠️ Deprecate an API Version on a Portal](#️-deprecate-an-api-version-on-a-portal)
     - [🚫 Unpublish an API Version from a Portal](#-unpublish-an-api-version-from-a-portal)
@@ -28,10 +29,11 @@ Ensure that the Konnect Developer Portals are set up before using this tool.
 
 ## Features
 
-- **Publish or update API products** on a Konnect Dev Portal.  
+- **Publish or update API Products and Versions** on a Konnect Dev Portal.  
+- Link **Gateway Services** to **API Product Versions**.
+- Manage **API Product Documents**.
 - **Deprecate or unpublish API versions**.  
 - **Delete API products** and their associations.  
-- Manage **API product documentation**.
 - Supports **non-interactive modes** for automation.  
 
 ## How It Works
@@ -89,23 +91,25 @@ $ kptl [options]
 
 ### Arguments
 
-| Option                               | Required                                                | Description                                                          |
-| ------------------------------------ | ------------------------------------------------------- | -------------------------------------------------------------------- |
-| `--oas-spec`                         | **Yes**                                                 | Path to the OAS spec file.                                           |
-| `--docs`                             | No                                                      | Path to the API product documents folder.                            |
-| `--konnect-portal-name`              | **Yes** (except for `--delete`)                         | Name of the Konnect portal to perform operations on.                 |
-| `--konnect-token`                    | **Yes** (except for `--config`)                         | The Konnect spat or kpat token.                                      |
-| `--konnect-url`                      | **Yes** (except for `--config`)                         | The Konnect API server URL.                                          |
-| `--deprecate`                        | No                                                      | Deprecate the API product version on the portal.                     |
-| `--application-registration-enabled` | No                                                      | Enable application registration for the API product on the portal.   |
-| `--auto-aprove-registration`         | No                                                      | Automatically approve application registrations for the API product. |
-| `--auth-strategy-ids`                | No                                                      | Comma-separated list of authentication strategy IDs.                 |
-| `--unpublish {product,version}`      | No                                                      | Unpublish the API product or version from the portal.                |
-| `--delete`                           | No                                                      | Delete the API product and it's associations.                        |
-| `--yes`                              | No                                                      | Skip confirmation prompts (useful for non-interactive environments). |
-| `--config`                           | **Yes** (except for `--konnect-token`, `--konnect-url`) | Path to the configuration file.                                      |
-| `--http-proxy`                       | No                                                      | HTTP proxy URL.                                                      |
-| `--https-proxy`                      | No                                                      | HTTPS proxy URL.                                                     |
+| Option                               | Required                                                | Description                                                                     |
+| ------------------------------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `--oas-spec`                         | **Yes**                                                 | Path to the OAS spec file.                                                      |
+| `--docs`                             | No                                                      | Path to the API product documents folder.                                       |
+| `--konnect-portal-name`              | **Yes** (except for `--delete`)                         | Name of the Konnect portal to perform operations on.                            |
+| `--konnect-token`                    | **Yes** (except for `--config`)                         | The Konnect spat or kpat token.                                                 |
+| `--konnect-url`                      | **Yes** (except for `--config`)                         | The Konnect API server URL.                                                     |
+| `--deprecate`                        | No                                                      | Deprecate the API product version on the portal.                                |
+| `--gateway-service-id`               | No                                                      | The id of the gateway service to link to the API product version.               |
+| `--gateway-service-control-plane-id` | No                                                      | The id of the gateway service control plane to link to the API product version. |
+| `--application-registration-enabled` | No                                                      | Enable application registration for the API product on the portal.              |
+| `--auto-aprove-registration`         | No                                                      | Automatically approve application registrations for the API product.            |
+| `--auth-strategy-ids`                | No                                                      | Comma-separated list of authentication strategy IDs.                            |
+| `--unpublish {product,version}`      | No                                                      | Unpublish the API product or version from the portal.                           |
+| `--delete`                           | No                                                      | Delete the API product and it's associations.                                   |
+| `--yes`                              | No                                                      | Skip confirmation prompts (useful for non-interactive environments).            |
+| `--config`                           | **Yes** (except for `--konnect-token`, `--konnect-url`) | Path to the configuration file.                                                 |
+| `--http-proxy`                       | No                                                      | HTTP proxy URL.                                                                 |
+| `--https-proxy`                      | No                                                      | HTTPS proxy URL.                                                                |
 
 ### Examples
 
@@ -115,6 +119,16 @@ $ kptl [options]
 $ kptl --config .config.yaml \
    --oas-spec ../examples/api-specs/v1/httpbin.yaml \
    --konnect-portal-name my-portal 
+```
+
+#### 🔗 Link a Gateway Service to an API Product Version
+
+```bash
+$ kptl --config .config.yaml \
+   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
+   --konnect-portal-name my-portal \
+   --gateway-service-id <gateway-service-id>
+   --gateway-service-control-plane-id <gateway-service-control-plane-id>
 ```
 
 #### 🚀 Publish a New Version of the API Product to a Portal

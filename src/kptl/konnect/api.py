@@ -127,13 +127,14 @@ class KonnectApi:
         self.logger.debug(json.dumps(api_product, indent=2))
         return api_product
 
-    def create_or_update_api_product_version(self, api_product: Dict[str, Any], version_name: str) -> Dict[str, Any]:
+    def create_or_update_api_product_version(self, api_product: Dict[str, Any], version_name: str, gateway_service: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Create or update an API product version.
 
         Args:
             api_product (Dict[str, Any]): The API product details.
             version_name (str): The name of the API product version.
+            gateway_service (Optional[Dict[str, str]]): The gateway service details.
 
         Returns:
             Dict[str, Any]: The API product version details.
@@ -142,14 +143,38 @@ class KonnectApi:
 
         existing_api_product_version = self.find_api_product_version_by_name(api_product['id'], version_name)
         if existing_api_product_version:
-            api_product_version = existing_api_product_version
-            action = "No changes detected for"
+            needs_update = (
+                gateway_service and (
+                    existing_api_product_version['gateway_service'] is None or
+                    gateway_service['id'] != existing_api_product_version['gateway_service'].get('id') or
+                    gateway_service['control_plane_id'] != existing_api_product_version['gateway_service'].get('control_plane_id')
+                )
+            ) or (
+                not gateway_service and existing_api_product_version['gateway_service'] is not None
+            )
+
+            if needs_update:
+                update_data = {
+                    "name": version_name,
+                    "gateway_service": gateway_service
+                }
+                api_product_version = self.api_product_client.update_api_product_version(
+                    api_product['id'],
+                    existing_api_product_version['id'],
+                    update_data
+                )
+                action = "Updated"
+            else:
+                api_product_version = existing_api_product_version
+                action = "No changes detected for"
         else:
+            create_data = {
+                "name": version_name,
+                "gateway_service": gateway_service
+            }
             api_product_version = self.api_product_client.create_api_product_version(
                 api_product['id'],
-                {
-                    "name": version_name
-                }
+                create_data
             )
             action = "Created new"
 
