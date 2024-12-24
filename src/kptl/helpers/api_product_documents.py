@@ -1,15 +1,37 @@
+"""
+This module provides helper functions for processing API product documents.
+It includes functions to extract hierarchy information, sort keys, parse directories,
+generate titles and slugs, and extract slug tails.
+"""
+
 import os
 import re
 from typing import Any, Dict
 from kptl.helpers import utils
 
 def extract_hierarchy_info(file_name):
-    # Extracts leading numbers from the file name, e.g., "1.2_filename.md" -> "1.2"
+    """
+    Extracts leading numbers from the file name, e.g., "1.2_filename.md" -> "1.2".
+    
+    Args:
+        file_name (str): The name of the file to process.
+    
+    Returns:
+        re.Match or None: A regex match object containing leading numbers from the file name.
+    """
     match = re.match(r'^(\d+)(?:\.(\d+))?', file_name)
     return match
 
 def extract_sort_key(file_path):
-    # Extracts sorting key from file name, e.g., "1.2_filename.md" -> (1, 2)
+    """
+    Extracts sorting key from file name, e.g., "1.2_filename.md" -> (1, 2).
+    
+    Args:
+        file_path (str): The path of the file to process.
+    
+    Returns:
+        tuple: A tuple containing the sorting key.
+    """
     match = extract_hierarchy_info(os.path.basename(file_path))
     return (int(match.group(1)), int(match.group(2)) if match and match.group(2) else 0) if match else (float('inf'), 0)
 

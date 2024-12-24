@@ -1,16 +1,23 @@
+"""
+Utility functions.
+"""
+
 import base64
 import re
 
 def read_file_content(file_path: str) -> str:
+    """Read the content of a file and return it as a string."""
     with open(file_path, 'rb') as f:
         return f.read()
 
 def encode_content(content) -> str:
+    """Encode the given content to a base64 string."""
     if isinstance(content, str):
         content = content.encode('utf-8')
     return base64.b64encode(content).decode('utf-8')
 
 def sort_key_for_numbered_files(filename):
+    """Generate a sort key for filenames with numeric prefixes."""
     # Extract the numeric parts from the filename
     match = re.match(r"(\d+)(\.\d+)?_", filename)
     if match:
