@@ -14,10 +14,10 @@ from .helpers.konnect import KonnectHelper
 # ==========================================
 # Constants
 # ==========================================
-SPEC_V1_PATH: str = "examples/oasv1.yaml"
-SPEC_V2_PATH: str = "examples/oasv2.yaml"
+SPEC_V1_PATH: str = "examples/api-specs/httpbin/v1/httpbin.yaml"
+SPEC_V2_PATH: str = "examples/api-specs/httpbin/v2/httpbin.yaml"
 TEST_SERVER_URL: str = "http://localhost:8080"
-DOCS_PATH: str = "examples/docs"
+DOCS_PATH: str = "examples/docs/httpbin"
 DOCS_EMPTY_PATH: str = "examples/docs_empty"
 PORTAL_DEV: str = "dev_portal"
 PORTAL_PROD: str = "prod_portal"
