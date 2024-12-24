@@ -16,6 +16,7 @@ SPEC_V2_PATH = "examples/oasv2.yaml"
 TEST_SERVER_URL = "http://localhost:8080"
 DOCS_PATH = "examples/docs"
 DOCS_EMPTY_PATH = "examples/docs_empty"
+PORTAL_1 = "test-portal"
 
 # ==========================================
 # Helper Functions
@@ -80,7 +81,7 @@ def test_invalid_oas_spec(cli_command, tmp_path):
     paths: {}
     """)
 
-    result = subprocess.run(cli_command + ["--oas-spec", str(oas_spec), "--konnect-portal-name", "test-portal", "--konnect-token", "test-token", "--konnect-url", "https://example.com"], capture_output=True, text=True)
+    result = subprocess.run(cli_command + ["--oas-spec", str(oas_spec), "--konnect-portal-name", PORTAL_1, "--konnect-token", "test-token", "--konnect-url", "https://example.com"], capture_output=True, text=True)
     assert result.returncode == 1
 
 def test_valid_oas_spec(cli_command, tmp_path):
@@ -91,7 +92,7 @@ def test_valid_oas_spec(cli_command, tmp_path):
         cli_command + [
             "--oas-spec", str(oas_spec),
             "--docs", DOCS_PATH,
-            "--konnect-portal-name", "test-portal",
+            "--konnect-portal-name", PORTAL_1,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL
         ],
@@ -155,7 +156,7 @@ def test_deprecate_portal_product_version(cli_command, tmp_path):
     result = subprocess.run(
         cli_command + [
             "--oas-spec", str(oas_spec),
-            "--konnect-portal-name", "test-portal",
+            "--konnect-portal-name", PORTAL_1,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL,
             "--deprecate"
@@ -165,7 +166,7 @@ def test_deprecate_portal_product_version(cli_command, tmp_path):
     )
 
     response = requests.get(f"{TEST_SERVER_URL}/v2/portals")
-    portal_id = response.json()["data"][0]["id"]
+    portal_id = next(portal["id"] for portal in response.json()["data"] if portal["name"] == PORTAL_1)
 
     response = requests.get(f"{TEST_SERVER_URL}/v2/portals/{portal_id}/product-versions")
     assert response.json()["data"][0]["deprecated"] == True
@@ -180,13 +181,17 @@ def test_add_new_api_product_version(cli_command, tmp_path):
         cli_command + [
             "--oas-spec", str(oas_spec),
             "--docs", DOCS_PATH,
-            "--konnect-portal-name", "test-portal",
+            "--konnect-portal-name", PORTAL_1,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL
         ],
         capture_output=True,
         text=True
     )
+
+    # Get the Portal by fetching th eportsal by name
+    response = requests.get(f"{TEST_SERVER_URL}/v2/portals")
+    portal_id = next(portal["id"] for portal in response.json()["data"] if portal["name"] == PORTAL_1)
 
     # Get the API Product ID
     response = requests.get(f"{TEST_SERVER_URL}/v2/api-products")
@@ -195,6 +200,11 @@ def test_add_new_api_product_version(cli_command, tmp_path):
     # Get the API Product Versions
     response = requests.get(f"{TEST_SERVER_URL}/v2/api-products/{api_product_id}/product-versions")
     assert len(response.json()["data"]) == 2
+
+    # Assert both versions are published to the portal
+    response = requests.get(f"{TEST_SERVER_URL}/v2/portals/{portal_id}/product-versions")
+    assert len(response.json()["data"]) == 2
+    assert all([pv["publish_status"] == "published" for pv in response.json()["data"]])
 
     assert result.returncode == 0
 
@@ -205,7 +215,7 @@ def test_delete_api_product_documents(cli_command, tmp_path):
     result = subprocess.run(
         cli_command + [
             "--oas-spec", str(oas_spec),
-            "--konnect-portal-name", "test-portal",
+            "--konnect-portal-name", PORTAL_1,
             "--docs", DOCS_EMPTY_PATH,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL
@@ -231,7 +241,7 @@ def test_unpublish_api_product(cli_command, tmp_path):
     result = subprocess.run(
         cli_command + [
             "--oas-spec", str(oas_spec),
-            "--konnect-portal-name", "test-portal",
+            "--konnect-portal-name", PORTAL_1,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL,
             "--unpublish", "product"
@@ -252,7 +262,7 @@ def test_delete_api_product(cli_command, tmp_path):
     result = subprocess.run(
         cli_command + [
             "--oas-spec", str(oas_spec),
-            "--konnect-portal-name", "test-portal",
+            "--konnect-portal-name", PORTAL_1,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL,
             "--delete", "--yes"
