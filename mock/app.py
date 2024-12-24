@@ -18,8 +18,12 @@ app = OpenAPI(__name__, info=spec['info'])
 data_stores = {
     "portals": {"data": [{
         "id": "66445d7c-c4aa-40d5-a683-97a5de16cd55",
-        "name": "test-portal",
-        "description": "My Portal Description"
+        "name": "dev_portal",
+        "description": "My Development Portal"
+    },{
+        "id": "4162d3be-5c74-45f8-9a10-0c78867f6729",
+        "name": "prod_portal",
+        "description": "My Production Portal"
     }]},
     "api_products": {"data": []},
     "api_product_versions": {"data": []},
@@ -69,6 +73,12 @@ def handle_get_api_products():
         filtered_products = get_filtered_data("api_products", "name", request.args.get("filter[name]"))
         return jsonify({"data": filtered_products}), 200
     return jsonify(data_stores["api_products"]), 200
+
+def handle_get_api_product_by_id(id):
+    item = get_item_by_key("api_products", "id", id)
+    if item:
+        return jsonify(item)
+    return jsonify({"message": "Product not found"}), 404
 
 def handle_post_api_products():
     item = create_item("api_products", request.json)
@@ -170,6 +180,8 @@ def create_mock_function(route, method):
         if method.upper() == "GET":
             if route == "/api-products":
                 return handle_get_api_products()
+            if route == "/api-products/<id>":
+                return handle_get_api_product_by_id(kwargs["id"])
             if route == "/api-products/<apiProductId>/documents":
                 return handle_get_api_product_documents()
             if route == "/api-products/<apiProductId>/documents/<id>":
@@ -237,6 +249,9 @@ for path, methods in spec.get("paths", {}).items():
 # Portal routes
 @app.route("/v2/portals", methods=["GET"])
 def get_portals():
+    if request.args.get("filter[name]"):
+        filtered_portals = get_filtered_data("portals", "name", request.args.get("filter[name]"))
+        return jsonify({"data": filtered_portals}), 200
     return jsonify(data_stores["portals"]), 200
 
 @app.route("/v2/portals/<portalId>/product-versions", methods=["GET"])

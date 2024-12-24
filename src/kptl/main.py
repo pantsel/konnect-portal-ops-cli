@@ -82,7 +82,7 @@ def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi
             api_product=api_product,
             options={
                 "deprecated": args.deprecate,
-                "publish": version_publish_status,
+                "publish_status": version_publish_status,
                 "application_registration_enabled": args.application_registration_enabled,
                 "auto_approve_registration": args.auto_aprove_registration,
                 "auth_strategy_ids": args.auth_strategy_ids.split(",") if args.auth_strategy_ids else []
