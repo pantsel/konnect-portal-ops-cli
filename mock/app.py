@@ -1,13 +1,19 @@
-from flask import Flask, jsonify, request
-from flask_openapi3 import OpenAPI
-import yaml
+"""
+This module provides a mock implementation of the Konnect API using Flask and OpenAPI.
+It includes endpoints for managing portals, API products, product versions, and related documents.
+"""
+
 import uuid
 import json
 import base64
+from flask import jsonify, request
+from flask_openapi3 import OpenAPI
+import yaml
 
 # Load OpenAPI Spec
 def load_openapi_spec(file_path):
-    with open(file_path, "r") as f:
+    """Load OpenAPI specification from a YAML file."""
+    with open(file_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 spec = load_openapi_spec("mock/specs/api_products.yaml")
@@ -34,26 +40,32 @@ data_stores = {
 
 # Helper functions
 def generate_uuid():
+    """Generate a new UUID."""
     return str(uuid.uuid4())
 
 def decode_base64(content):
+    """Decode a base64 encoded string."""
     return base64.b64decode(content).decode('utf-8')
 
 def get_filtered_data(store, filter_key, filter_value):
+    """Get filtered data from a store based on a key-value pair."""
     return [item for item in data_stores[store]["data"] if item[filter_key] == filter_value]
 
 def get_item_by_key(store, key, value):
+    """Get an item from a store by key and value."""
     for item in data_stores[store]["data"]:
         if item[key] == value:
             return item
     return None
 
 def create_item(store, item):
+    """Create a new item in a store."""
     item["id"] = generate_uuid()
     data_stores[store]["data"].append(item)
     return item
 
 def update_item(store, key, value, updates):
+    """Update an item in a store."""
     item = get_item_by_key(store, key, value)
     if item:
         item.update(updates)
@@ -61,6 +73,7 @@ def update_item(store, key, value, updates):
     return None
 
 def delete_item(store, item_id):
+    """Delete an item from a store."""
     item = get_item_by_key(store, "id", item_id)
     if item:
         data_stores[store]["data"].remove(item)
@@ -69,106 +82,126 @@ def delete_item(store, item_id):
 
 # Endpoint handlers
 def handle_get_api_products():
+    """Handle GET requests for API products."""
     if request.args.get("filter[name]"):
         filtered_products = get_filtered_data("api_products", "name", request.args.get("filter[name]"))
         return jsonify({"data": filtered_products}), 200
     return jsonify(data_stores["api_products"]), 200
 
-def handle_get_api_product_by_id(id):
-    item = get_item_by_key("api_products", "id", id)
+def handle_get_api_product_by_id(product_id):
+    """Handle GET requests for a specific API product by ID."""
+    item = get_item_by_key("api_products", "id", product_id)
     if item:
         return jsonify(item)
     return jsonify({"message": "Product not found"}), 404
 
 def handle_post_api_products():
+    """Handle POST requests to create a new API product."""
     item = create_item("api_products", request.json)
     return jsonify(item), 201
 
-def handle_patch_api_products(id):
-    item = update_item("api_products", "id", id, request.json)
+def handle_patch_api_products(product_id):
+    """Handle PATCH requests to update an API product."""
+    item = update_item("api_products", "id", product_id, request.json)
     if item:
         return jsonify(item)
     return jsonify({"message": "Product not found"}), 404
 
-def handle_delete_api_products(id):
-    if delete_item("api_products", id):
+def handle_delete_api_products(product_id):
+    """Handle DELETE requests to remove an API product."""
+    if delete_item("api_products", product_id):
         return jsonify({"message": "Product deleted"}), 204
     return jsonify({"message": "Product not found"}), 404
 
 def handle_get_api_product_documents():
+    """Handle GET requests for API product documents."""
     return jsonify(data_stores["api_product_documents"]), 200
 
-def handle_get_api_product_document(id):
-    item = get_item_by_key("api_product_documents", "id", id)
+def handle_get_api_product_document(document_id):
+    """Handle GET requests for a specific API product document by ID."""
+    item = get_item_by_key("api_product_documents", "id", document_id)
     if item:
         return jsonify(item)
     return jsonify({"message": "Document not found"}), 404
 
 def handle_post_api_product_documents():
+    """Handle POST requests to create a new API product document."""
     request.json["content"] = decode_base64(request.json["content"])
     item = create_item("api_product_documents", request.json)
     return jsonify(item), 201
 
-def handle_patch_api_product_document(id):
-    item = update_item("api_product_documents", "id", id, request.json)
+def handle_patch_api_product_document(document_id):
+    """Handle PATCH requests to update an API product document."""
+    item = update_item("api_product_documents", "id", document_id, request.json)
     if item:
         return jsonify(item)
     return jsonify({"message": "Document not found"}), 404
 
-def handle_delete_api_product_document(id):
-    if delete_item("api_product_documents", id):
+def handle_delete_api_product_document(document_id):
+    """Handle DELETE requests to remove an API product document."""
+    if delete_item("api_product_documents", document_id):
         return jsonify({"message": "Document deleted"}), 204
     return jsonify({"message": "Document not found"}), 404
 
 def handle_get_api_product_versions():
+    """Handle GET requests for API product versions."""
     if request.args.get("filter[name]"):
         filtered_versions = get_filtered_data("api_product_versions", "name", request.args.get("filter[name]"))
         return jsonify({"data": filtered_versions}), 200
     return jsonify(data_stores["api_product_versions"]), 200
 
-def handle_get_api_product_version(id):
-    item = get_item_by_key("api_product_versions", "id", id)
+def handle_get_api_product_version(version_id):
+    """Handle GET requests for a specific API product version by ID."""
+    item = get_item_by_key("api_product_versions", "id", version_id)
     if item:
         return jsonify(item)
     return jsonify({"message": "Version not found"}), 404
 
 def handle_post_api_product_versions():
+    """Handle POST requests to create a new API product version."""
     item = create_item("api_product_versions", request.json)
     return jsonify(item), 201
 
-def handle_patch_api_product_version(id):
-    item = update_item("api_product_versions", "id", id, request.json)
+def handle_patch_api_product_version(version_id):
+    """Handle PATCH requests to update an API product version."""
+    item = update_item("api_product_versions", "id", version_id, request.json)
     if item:
         return jsonify(item)
     return jsonify({"message": "Version not found"}), 404
 
-def handle_delete_api_product_version(id):
-    if delete_item("api_product_versions", id):
+def handle_delete_api_product_version(version_id):
+    """Handle DELETE requests to remove an API product version."""
+    if delete_item("api_product_versions", version_id):
         return jsonify({"message": "Version deleted"}), 204
     return jsonify({"message": "Version not found"}), 404
 
 def handle_get_api_product_version_specifications():
+    """Handle GET requests for API product version specifications."""
     return jsonify(data_stores["api_product_version_specifications"]), 200
 
-def handle_get_api_product_version_specification(id):
-    item = get_item_by_key("api_product_version_specifications", "id", id)
+def handle_get_api_product_version_specification(specification_id):
+    """Handle GET requests for a specific API product version specification by ID."""
+    item = get_item_by_key("api_product_version_specifications", "id", specification_id)
     if item:
         return jsonify(item)
     return jsonify({"message": "Specification not found"}), 404
 
 def handle_post_api_product_version_specifications():
+    """Handle POST requests to create a new API product version specification."""
     request.json["content"] = decode_base64(request.json["content"])
     item = create_item("api_product_version_specifications", request.json)
     return jsonify(item), 201
 
-def handle_patch_api_product_version_specification(id):
-    item = update_item("api_product_version_specifications", "id", id, request.json)
+def handle_patch_api_product_version_specification(specification_id):
+    """Handle PATCH requests to update an API product version specification."""
+    item = update_item("api_product_version_specifications", "id", specification_id, request.json)
     if item:
         return jsonify(item)
     return jsonify({"message": "Specification not found"}), 404
 
-def handle_delete_api_product_version_specification(id):
-    if delete_item("api_product_version_specifications", id):
+def handle_delete_api_product_version_specification(specification_id):
+    """Handle DELETE requests to remove an API product version specification."""
+    if delete_item("api_product_version_specifications", specification_id):
         return jsonify({"message": "Specification deleted"}), 204
     return jsonify({"message": "Specification not found"}), 404
 
@@ -176,6 +209,7 @@ def handle_delete_api_product_version_specification(id):
 base_path = "/" + spec.get("servers", [{}])[0].get("url", "").rstrip("/").split("/")[-1]
 
 def create_mock_function(route, method):
+    """Create a mock endpoint function."""
     def mock_endpoint(**kwargs):
         if method.upper() == "GET":
             if route == "/api-products":
@@ -249,13 +283,15 @@ for path, methods in spec.get("paths", {}).items():
 # Portal routes
 @app.route("/v2/portals", methods=["GET"])
 def get_portals():
+    """Get all portals or filter by name."""
     if request.args.get("filter[name]"):
         filtered_portals = get_filtered_data("portals", "name", request.args.get("filter[name]"))
         return jsonify({"data": filtered_portals}), 200
     return jsonify(data_stores["portals"]), 200
 
-@app.route("/v2/portals/<portalId>/product-versions", methods=["GET"])
-def get_portal_product_versions(portalId):
+@app.route("/v2/portals/<portal_id>/product-versions", methods=["GET"])
+def get_portal_product_versions(portal_id):
+    """Get product versions for a specific portal."""
     if request.args.get("filter[product_version_id]"):
         filtered_portal_product_versions = get_filtered_data("portal_product_versions", "product_version_id", request.args.get("filter[product_version_id]"))
         for version in filtered_portal_product_versions:
@@ -263,14 +299,16 @@ def get_portal_product_versions(portalId):
         return jsonify({"data": filtered_portal_product_versions}), 200
     return jsonify(data_stores["portal_product_versions"]), 200
 
-@app.route("/v2/portals/<portalId>/product-versions", methods=["POST"])
-def create_portal_product_version(portalId):
+@app.route("/v2/portals/<portal_id>/product-versions", methods=["POST"])
+def create_portal_product_version(portal_id):
+    """Create a new product version for a specific portal."""
     item = create_item("portal_product_versions", request.json)
     print(json.dumps(data_stores["portal_product_versions"], indent=2))
     return jsonify(item), 201
 
-@app.route("/v2/portals/<portalId>/product-versions/<id>", methods=["PATCH"])
-def update_portal_product_version(portalId, id):
+@app.route("/v2/portals/<portal_id>/product-versions/<id>", methods=["PATCH"])
+def update_portal_product_version(portal_id, id):
+    """Update a product version for a specific portal."""
     item = update_item("portal_product_versions", "product_version_id", id, request.json)
     print(json.dumps(data_stores["portal_product_versions"], indent=2))
     if item:
