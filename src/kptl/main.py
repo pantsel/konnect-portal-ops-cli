@@ -1,23 +1,27 @@
-import yaml
+"""
+Main module for kptl.
+"""
+
 import argparse
 import os
 import sys
-
-# Add `src` to sys.path dynamically if the script is run directly for easier local development
-if __name__ == "__main__" and __package__ is None:
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
+import yaml
 from kptl import logger, __version__
 from kptl import constants
 from kptl.konnect import KonnectApi
 from kptl.helpers import utils
 
-LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+# Add `src` to sys.path dynamically if the script is run directly for easier local development
+if __name__ == "__main__" and __package__ is None:
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
 
 def get_parser_args() -> argparse.Namespace:
-
+    """
+    Parse command-line arguments.
+    """
     parser = argparse.ArgumentParser(description="Konnect Dev Portal Ops CLI", allow_abbrev=False)
     parser.add_argument('--version', action='version', version=f'%(prog)s {__version__}')
     parser.add_argument("--oas-spec", type=str, required=True, help="Path to the OAS spec file")
@@ -38,10 +42,16 @@ def get_parser_args() -> argparse.Namespace:
     return parser.parse_args()
 
 def confirm_deletion(api_name: str) -> bool:
+    """
+    Confirm deletion of the API product.
+    """
     confirmation = input(f"Are you sure you want to delete the API product '{api_name}'? This action cannot be undone. (yes/No): ")
     return confirmation.strip().lower() == 'yes'
 
 def delete_api_product(konnect: KonnectApi, api_name: str) -> None:
+    """
+    Delete the API product.
+    """
     try:
         konnect.delete_api_product(api_name)
     except Exception as e:
@@ -49,6 +59,9 @@ def delete_api_product(konnect: KonnectApi, api_name: str) -> None:
         sys.exit(1)
 
 def find_konnect_portal(konnect: KonnectApi, portal_name: str) -> dict:
+    """
+    Find the Konnect portal by name.
+    """
     try:
         portal = konnect.find_portal_by_name(portal_name)
         logger.info(f"Fetching Portal information for '{portal_name}'")
@@ -64,8 +77,10 @@ def find_konnect_portal(konnect: KonnectApi, portal_name: str) -> dict:
         sys.exit(1)
 
 def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi, api_info: dict, oas_file_base64: str, portal: dict) -> None:
+    """
+    Handle the publication of the API product.
+    """
     try:
-
         unpublish_product = "product" in args.unpublish if args.unpublish else False
         api_product = konnect.create_or_update_api_product(api_info['title'], api_info['description'], portal['id'], unpublish_product)
 
@@ -74,7 +89,6 @@ def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi
 
         api_product_version = konnect.create_or_update_api_product_version(api_product, api_info['version'])
         konnect.create_or_update_api_product_version_spec(api_product['id'], api_product_version['id'], oas_file_base64)
-        
         version_publish_status = "unpublished" if args.unpublish and "version" in args.unpublish else "published"
         konnect.create_or_update_portal_product_version(
             portal=portal,
@@ -88,23 +102,24 @@ def handle_api_product_publication(args: argparse.Namespace, konnect: KonnectApi
                 "auth_strategy_ids": args.auth_strategy_ids.split(",") if args.auth_strategy_ids else []
             }
         )
-    
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         sys.exit(1)
 
 def read_oas_document(spec: str) -> tuple:
+    """
+    Read the OAS document.
+    """
     try:
         logger.info(f"Reading OAS file: {spec}")
         oas_file = utils.read_file_content(spec)
-
         yaml_data = yaml.safe_load(oas_file)
         api_info = yaml_data.get('info', {})
         logger.info(f"API Info: {api_info}")
 
         if not api_info['title'] or not api_info["description"] or not api_info["version"]:
             raise ValueError("API title, version, and description must be provided in the spec")
-        
+
         oas_file_base64 = utils.encode_content(oas_file)
         return api_info, oas_file_base64
     except Exception as e:
@@ -112,6 +127,9 @@ def read_oas_document(spec: str) -> tuple:
         sys.exit(1)
 
 def read_config_file(config_file: str) -> dict:
+    """
+    Read the configuration file.
+    """
     try:
         file = utils.read_file_content(config_file)
         return yaml.safe_load(file)
@@ -120,6 +138,9 @@ def read_config_file(config_file: str) -> dict:
         sys.exit(1)
 
 def should_delete_api_product(args: argparse.Namespace, api_name: str) -> bool:
+    """
+    Determine if the API product should be deleted.
+    """
     if not args.delete:
         return False
 
@@ -130,6 +151,9 @@ def should_delete_api_product(args: argparse.Namespace, api_name: str) -> bool:
     return True
 
 def main() -> None:
+    """
+    Main function for the kptl module.
+    """
     args = get_parser_args()
     config = read_config_file(args.config) if args.config else {}
     konnect = KonnectApi(

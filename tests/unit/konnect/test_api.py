@@ -6,9 +6,7 @@ from typing import List, Dict, Any
 
 @pytest.fixture
 def konnect_api() -> KonnectApi:
-    api_product_client_mock = MagicMock()
-    logger_mock = MagicMock()
-    return KonnectApi(base_url="https://example.com", token="dummy_token", api_product_client=api_product_client_mock, logger=logger_mock)
+    return KonnectApi(base_url="https://example.com", token="dummy_token")
 
 def test_sync_pages_create_new_page(konnect_api: KonnectApi, mocker: Any) -> None:
     local_pages: List[Dict[str, Any]] = [{

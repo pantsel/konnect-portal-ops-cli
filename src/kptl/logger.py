@@ -1,3 +1,7 @@
+"""
+This module provides a custom logger with colored output for different log levels.
+"""
+
 import logging
 from typing import Optional
 
@@ -21,22 +25,24 @@ class ColoredFormatter(logging.Formatter):
         record.levelname = f"{color}{record.levelname}{self.RESET}"
         return super().format(record)
 
-class Logger:
+class Logger(logging.Logger):
+    """
+    Singleton logger class with colored console output.
+    """
     _instance: Optional[logging.Logger] = None
 
-    def __new__(cls, name: str = "app", log_file: str = "app.log", level: int = logging.DEBUG):
+    def __new__(cls, name: str = "app", level: int = logging.DEBUG):
         if not cls._instance:
-            cls._instance = cls._initialize_logger(name, log_file, level)
+            cls._instance = cls._initialize_logger(name, level)
         return cls._instance
 
     @staticmethod
-    def _initialize_logger(name: str, log_file: str, level: int) -> logging.Logger:
+    def _initialize_logger(name: str, level: int) -> logging.Logger:
         """
         Initialize the singleton logger instance.
 
         Args:
             name (str): Name of the logger.
-            log_file (str): Path to the log file.
             level (int): Logging level.
 
         Returns:
