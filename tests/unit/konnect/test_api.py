@@ -2,15 +2,16 @@ import pytest
 from unittest.mock import MagicMock
 from src.kptl.helpers.utils import encode_content
 from src.kptl.konnect.api import KonnectApi
+from typing import List, Dict, Any
 
 @pytest.fixture
-def konnect_api():
+def konnect_api() -> KonnectApi:
     api_product_client_mock = MagicMock()
     logger_mock = MagicMock()
     return KonnectApi(base_url="https://example.com", token="dummy_token", api_product_client=api_product_client_mock, logger=logger_mock)
 
-def test_sync_pages_create_new_page(konnect_api, mocker):
-    local_pages = [{
+def test_sync_pages_create_new_page(konnect_api: KonnectApi, mocker: Any) -> None:
+    local_pages: List[Dict[str, Any]] = [{
         "slug": "1-file1",
         "title": "File1",
         "content": encode_content("Content of file1"),
@@ -35,7 +36,7 @@ def test_sync_pages_create_new_page(konnect_api, mocker):
         "status": "unpublished",
         "parent_slug": None
     }]
-    remote_pages = []
+    remote_pages: List[Dict[str, Any]] = []
 
     mocker.patch.object(konnect_api.api_product_client, 'get_api_product_document', return_value=None)
     mocker.patch.object(konnect_api.api_product_client, 'create_api_product_document', side_effect=[
@@ -89,11 +90,11 @@ def test_sync_pages_create_new_page(konnect_api, mocker):
         }
     )
 
-def test_sync_pages_update_existing_page(konnect_api, mocker):
-    local_pages = [
+def test_sync_pages_update_existing_page(konnect_api: KonnectApi, mocker: Any) -> None:
+    local_pages: List[Dict[str, Any]] = [
         {"slug": "existing_page", "title": "Existing Page", "parent_slug": None, "content": encode_content("Updated content"), "status": "published"}
     ]
-    remote_pages = [
+    remote_pages: List[Dict[str, Any]] = [
         {"slug": "existing_page", "id": "existing_page_id"}
     ]
 
@@ -114,11 +115,11 @@ def test_sync_pages_update_existing_page(konnect_api, mocker):
         }
     )
 
-def test_sync_pages_no_changes(konnect_api, mocker):
-    local_pages = [
+def test_sync_pages_no_changes(konnect_api: KonnectApi, mocker: Any) -> None:
+    local_pages: List[Dict[str, Any]] = [
         {"slug": "existing_page", "title": "Existing Page", "parent_slug": None, "content": encode_content("Same content"), "status": "published"}
     ]
-    remote_pages = [
+    remote_pages: List[Dict[str, Any]] = [
         {"slug": "existing_page", "id": "existing_page_id", "title": "Existing Page", "content": "Same content", "status": "published"}
     ]
 

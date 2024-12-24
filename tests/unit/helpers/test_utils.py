@@ -1,31 +1,32 @@
 import pytest
 from src.kptl.helpers.utils import read_file_content, encode_content, sort_key_for_numbered_files, slugify
+from typing import List
 
-def test_read_file_content(tmpdir):
+def test_read_file_content(tmpdir: pytest.TempPathFactory) -> None:
     # Create a temporary file
     file = tmpdir.join("test_file.txt")
     file.write("Test content")
 
     # Read the file content using the function
-    content = read_file_content(str(file))
+    content: bytes = read_file_content(str(file))
 
     assert content == b"Test content"
 
-def test_encode_content():
+def test_encode_content() -> None:
     # Test encoding a string
-    content = "test content"
-    encoded_content = encode_content(content)
+    content: str = "test content"
+    encoded_content: str = encode_content(content)
     assert encoded_content == "dGVzdCBjb250ZW50"
 
     # Test encoding bytes
-    content_bytes = b"test content"
-    encoded_content_bytes = encode_content(content_bytes)
+    content_bytes: bytes = b"test content"
+    encoded_content_bytes: str = encode_content(content_bytes)
     assert encoded_content_bytes == "dGVzdCBjb250ZW50"
 
-def test_sort_key_for_numbered_files():
+def test_sort_key_for_numbered_files() -> None:
     # Test sorting with numeric prefixes
-    filenames = ["1_file.md", "2.1_file.md", "2_file.md", "10_file.md", "file.md"]
-    sorted_filenames = sorted(filenames, key=sort_key_for_numbered_files)
+    filenames: List[str] = ["1_file.md", "2.1_file.md", "2_file.md", "10_file.md", "file.md"]
+    sorted_filenames: List[str] = sorted(filenames, key=sort_key_for_numbered_files)
     assert sorted_filenames == ["1_file.md", "2_file.md", "2.1_file.md", "10_file.md", "file.md"]
 
     # Test sorting with non-numeric prefixes
@@ -33,10 +34,10 @@ def test_sort_key_for_numbered_files():
     sorted_filenames = sorted(filenames, key=sort_key_for_numbered_files)
     assert sorted_filenames == ["file.md", "another_file.md"]
 
-def test_slugify():
+def test_slugify() -> None:
     # Test slugifying a title
-    title = "This is a Test Title!"
-    slug = slugify(title)
+    title: str = "This is a Test Title!"
+    slug: str = slugify(title)
     assert slug == "this-is-a-test-title"
 
     # Test slugifying a title with special characters

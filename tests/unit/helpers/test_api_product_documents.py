@@ -1,9 +1,10 @@
 import pytest
 from src.kptl.helpers.api_product_documents import get_slug_tail, parse_directory
 from src.kptl.helpers.utils import encode_content
+from typing import List, Dict, Any
 
 @pytest.fixture
-def docs_directory(tmpdir):
+def docs_directory(tmpdir) -> str:
     # Create a temporary directory structure for testing
     docs_dir = tmpdir.mkdir("docs")
     
@@ -22,10 +23,10 @@ def docs_directory(tmpdir):
 
     return str(docs_dir)
 
-def test_parse_directory(docs_directory):
-    pages = parse_directory(docs_directory)
+def test_parse_directory(docs_directory: str) -> None:
+    pages: List[Dict[str, Any]] = parse_directory(docs_directory)
 
-    expected_pages = [{
+    expected_pages: List[Dict[str, Any]] = [{
         "slug": "1-file1",
         "title": "File1",
         "content": encode_content("Content of file1"),
@@ -53,37 +54,37 @@ def test_parse_directory(docs_directory):
 
     assert pages == expected_pages
 
-def test_get_slug_tail_single_segment():
-    slug = "doc_slug"
-    result = get_slug_tail(slug)
+def test_get_slug_tail_single_segment() -> None:
+    slug: str = "doc_slug"
+    result: str = get_slug_tail(slug)
     assert result == "doc_slug"
 
-def test_get_slug_tail_multiple_segments():
-    slug = "parent_doc_slug/doc_slug"
-    result = get_slug_tail(slug)
+def test_get_slug_tail_multiple_segments() -> None:
+    slug: str = "parent_doc_slug/doc_slug"
+    result: str = get_slug_tail(slug)
     assert result == "doc_slug"
 
-def test_get_slug_tail_trailing_slash():
-    slug = "parent_doc_slug/doc_slug/"
-    result = get_slug_tail(slug)
+def test_get_slug_tail_trailing_slash() -> None:
+    slug: str = "parent_doc_slug/doc_slug/"
+    result: str = get_slug_tail(slug)
     assert result == ""
 
-def test_get_slug_tail_empty_slug():
-    slug = ""
-    result = get_slug_tail(slug)
+def test_get_slug_tail_empty_slug() -> None:
+    slug: str = ""
+    result: str = get_slug_tail(slug)
     assert result == ""
 
-def test_get_slug_tail_no_slash():
-    slug = "doc_slug"
-    result = get_slug_tail(slug)
+def test_get_slug_tail_no_slash() -> None:
+    slug: str = "doc_slug"
+    result: str = get_slug_tail(slug)
     assert result == "doc_slug"
 
-def test_get_slug_tail_leading_slash():
-    slug = "/doc_slug"
-    result = get_slug_tail(slug)
+def test_get_slug_tail_leading_slash() -> None:
+    slug: str = "/doc_slug"
+    result: str = get_slug_tail(slug)
     assert result == "doc_slug"
 
-def test_get_slug_tail_multiple_slashes():
-    slug = "parent_doc_slug/sub_parent/doc_slug"
-    result = get_slug_tail(slug)
+def test_get_slug_tail_multiple_slashes() -> None:
+    slug: str = "parent_doc_slug/sub_parent/doc_slug"
+    result: str = get_slug_tail(slug)
     assert result == "doc_slug"
