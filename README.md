@@ -10,7 +10,6 @@ Ensure that the Konnect Developer Portals are set up before using this tool.
 
 ## Table of Contents <!-- omit in toc -->
 - [Features](#features)
-- [Requirements](#requirements)
 - [How It Works](#how-it-works)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -34,12 +33,6 @@ Ensure that the Konnect Developer Portals are set up before using this tool.
 - **Delete API products** and their associations.  
 - Manage **API product documentation**.
 - Supports **non-interactive modes** for automation.  
-
-## Requirements
-
-- Python 3+  
-- `PyYaml`: For parsing YAML-based files.  
-- `requests`: For making HTTP requests to the Konnect API.
 
 ## How It Works
 
@@ -199,6 +192,12 @@ And the following environment variables:
 | `LOG_LEVEL` | Logging verbosity level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). Default: `INFO`. |
 
 ## Local Development
+
+***Requirements***
+
+- Python 3+  
+- `PyYaml`: For parsing YAML-based files.  
+- `requests`: For making HTTP requests to the Konnect API.
 
 1. Clone the repository:  
    ```shell
