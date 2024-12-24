@@ -113,7 +113,7 @@ $ kptl [options]
 
 ```bash
 $ kptl --config .config.yaml \
-   --oas-spec ../examples/oasv1.yaml \
+   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
    --konnect-portal-name my-portal 
 ```
 
@@ -121,7 +121,7 @@ $ kptl --config .config.yaml \
 
 ```bash
 $ kptl --config .config.yaml \
-   --oas-spec ../examples/oasv2.yaml \
+   --oas-spec ../examples/api-specs/v2/httpbin.yaml \
    --konnect-portal-name my-portal
 ```
 
@@ -129,7 +129,7 @@ $ kptl --config .config.yaml \
 
 ```bash
 $ kptl --config .config.yaml \
-   --oas-spec ../examples/oasv1.yaml \
+   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
    --konnect-portal-name my-portal --deprecate
 ```
 
@@ -137,7 +137,7 @@ $ kptl --config .config.yaml \
 
 ```bash
 $ kptl --config .config.yaml \
-   --oas-spec ../examples/oasv1.yaml \
+   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
    --konnect-portal-name my-portal \
    --unpublish version
 ```
@@ -146,7 +146,7 @@ $ kptl --config .config.yaml \
 
 ```bash
 $ kptl --config .config.yaml \
-   --oas-spec ../examples/oasv1.yaml \
+   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
    --konnect-portal-name my-portal \
    --unpublish product
 ```
@@ -164,8 +164,8 @@ For an example documents folder structure and use-cases, see the [examples/docs]
 
 ```bash
 $ kptl --config .config.yaml \
-   --oas-spec ../examples/oasv1.yaml \
-   --docs ../examples/docs \
+   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
+   --docs ../examples/docs/httpbin \
    --konnect-portal-name my-portal
 ```
 
@@ -173,7 +173,7 @@ $ kptl --config .config.yaml \
 
 ```bash
 $ kptl --config .config.yaml \
-   --oas-spec ../examples/oasv1.yaml --delete --yes
+   --oas-spec ../examples/api-specs/v1/httpbin.yaml --delete --yes
 ```
 
 ## CLI Configuration
