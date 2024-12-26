@@ -33,6 +33,11 @@ class KonnectApi:
             Optional[Dict[str, Any]]: The API product details if found, else None.
         """
         response = self.api_product_client.list_api_products({"filter[name]": name})
+
+        if len(response['data']) > 1:
+            self.logger.error("Multiple API products found with the name: %s. Please resolve the duplicate names manually before proceeding.", name)
+            exit(1)
+
         return response['data'][0] if response['data'] else None
     
     def find_api_product_version_by_name(self, api_product_id: str, name: str) -> Optional[Dict[str, Any]]:
@@ -47,6 +52,11 @@ class KonnectApi:
             Optional[Dict[str, Any]]: The API product version details if found, else None.
         """
         response = self.api_product_client.list_api_product_versions(api_product_id, {"filter[name]": name})
+
+        if len(response['data']) > 1:
+            self.logger.error("Multiple API product versions found with the name: %s for product %s. Please resolve the duplicate names manually before proceeding.", name, api_product_id)
+            exit(1)
+
         return response['data'][0] if response['data'] else None
 
     def find_portal_by_name(self, portal_name: str) -> Optional[Dict[str, Any]]:
