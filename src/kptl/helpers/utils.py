@@ -30,3 +30,7 @@ def sort_key_for_numbered_files(filename):
 def slugify(title: str) -> str:
     """Convert a title into a slug-friendly format."""
     return re.sub(r'[^a-zA-Z0-9\s-]', '', title).lower().strip().replace(' ', '-')
+
+def is_valid_uuid(uuid: str) -> bool:
+    """Check if the given string is a valid UUID."""
+    return re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', uuid) is not None

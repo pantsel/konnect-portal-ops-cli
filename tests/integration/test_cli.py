@@ -79,7 +79,7 @@ def test_missing_gateway_service_args(sync_command: List[str]) -> None:
     result = subprocess.run(
         sync_command + [
             SPEC_V1_PATH,
-            "--konnect-portal-name", PORTAL_DEV,
+            "--konnect-portal", PORTAL_DEV,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL,
             "--gateway-service-id", "test-id" # only --gateway-service-id is provided
@@ -94,7 +94,7 @@ def test_missing_gateway_service_args(sync_command: List[str]) -> None:
     result = subprocess.run(
         sync_command + [
             SPEC_V1_PATH,
-            "--konnect-portal-name", PORTAL_DEV,
+            "--konnect-portal", PORTAL_DEV,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL,
             "--gateway-service-control-plane-id", "test-id" # only --gateway-service-control-plane-id is provided
@@ -120,7 +120,7 @@ def test_invalid_spec(sync_command: List[str], tmp_path: pytest.TempPathFactory)
     result = subprocess.run(
         sync_command + [
             spec,
-            "--konnect-portal-name", PORTAL_DEV,
+            "--konnect-portal", PORTAL_DEV,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL
         ],
@@ -142,7 +142,7 @@ def test_publish_product_v1_to_dev_portal(sync_command: List[str], tmp_path: pyt
         sync_command + [
             SPEC_V1_PATH,
             "--documents-dir", DOCS_PATH,
-            "--konnect-portal-name", PORTAL_DEV,
+            "--konnect-portal", PORTAL_DEV,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL
         ],
@@ -173,7 +173,7 @@ def test_link_product_v1_to_gateway_service(sync_command: List[str], tmp_path: p
         sync_command + [
             SPEC_V1_PATH,
             "--documents-dir", DOCS_PATH,
-            "--konnect-portal-name", PORTAL_DEV,
+            "--konnect-portal", PORTAL_DEV,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL,
             "--gateway-service-id", "test-id",
@@ -205,7 +205,7 @@ def test_unlink_product_v1_from_gateway_service(sync_command: List[str], tmp_pat
         sync_command + [
             SPEC_V1_PATH,
             "--documents-dir", DOCS_PATH,
-            "--konnect-portal-name", PORTAL_DEV,
+            "--konnect-portal", PORTAL_DEV,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL
         ],
@@ -233,7 +233,7 @@ def test_publish_product_v1_to_prod_portal(sync_command: List[str], tmp_path: py
         sync_command + [
             SPEC_V1_PATH,
             "--documents-dir", DOCS_PATH,
-            "--konnect-portal-name", PORTAL_PROD,
+            "--konnect-portal", PORTAL_PROD,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL
         ],
@@ -264,7 +264,7 @@ def test_publish_product_v2_to_dev_portal(sync_command: List[str], tmp_path: pyt
         sync_command + [
             SPEC_V2_PATH,
             "--documents-dir", DOCS_PATH,
-            "--konnect-portal-name", PORTAL_DEV,
+            "--konnect-portal", PORTAL_DEV,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL
         ],
@@ -295,7 +295,7 @@ def test_publish_product_v2_to_prod_portal(sync_command: List[str], tmp_path: py
         sync_command + [
             SPEC_V2_PATH,
             "--documents-dir", DOCS_PATH,
-            "--konnect-portal-name", PORTAL_PROD,
+            "--konnect-portal", PORTAL_PROD,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL
         ],
@@ -325,7 +325,7 @@ def test_deprecate_product_v1_from_prod_portal(sync_command: List[str], tmp_path
     result = subprocess.run(
         sync_command + [
             SPEC_V1_PATH,
-            "--konnect-portal-name", PORTAL_PROD,
+            "--konnect-portal", PORTAL_PROD,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL,
             "--deprecate"
@@ -353,7 +353,7 @@ def test_unpublish_product_v1_from_prod_portal(sync_command: List[str], tmp_path
     result = subprocess.run(
         sync_command + [
             SPEC_V1_PATH,
-            "--konnect-portal-name", PORTAL_PROD,
+            "--konnect-portal", PORTAL_PROD,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL,
             "--unpublish", "version"
@@ -378,7 +378,7 @@ def test_unpublish_product_from_dev_portal(sync_command: List[str], tmp_path: py
     result = subprocess.run(
         sync_command + [
             SPEC_V1_PATH,
-            "--konnect-portal-name", PORTAL_DEV,
+            "--konnect-portal", PORTAL_DEV,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL,
             "--unpublish", "product"
@@ -401,7 +401,7 @@ def test_delete_api_product_documents(sync_command: List[str], tmp_path: pytest.
     result = subprocess.run(
         sync_command + [
             SPEC_V2_PATH,
-            "--konnect-portal-name", PORTAL_DEV,
+            "--konnect-portal", PORTAL_DEV,
             "--documents-dir", DOCS_EMPTY_PATH,
             "--konnect-token", "test-token",
             "--konnect-url", TEST_SERVER_URL

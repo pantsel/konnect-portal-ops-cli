@@ -59,18 +59,28 @@ class KonnectApi:
 
         return response['data'][0] if response['data'] else None
 
-    def find_portal_by_name(self, portal_name: str) -> Optional[Dict[str, Any]]:
+    def find_portal(self, portal: str) -> Optional[Dict[str, Any]]:
         """
-        Find a portal by its name.
+        Find a portal by its name or ID.
 
         Args:
-            portal_name (str): The name of the portal.
+            portal (str): The name or ID of the portal.
 
         Returns:
             Optional[Dict[str, Any]]: The portal details if found, else None.
         """
-        portal = self.portal_client.list_portals({"filter[name]": portal_name})
-        return portal['data'][0] if portal['data'] else None
+
+        if utils.is_valid_uuid(portal):
+            response = self.portal_client.get_portal(portal)
+            return response if response else None
+
+        response = self.portal_client.list_portals({"filter[name]": portal})
+
+        if len(response['data']) > 1:
+            self.logger.error("Multiple portals found with the name: %s. Please resolve the duplicate names manually before proceeding.", portal)
+            exit(1)
+
+        return response['data'][0] if response['data'] else None
 
     def find_portal_product_version(self, portal_id: str, product_version_id: str) -> Optional[Dict[str, Any]]:
         """

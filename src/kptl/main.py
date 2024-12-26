@@ -24,7 +24,7 @@ def delete_command(args, konnect: KonnectApi):
 def sync_command(args, konnect: KonnectApi, state: ApiState):
     logger.info(f"Executing sync command")
 
-    portal = find_konnect_portal(konnect, args.konnect_portal_name)
+    portal = find_konnect_portal(konnect, args.konnect_portal)
 
     # API Product management
     unpublish_product = state.metadata.product_publish == False
@@ -97,7 +97,7 @@ def get_parser_args() -> argparse.Namespace:
     sync_parser.add_argument("spec", type=argparse.FileType('r'),
         nargs='?',
         default=sys.stdin, help="Open API Specification (default: stdin)")
-    sync_parser.add_argument("--konnect-portal-name", type=str, required=True, help="The name of the Konnect portal to perform operations on")
+    sync_parser.add_argument("--konnect-portal", type=str, required=True, help="The name or id the Konnect portal to perform operations on")
     sync_parser.add_argument("--konnect-portal-state", type=str, help="Path to the portal state file (default: x-konnect-portal-state in the OAS file)")
     sync_parser.add_argument("--documents-dir", type=str, help="Path to the documents folder", default=None)
     sync_parser.add_argument("--gateway-service-id", type=str, help="The id of the gateway service to link to the API product version", required="--gateway-service-control-plane-id" in sys.argv)
@@ -137,14 +137,14 @@ def find_konnect_portal(konnect: KonnectApi, portal_name: str) -> dict:
     Find the Konnect portal by name.
     """
     try:
-        portal = konnect.find_portal_by_name(portal_name)
+        portal = konnect.find_portal(portal_name)
         logger.info(f"Fetching Portal information for '{portal_name}'")
 
         if not portal:
             logger.error(f"Portal with name {portal_name} not found")
             sys.exit(1)
 
-        logger.info(f"Using '{portal_name}' ({portal['id']}) for subsequent operations")
+        logger.info(f"Using '{portal["name"]}' ({portal['id']}) for subsequent operations")
         return portal
     except Exception as e:
         logger.error(f"Failed to get Portal information: {str(e)}")
