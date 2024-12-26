@@ -116,6 +116,57 @@ class KonnectApi:
         else:
             self.logger.warning("API product '%s' not found. Nothing to unpublish.", api_title)
 
+    def upsert_api_product(self, api_title: str, api_description: str, portal_ids: List[str]) -> Dict[str, Any]:
+        """
+        Create or update an API product.
+
+        Args:
+            api_title (str): The title of the API product.
+            api_description (str): The description of the API product.
+            portal_ids (List[str]): The list of portal IDs.
+            unpublish (bool): Whether to unpublish the API product.
+
+        Returns:
+            Dict[str, Any]: The API product details.
+        """
+
+        self.logger.info("Processing API product")
+        existing_api_product = self.find_api_product_by_name(api_title)
+
+        if existing_api_product:
+            if existing_api_product['description'] != api_description or existing_api_product['portal_ids'] != portal_ids:
+                
+                if set(existing_api_product['portal_ids']) != set(portal_ids):
+                    self.logger.info("Updating portals for API product '%s'.", api_title)
+                    self.logger.info("Publishing to portals: %s", [pid for pid in portal_ids if pid not in existing_api_product['portal_ids']])
+                    self.logger.info("Unpublishing from portals: %s", [pid for pid in existing_api_product['portal_ids'] if pid not in portal_ids])
+                   
+
+                api_product = self.api_product_client.update_api_product(
+                    existing_api_product['id'],
+                    {
+                        "name": api_title,
+                        "description": api_description,
+                        "portal_ids": portal_ids
+                    }
+                )
+                action = "Updated"
+            else:
+                api_product = existing_api_product
+                action = "No changes detected for"
+        else:
+            api_product = self.api_product_client.create_api_product(
+                {
+                    "name": api_title,
+                    "description": api_description,
+                    "portal_ids": portal_ids
+                }
+            )
+            action = "Created new"
+        
+        self.logger.info("%s API product: %s (%s)", action, api_product['name'], api_product['id'])
+        return api_product
+    
     def create_or_update_api_product(self, api_title: str, api_description: str, portal_id: str, unpublish: bool) -> Dict[str, Any]:
         """
         Create or update an API product.
@@ -479,7 +530,7 @@ class KonnectApi:
                     "parent_document_id": parent_id
                 })
             else:
-                self.logger.info("No changes detected for page: '%s' (%s)", page['title'], page['slug'])
+                self.logger.info("No changes detected for document: '%s' (%s)", page['title'], page['slug'])
 
         # Handle deletions
         local_slugs = {page['slug'] for page in local_pages}

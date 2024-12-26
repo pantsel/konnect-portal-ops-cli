@@ -9,12 +9,115 @@ import yaml
 from kptl import logger, __version__
 from kptl import constants
 from kptl.konnect import KonnectApi
-from kptl.konnect.state import ApiState, KonnectPortalState
+from kptl.konnect.state import ApiState, KonnectPortalState, ProductSpec, Portal, PortalConfig, ApplicationRegistration, ProductVersion, Version, Documents
 from kptl.helpers import utils
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
 
+
+def deploy_command(args, konnect: KonnectApi):
+    logger.info(f"Executing deploy command")
+    state = load_deploy_state(args.state)
+
+    oas_data, oas_data_base64 = load_oas_data(state.get('info').get('spec'))
+
+    product = create_product_spec(state.get('product'), state.get('info').get('spec'))
+
+    logger.info(f"API Product info: %s", oas_data['info'])
+
+    portals = [find_konnect_portal(konnect, p.name) for p in product.portals]
+    published_portal_ids = filter_published_portal_ids(product, portals)
+
+    api_product = upsert_api_product(konnect, oas_data, published_portal_ids)
+    api_product_version = manage_api_product_version(konnect, api_product, oas_data, product.version)
+
+    konnect.create_or_update_api_product_version_spec(api_product['id'], api_product_version['id'], oas_data_base64)
+
+    if product.documents.sync and product.documents.dir:
+        konnect.sync_api_product_documents(api_product['id'], product.documents.dir)
+
+    for p in product.portals:
+        portal = next((portal for portal in portals if portal['name'] == p.name), None)
+        logger.info(f"Using '{portal['name']}' ('{portal['id']}') for subsequent operations")
+        manage_portal_product_version(konnect, portal, api_product, api_product_version, p.config)
+
+def load_deploy_state(state_file: str) -> dict:
+    contents = utils.read_file_content(state_file)
+    return yaml.safe_load(contents)
+
+def load_oas_data(spec_file: str) -> tuple:
+    oas_file = utils.read_file_content(spec_file)
+    oas_data = parse_yaml(oas_file)
+    oas_data_base64 = utils.encode_content(oas_file)
+    return oas_data, oas_data_base64
+
+def create_product_spec(product_state: dict, spec: str) -> ProductSpec:
+    return ProductSpec(
+        spec=spec,
+        version=Version(gateway=product_state.get('version', {}).get('gateway')),
+        documents=Documents(sync=product_state.get('documents').get('sync'), dir=product_state.get('documents').get('dir')),
+        portals=[
+            Portal(
+                name=p.get('name'),
+                config=PortalConfig(
+                    publish_status=p.get('config', {}).get('publish_status', "published"),
+                    auth_strategy_ids=p.get('config', {}).get('auth_strategy_ids', []),
+                    application_registration=ApplicationRegistration(
+                        enabled=p.get('config', {}).get('application_registration', {}).get('enabled', False),
+                        auto_approve=p.get('config', {}).get('application_registration', {}).get('auto_approve', False)
+                    ),
+                    product_version=ProductVersion(
+                        deprecate=p.get('config', {}).get('product_version', {}).get('deprecate', False),
+                        publish_status=p.get('config', {}).get('product_version', {}).get('publish_status', "published")
+                    )
+                )
+            ) for p in product_state.get('portals', [])
+        ]
+    )
+
+def upsert_api_product(konnect: KonnectApi, oas_data: dict, published_portal_ids: list) -> dict:
+    return konnect.upsert_api_product(oas_data['info']['title'], oas_data['info']['description'], published_portal_ids)
+
+def manage_api_product_version(konnect: KonnectApi, api_product: dict, oas_data: dict, version: Version) -> dict:
+    gateway_service = None
+    if version.gateway and version.gateway.get('service_id') and version.gateway.get('control_plane_id'):
+        gateway_service = {
+            "id": version.gateway['service_id'],
+            "control_plane_id": version.gateway['control_plane_id']
+        }
+    return konnect.create_or_update_api_product_version(
+        api_product=api_product,
+        version_name=oas_data['info']['version'],
+        gateway_service=gateway_service
+    )
+
+def manage_portal_product_version(konnect: KonnectApi, portal: dict, api_product: dict, api_product_version: dict, config: PortalConfig):
+    options = {
+        "deprecated": config.product_version.deprecate,
+        "publish_status": config.product_version.publish_status,
+        "application_registration_enabled": config.application_registration.enabled,
+        "auto_approve_registration": config.application_registration.auto_approve,
+        "auth_strategy_ids": config.auth_strategy_ids
+    }
+    konnect.create_or_update_portal_product_version(
+        portal=portal,
+        api_product_version=api_product_version,
+        api_product=api_product,
+        options=options
+    )
+
+def filter_published_portal_ids(product, portals):
+    portal_ids = [p['id'] for p in portals]
+
+    # Only keep the portal ids that correspont to the portals in the state where product.portal publish_status is "published"
+    portal_ids = [portal_ids[i] for i in range(len(portal_ids)) if product.portals[i].config.publish_status == "published"]
+    return portal_ids
+
+def display_header_message(message):
+    logger.info("#" * len(message))
+    logger.info(message)
+    logger.info("#" * len(message))
 
 def delete_command(args, konnect: KonnectApi):
     logger.info(f"Executing delete command")
@@ -108,6 +211,10 @@ def get_parser_args() -> argparse.Namespace:
     sync_parser.add_argument("--deprecate", action="store_true", help="Deprecate the API product version on the specified portal")
     sync_parser.add_argument("--unpublish", action="append", choices=["product", "version"], help="Unpublish the API product or version from the specified portal")
 
+    # Deploy command arguments
+    deploy_parser = subparsers.add_parser('deploy', help='Deploy the API product', parents=[common_parser])
+    deploy_parser.add_argument("state", type=str, help="Path to the API product state file")
+
     # Delete command arguments
     delete_parser = subparsers.add_parser('delete', help='Delete API product', parents=[common_parser])
     delete_parser.add_argument("name", type=str, help="The name of the API product to delete")
@@ -144,7 +251,6 @@ def find_konnect_portal(konnect: KonnectApi, portal_name: str) -> dict:
             logger.error(f"Portal with name {portal_name} not found")
             sys.exit(1)
 
-        logger.info(f"Using '{portal["name"]}' ({portal['id']}) for subsequent operations")
         return portal
     except Exception as e:
         logger.error(f"Failed to get Portal information: {str(e)}")
@@ -242,7 +348,6 @@ def main() -> None:
     Main function for the kptl module.
     """
     args = get_parser_args()
-    print(args)
     config = read_config_file(args.config) if args.config else {}
     
     konnect = KonnectApi(
@@ -259,6 +364,8 @@ def main() -> None:
         sync_command(args, konnect, state)
     elif args.command == 'delete':
         delete_command(args, konnect)
+    elif args.command == 'deploy':
+        deploy_command(args, konnect)
     else:
         logger.error("Invalid command")
         sys.exit(1)

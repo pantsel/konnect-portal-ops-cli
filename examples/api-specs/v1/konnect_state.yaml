@@ -1,0 +1,34 @@
+version: 1.0.0
+_info:
+  name: httpbin
+  description: Example state file for httpbin v1
+  spec: examples/api-specs/v1/httpbin.yaml
+product:
+  version:
+    gateway:
+      service_id: null
+      control_plane_id: null
+  documents:
+    sync: false
+    dir: examples/docs/httpbin
+  portals:
+    - name: dev_portal
+      config:
+        publish_status: published
+        auth_strategy_ids: []
+        application_registration:
+          enabled: false
+          auto_approve: false
+        product_version:
+          deprecate: true
+          publish_status: published
+    - name: prod_portal
+      config:
+        publish_status: published
+        auth_strategy_ids: []
+        application_registration:
+          enabled: false
+          auto_approve: false
+        product_version:
+          deprecate: false
+          publish_status: published
