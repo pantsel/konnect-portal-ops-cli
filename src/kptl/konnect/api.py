@@ -76,6 +76,26 @@ class KonnectApi:
         response = self.portal_client.list_portal_product_versions(portal_id, {"filter[product_version_id]": product_version_id})
         return response['data'][0] if response['data'] else None
 
+    def unpublish_api_product(self, api_title: str, portal_id: str) -> None:
+        """
+        Unpublish an API product.
+
+        Args:
+            api_title (str): The title of the API product.
+            portal_id (str): The ID of the portal.
+
+        Returns:
+            None
+        """
+        api_product = self.find_api_product_by_name(api_title)
+        if api_product:
+            self.logger.info("Unpublishing API product: '%s' (%s)", api_product['name'], api_product['id'])
+            new_portal_ids = [portal['portal_id'] for portal in api_product['portals'] if portal['portal_id'] != portal_id]
+            self.api_product_client.update_api_product(api_product['id'], {"portal_ids": new_portal_ids})
+            self.logger.info("API product '%s' unpublished successfully.", api_title)
+        else:
+            self.logger.warning("API product '%s' not found. Nothing to unpublish.", api_title)
+
     def create_or_update_api_product(self, api_title: str, api_description: str, portal_id: str, unpublish: bool) -> Dict[str, Any]:
         """
         Create or update an API product.
@@ -226,6 +246,77 @@ class KonnectApi:
         self.logger.debug(json.dumps(api_product_version_spec, indent=2))
         return api_product_version_spec
 
+    def deprecate_portal_product_version(self, portal_id: str, api_product_name: str, api_product_version_name: str) -> None:
+        """
+        Deprecate a portal product version.
+
+        Args:
+            portal_id (str): The ID of the portal.
+            api_product_name (str): The name of the API product.
+            api_product_version_name (str): The name of the API product version.
+
+        Returns:
+            None
+        """
+        portal = self.portal_client.get_portal(portal_id)
+        if portal:
+            api_product = self.find_api_product_by_name(api_product_name)
+            if api_product:
+                api_product_version = self.find_api_product_version_by_name(api_product['id'], api_product_version_name)
+                if api_product_version:
+                    if api_product_version['deprecated']:
+                        self.logger.info("API product version '%s' is already deprecated. Nothing to do.", api_product_version_name)
+                        return
+                    self.portal_client.update_portal_product_version(
+                        portal['id'],
+                        api_product_version['id'],
+                        {
+                            "deprecated": True
+                        }
+                    )
+                    self.logger.info("Portal Product Version '%s' for '%s' on '%s' deprecated successfully.", api_product_version_name, api_product_name, portal['name'])
+                else:
+                    self.logger.warning("API product version '%s' not found. Nothing to deprecate.", api_product_version_name)
+            else:
+                self.logger.warning("API product '%s' not found. Nothing to deprecate.", api_product_name)
+        else:
+            self.logger.warning("Portal '%s' not found. Nothing to deprecate.", portal['name'])
+    def unpublish_portal_product_version(self, portal_id: str, api_product_name: str, api_product_version_name: str) -> None:
+        """
+        Unpublish a portal product version.
+
+        Args:
+            portal_name (str): The name of the portal.
+            api_product_name (str): The name of the API product.
+            api_product_version_name (str): The name of the API product version.
+
+        Returns:
+            None
+        """
+        portal = self.portal_client.get_portal(portal_id)
+        if portal:
+            api_product = self.find_api_product_by_name(api_product_name)
+            if api_product:
+                api_product_version = self.find_api_product_version_by_name(api_product['id'], api_product_version_name)
+                if api_product_version:
+                    if api_product_version['publish_status'] == "unpublished":
+                        self.logger.info("API product version '%s' is already unpublished. Nothing to do.", api_product_version_name)
+                        return
+                    self.portal_client.update_portal_product_version(
+                        portal['id'],
+                        api_product_version['id'],
+                        {
+                            "publish_status": "unpublished"
+                        }
+                    )
+                    self.logger.info("Portal Product Version '%s' for '%s' on '%s' unpublished successfully.", api_product_version_name, api_product_name, portal['name'])
+                else:
+                    self.logger.warning("API product version '%s' not found. Nothing to unpublish.", api_product_version_name)
+            else:
+                self.logger.warning("API product '%s' not found. Nothing to unpublish.", api_product_name)
+        else:
+            self.logger.warning("Portal '%s' not found. Nothing to unpublish.", portal['name'])
+    
     def create_or_update_portal_product_version(self, portal: Dict[str, Any], api_product_version: Dict[str, Any], api_product: Dict[str, Any], options: Dict[str, Any]) -> None:
         """
         Create or update a Portal Product Version.
@@ -371,7 +462,8 @@ class KonnectApi:
 
         # Handle deletions
         local_slugs = {page['slug'] for page in local_pages}
-        for remote_page in remote_pages:
+        remote_pages_sorted = sorted(remote_pages, key=lambda x: x['slug'].count('/'), reverse=True)
+        for remote_page in remote_pages_sorted:
             if get_slug_tail(remote_page['slug']) not in local_slugs:
                 self.logger.warning("Deleting page: '%s' (%s)", remote_page['title'], remote_page['slug'])
                 self.api_product_client.delete_api_product_document(api_product_id, remote_page['id'])

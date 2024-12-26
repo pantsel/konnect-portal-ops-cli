@@ -6,6 +6,23 @@ info:
 servers:
   - url: https://example.com
 
+x-konnect-metadata:
+  product:
+    publish: true
+  version:
+    deprecate: false
+    publish: true
+  application_registration:
+    enabled: false
+    auto_approve: false
+  gateway:
+    servide_id: null
+    control_plane_id: null
+  documents:
+    sync: true
+    dir: examples/docs/httpbin/
+  auth_strategy_ids: []
+
 tags:
   - name: HTTPBin
 
