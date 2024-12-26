@@ -254,7 +254,6 @@ def main() -> None:
         }
     )
 
-    
     if args.command == 'sync':
         state: ApiState = load_state(args)
         sync_command(args, konnect, state)
