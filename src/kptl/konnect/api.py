@@ -291,6 +291,7 @@ class KonnectApi:
                 self.logger.warning("API product '%s' not found. Nothing to deprecate.", api_product_name)
         else:
             self.logger.warning("Portal '%s' not found. Nothing to deprecate.", portal['name'])
+    
     def unpublish_portal_product_version(self, portal_id: str, api_product_name: str, api_product_version_name: str) -> None:
         """
         Unpublish a portal product version.
