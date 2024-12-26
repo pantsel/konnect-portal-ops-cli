@@ -6,7 +6,7 @@ info:
 servers:
   - url: https://example.com
 
-x-konnect-metadata:
+x-konnect-portal-state:
   product:
     publish: true
   version:

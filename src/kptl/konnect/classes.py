@@ -1,7 +1,7 @@
 import argparse
 from typing import Any, Dict
 
-class KonnectMetadata:
+class KonnectPortalState:
     def __init__(self, args: argparse.Namespace, data: Dict[str, Any] = {}):
         self.product_publish = self._get_value(data, 'product.publish', True)
         self.version_deprecate = self._get_value(data, 'version.deprecate', False)
@@ -22,7 +22,7 @@ class KonnectMetadata:
         return data if data else default
 
 class ApiState:
-    def __init__(self, title: str, description: str, version: str, spec_base64: str, metadata: KonnectMetadata):
+    def __init__(self, title: str, description: str, version: str, spec_base64: str, metadata: KonnectPortalState):
         self.title = title
         self.description = description
         self.version = version

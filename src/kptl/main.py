@@ -9,7 +9,7 @@ import yaml
 from kptl import logger, __version__
 from kptl import constants
 from kptl.konnect import KonnectApi
-from kptl.konnect.classes import ApiState, KonnectMetadata
+from kptl.konnect.classes import ApiState, KonnectPortalState
 from kptl.helpers import utils
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
@@ -31,8 +31,8 @@ def sync_command(args, konnect: KonnectApi, state: ApiState):
     api_product = konnect.create_or_update_api_product(state.title, state.description, portal['id'], unpublish_product)
 
     # API Product Documents management
-    if args.docs:
-        konnect.sync_api_product_documents(api_product['id'], args.docs)
+    if args.documents_dir:
+        konnect.sync_api_product_documents(api_product['id'], args.documents_dir)
     elif state.metadata.documents_sync and state.metadata.documents_dir:
         konnect.sync_api_product_documents(api_product['id'], state.metadata.documents_dir)
 
@@ -97,7 +97,8 @@ def get_parser_args() -> argparse.Namespace:
 
     sync_parser = subparsers.add_parser('sync', help='Synchronize the API state with the portal', parents=[common_parser])
     sync_parser.add_argument("--konnect-portal-name", type=str, required=True, help="The name of the Konnect portal to perform operations on")
-    sync_parser.add_argument("--docs", type=str, help="Path to the documents folder", default=None)
+    sync_parser.add_argument("--konnect-portal-state", type=str, help="Path to the portal state file")
+    sync_parser.add_argument("--documents-dir", type=str, help="Path to the documents folder", default=None)
     sync_parser.add_argument("--gateway-service-id", type=str, help="The id of the gateway service to link to the API product version", required="--gateway-service-control-plane-id" in sys.argv)
     sync_parser.add_argument("--gateway-service-control-plane-id", type=str, help="The id of the gateway service control plane to link to the API product version", required="--gateway-service-id" in sys.argv)
     sync_parser.add_argument("--application-registration-enabled", action="store_true", help="Enable application registration for the API product on the specified portal")
@@ -151,8 +152,10 @@ def load_state(args: argparse.Namespace) -> ApiState:
     try:
         oas_file = args.spec.read()
         yaml_data = yaml.safe_load(oas_file)
+        konnect_portal_state_file = utils.read_file_content(args.konnect_portal_state) if args.konnect_portal_state else None
+        konnect_portal_state: KonnectPortalState = KonnectPortalState(args, yaml.safe_load(konnect_portal_state_file)) if konnect_portal_state_file else KonnectPortalState(args, yaml_data.get('x-konnect-portal-state') or {})
+        
         api_info = yaml_data.get('info') or {}
-        konnect_metadata: KonnectMetadata = KonnectMetadata(args, yaml_data.get('x-konnect-metadata') or {})
 
         if not api_info['title'] or not api_info["description"] or not api_info["version"]:
             raise ValueError("API title, version, and description must be provided in the spec")
@@ -164,7 +167,7 @@ def load_state(args: argparse.Namespace) -> ApiState:
             description=api_info['description'],
             version=api_info['version'],
             spec_base64=oas_file_base64,
-            metadata=konnect_metadata
+            metadata=konnect_portal_state
         )
 
         return state
