@@ -95,9 +95,10 @@ def get_parser_args() -> argparse.Namespace:
     common_parser.add_argument("--http-proxy", type=str, help="HTTP Proxy URL", default=None)
     common_parser.add_argument("--https-proxy", type=str, help="HTTPS Proxy URL", default=None)
 
+    # Sync command arguments
     sync_parser = subparsers.add_parser('sync', help='Synchronize the API state with the portal', parents=[common_parser])
     sync_parser.add_argument("--konnect-portal-name", type=str, required=True, help="The name of the Konnect portal to perform operations on")
-    sync_parser.add_argument("--konnect-portal-state", type=str, help="Path to the portal state file")
+    sync_parser.add_argument("--konnect-portal-state", type=str, help="Path to the portal state file (default: x-konnect-portal-state in the OAS file)")
     sync_parser.add_argument("--documents-dir", type=str, help="Path to the documents folder", default=None)
     sync_parser.add_argument("--gateway-service-id", type=str, help="The id of the gateway service to link to the API product version", required="--gateway-service-control-plane-id" in sys.argv)
     sync_parser.add_argument("--gateway-service-control-plane-id", type=str, help="The id of the gateway service control plane to link to the API product version", required="--gateway-service-id" in sys.argv)
@@ -105,6 +106,7 @@ def get_parser_args() -> argparse.Namespace:
     sync_parser.add_argument("--auto-aprove-registration", action="store_true", help="Auto approve application registration for the API product on the specified portal")
     sync_parser.add_argument("--auth-strategy-ids", type=str, help="Comma separated list of auth strategy IDs to associate with the API product on the specified portal")
 
+    # Delete command arguments
     delete_parser = subparsers.add_parser('delete', help='Delete API product', parents=[common_parser])
     delete_parser.add_argument("--yes", action="store_true", help="Skip confirmation prompt")
 
