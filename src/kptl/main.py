@@ -16,10 +16,10 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
 
 
-def delete_command(args, konnect: KonnectApi, state: ApiState):
+def delete_command(args, konnect: KonnectApi):
     logger.info(f"Executing delete command")
-    if should_delete_api_product(args, state.title):
-        delete_api_product(konnect, state.title)
+    if should_delete_api_product(args, args.name):
+        delete_api_product(konnect, args.name)
 
 def sync_command(args, konnect: KonnectApi, state: ApiState):
     logger.info(f"Executing sync command")
@@ -86,9 +86,6 @@ def get_parser_args() -> argparse.Namespace:
 
     # Common arguments
     common_parser = argparse.ArgumentParser(add_help=False)
-    common_parser.add_argument("spec", type=argparse.FileType('r'),
-        nargs='?',
-        default=sys.stdin, help="Open API Specification (default: stdin)")
     common_parser.add_argument("--config", type=str, help="Path to the CLI configuration file")
     common_parser.add_argument("--konnect-token", type=str, help="The Konnect spat or kpat token", required="--config" not in sys.argv)
     common_parser.add_argument("--konnect-url", type=str, help="The Konnect API server URL", required="--config" not in sys.argv)
@@ -97,6 +94,9 @@ def get_parser_args() -> argparse.Namespace:
 
     # Sync command arguments
     sync_parser = subparsers.add_parser('sync', help='Synchronize the API state with the portal', parents=[common_parser])
+    sync_parser.add_argument("spec", type=argparse.FileType('r'),
+        nargs='?',
+        default=sys.stdin, help="Open API Specification (default: stdin)")
     sync_parser.add_argument("--konnect-portal-name", type=str, required=True, help="The name of the Konnect portal to perform operations on")
     sync_parser.add_argument("--konnect-portal-state", type=str, help="Path to the portal state file (default: x-konnect-portal-state in the OAS file)")
     sync_parser.add_argument("--documents-dir", type=str, help="Path to the documents folder", default=None)
@@ -110,6 +110,7 @@ def get_parser_args() -> argparse.Namespace:
 
     # Delete command arguments
     delete_parser = subparsers.add_parser('delete', help='Delete API product', parents=[common_parser])
+    delete_parser.add_argument("name", type=str, help="The name of the API product to delete")
     delete_parser.add_argument("--yes", action="store_true", help="Skip confirmation prompt")
 
     return parser.parse_args()
@@ -154,10 +155,10 @@ def load_state(args: argparse.Namespace) -> ApiState:
     Read the OAS document and return the API state.
     """
     oas_file = read_oas_file(args.spec)
-    yaml_data = parse_yaml(oas_file)
-    konnect_portal_state: KonnectPortalState = load_konnect_portal_state(args, yaml_data)
+    oas_data = parse_yaml(oas_file)
+    konnect_portal_state: KonnectPortalState = load_konnect_portal_state(args, oas_data)
 
-    api_info = extract_api_info(yaml_data)
+    api_info = extract_api_info(oas_data)
     oas_file_base64 = utils.encode_content(oas_file)
 
     return ApiState(
@@ -253,12 +254,12 @@ def main() -> None:
         }
     )
 
-    state: ApiState = load_state(args)
-
-    if args.command == 'delete':
-        delete_command(args, konnect, state)
-    elif args.command == 'sync':
+    
+    if args.command == 'sync':
+        state: ApiState = load_state(args)
         sync_command(args, konnect, state)
+    elif args.command == 'delete':
+        delete_command(args, konnect)
     else:
         logger.error("Invalid command")
         sys.exit(1)
