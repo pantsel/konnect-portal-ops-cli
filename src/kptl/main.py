@@ -147,33 +147,65 @@ def find_konnect_portal(konnect: KonnectApi, portal_name: str) -> dict:
 
 def load_state(args: argparse.Namespace) -> ApiState:
     """
-    Read the OAS document.
+    Read the OAS document and return the API state.
+    """
+    oas_file = read_oas_file(args.spec)
+    yaml_data = parse_yaml(oas_file)
+    konnect_portal_state = load_konnect_portal_state(args, yaml_data)
+    api_info = extract_api_info(yaml_data)
+    oas_file_base64 = utils.encode_content(oas_file)
+
+    return ApiState(
+        title=api_info['title'],
+        description=api_info['description'],
+        version=api_info['version'],
+        spec_base64=oas_file_base64,
+        metadata=konnect_portal_state
+    )
+
+def read_oas_file(spec) -> str:
+    """
+    Read the OAS file content.
     """
     try:
-        oas_file = args.spec.read()
-        yaml_data = yaml.safe_load(oas_file)
-        konnect_portal_state_file = utils.read_file_content(args.konnect_portal_state) if args.konnect_portal_state else None
-        konnect_portal_state: KonnectPortalState = KonnectPortalState(args, yaml.safe_load(konnect_portal_state_file)) if konnect_portal_state_file else KonnectPortalState(args, yaml_data.get('x-konnect-portal-state') or {})
-        
-        api_info = yaml_data.get('info') or {}
-
-        if not api_info['title'] or not api_info["description"] or not api_info["version"]:
-            raise ValueError("API title, version, and description must be provided in the spec")
-
-        oas_file_base64 = utils.encode_content(oas_file)
-
-        state = ApiState(
-            title=api_info['title'],
-            description=api_info['description'],
-            version=api_info['version'],
-            spec_base64=oas_file_base64,
-            metadata=konnect_portal_state
-        )
-
-        return state
+        return spec.read()
     except Exception as e:
-        logger.error(f"Error reading or parsing OAS file: {str(e)}")
+        logger.error(f"Error reading OAS file: {str(e)}")
         sys.exit(1)
+
+def parse_yaml(file_content: str) -> dict:
+    """
+    Parse YAML content.
+    """
+    try:
+        return yaml.safe_load(file_content)
+    except Exception as e:
+        logger.error(f"Error parsing YAML content: {str(e)}")
+        sys.exit(1)
+
+def load_konnect_portal_state(args: argparse.Namespace, yaml_data: dict) -> KonnectPortalState:
+    """
+    Load Konnect portal state from file or YAML data.
+    """
+    try:
+        if args.konnect_portal_state:
+            konnect_portal_state_file = utils.read_file_content(args.konnect_portal_state)
+            return KonnectPortalState(args, yaml.safe_load(konnect_portal_state_file))
+        else:
+            return KonnectPortalState(args, yaml_data.get('x-konnect-portal-state') or {})
+    except Exception as e:
+        logger.error(f"Error loading Konnect portal state: {str(e)}")
+        sys.exit(1)
+
+def extract_api_info(yaml_data: dict) -> dict:
+    """
+    Extract API information from YAML data.
+    """
+    api_info = yaml_data.get('info') or {}
+    if not api_info.get('title') or not api_info.get("description") or not api_info.get("version"):
+        logger.error("API title, version, and description must be provided in the spec")
+        sys.exit(1)
+    return api_info
 
 def read_config_file(config_file: str) -> dict:
     """
