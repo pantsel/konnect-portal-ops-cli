@@ -9,7 +9,7 @@ import yaml
 from kptl import logger, __version__
 from kptl import constants
 from kptl.konnect import KonnectApi
-from kptl.konnect.classes import ApiState, KonnectPortalState
+from kptl.konnect.state import ApiState, KonnectPortalState
 from kptl.helpers import utils
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
@@ -154,7 +154,7 @@ def load_state(args: argparse.Namespace) -> ApiState:
     """
     Read the OAS document and return the API state.
     """
-    oas_file = read_oas_file(args.spec)
+    oas_file = read_spec_file(args.spec)
     oas_data = parse_yaml(oas_file)
     konnect_portal_state: KonnectPortalState = load_konnect_portal_state(args, oas_data)
 
@@ -169,7 +169,7 @@ def load_state(args: argparse.Namespace) -> ApiState:
         metadata=konnect_portal_state
     )
 
-def read_oas_file(spec) -> str:
+def read_spec_file(spec) -> str:
     """
     Read the OAS file content.
     """
