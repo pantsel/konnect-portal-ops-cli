@@ -1,11 +1,20 @@
+"""
+Module for Konnect API state classes.
+"""
+
 import argparse
 from typing import Any, Dict
 
 class KonnectPortalState:
-    def __init__(self, args: argparse.Namespace, data: Dict[str, Any] = {}):
-        self.product_publish = self._get_value(data, 'product.publish', True)
-        self.version_deprecate = self._get_value(data, 'version.deprecate', False)
-        self.version_publish = self._get_value(data, 'version.publish', True)
+    """
+    Class representing the state of the Konnect portal.
+    """
+    def __init__(self, args: argparse.Namespace, data: Dict[str, Any] = None):
+        if data is None:
+            data = {}
+        self.product_publish = not (args.unpublish and "product" in args.unpublish) and self._get_value(data, 'product.publish', True)
+        self.version_publish = not (args.unpublish and "version" in args.unpublish) and self._get_value(data, 'version.publish', True)
+        self.version_deprecate = args.deprecate or self._get_value(data, 'version.deprecate', False)
         self.application_registration_enabled = args.application_registration_enabled or self._get_value(data, 'application_registration.enabled', False)
         self.application_registration_auto_approve = args.auto_aprove_registration or self._get_value(data, 'application_registration.auto_approve', False)
         self.gateway_service_id = args.gateway_service_id or self._get_value(data, 'gateway.service_id', None)
@@ -22,6 +31,9 @@ class KonnectPortalState:
         return data if data else default
 
 class ApiState:
+    """
+    Class representing the state of an API.
+    """
     def __init__(self, title: str, description: str, version: str, spec_base64: str, metadata: KonnectPortalState):
         self.title = title
         self.description = description

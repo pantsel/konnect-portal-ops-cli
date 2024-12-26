@@ -105,6 +105,8 @@ def get_parser_args() -> argparse.Namespace:
     sync_parser.add_argument("--application-registration-enabled", action="store_true", help="Enable application registration for the API product on the specified portal")
     sync_parser.add_argument("--auto-aprove-registration", action="store_true", help="Auto approve application registration for the API product on the specified portal")
     sync_parser.add_argument("--auth-strategy-ids", type=str, help="Comma separated list of auth strategy IDs to associate with the API product on the specified portal")
+    sync_parser.add_argument("--deprecate", action="store_true", help="Deprecate the API product version on the specified portal")
+    sync_parser.add_argument("--unpublish", action="append", choices=["product", "version"], help="Unpublish the API product or version from the specified portal")
 
     # Delete command arguments
     delete_parser = subparsers.add_parser('delete', help='Delete API product', parents=[common_parser])
@@ -153,7 +155,8 @@ def load_state(args: argparse.Namespace) -> ApiState:
     """
     oas_file = read_oas_file(args.spec)
     yaml_data = parse_yaml(oas_file)
-    konnect_portal_state = load_konnect_portal_state(args, yaml_data)
+    konnect_portal_state: KonnectPortalState = load_konnect_portal_state(args, yaml_data)
+
     api_info = extract_api_info(yaml_data)
     oas_file_base64 = utils.encode_content(oas_file)
 
