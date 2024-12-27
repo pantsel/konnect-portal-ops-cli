@@ -40,6 +40,38 @@ class KonnectApi:
 
         return response['data'][0] if response['data'] else None
     
+    def create_api_product(self, data: Dict) -> Dict[str, Any]:
+        """
+        Create an API product.
+
+        Args:
+            name (str): The name of the API product.
+            description (str): The description of the API product.
+
+        Returns:
+            Dict[str, Any]: The API product details.
+        """
+        self.logger.info("Creating API product: '%s'", data['name'])
+        api_product = self.api_product_client.create_api_product(data)
+        self.logger.info("API product '%s' created successfully.", data['name'])
+        return api_product
+    
+    def update_api_product(self, api_product_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Update an API product.
+
+        Args:
+            api_product_id (str): The ID of the API product.
+            data (Dict[str, Any]): The data to update.
+
+        Returns:
+            Dict[str, Any]: The updated API product details.
+        """
+        self.logger.info("Updating API product: '%s' (%s)", data['name'], api_product_id)
+        api_product = self.api_product_client.update_api_product(api_product_id, data)
+        self.logger.info("API product '%s' updated successfully.", data['name'])
+        return api_product
+
     def delete_portal_product_version(self, portal_id: str, api_product_version_id: str) -> None:
         """
         Delete a portal product version.
@@ -185,7 +217,7 @@ class KonnectApi:
                     self.logger.info("Unpublishing from portals: %s", [pid for pid in existing_api_product['portal_ids'] if pid not in portal_ids])
                    
 
-                api_product = self.api_product_client.update_api_product(
+                api_product = self.update_api_product(
                     existing_api_product['id'],
                     {
                         "name": api_title,
@@ -193,21 +225,18 @@ class KonnectApi:
                         "portal_ids": portal_ids
                     }
                 )
-                action = "Updated"
             else:
                 api_product = existing_api_product
-                action = "No changes detected for"
+                self.logger.info("No changes detected for API product")
         else:
-            api_product = self.api_product_client.create_api_product(
+            api_product = self.create_api_product(
                 {
                     "name": api_title,
                     "description": api_description,
                     "portal_ids": portal_ids
                 }
             )
-            action = "Created new"
         
-        self.logger.info("%s API product: %s (%s)", action, api_product['name'], api_product['id'])
         return api_product
     
     def create_or_update_api_product(self, api_title: str, api_description: str, portal_id: str, unpublish: bool) -> Dict[str, Any]:
@@ -261,7 +290,7 @@ class KonnectApi:
         self.logger.debug(json.dumps(api_product, indent=2))
         return api_product
 
-    def create_or_update_api_product_version(self, api_product: Dict[str, Any], version_name: str, gateway_service: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def upsert_api_product_version(self, api_product: Dict[str, Any], version_name: str, gateway_service: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Create or update an API product version.
 
@@ -273,7 +302,7 @@ class KonnectApi:
         Returns:
             Dict[str, Any]: The API product version details.
         """
-        self.logger.info("Processing API Product Version")
+        self.logger.info("Processing API Product Version: %s", version_name)
 
         existing_api_product_version = self.find_api_product_version_by_name(api_product['id'], version_name)
         if existing_api_product_version:
@@ -316,7 +345,7 @@ class KonnectApi:
         self.logger.debug(json.dumps(api_product_version, indent=2))
         return api_product_version
 
-    def create_or_update_api_product_version_spec(self, api_product_id: str, api_product_version_id: str, oas_file_base64: str) -> Dict[str, Any]:
+    def upsert_api_product_version_spec(self, api_product_id: str, api_product_version_id: str, oas_file_base64: str) -> Dict[str, Any]:
         """
         Create or update an API product version spec.
 
@@ -432,7 +461,7 @@ class KonnectApi:
         else:
             self.logger.warning("Portal '%s' not found. Nothing to unpublish.", portal['name'])
     
-    def create_or_update_portal_product_version(self, portal: Dict[str, Any], api_product_version: Dict[str, Any], api_product: Dict[str, Any], options: Dict[str, Any]) -> None:
+    def upsert_portal_product_version(self, portal: Dict[str, Any], api_product_version: Dict[str, Any], api_product: Dict[str, Any], options: Dict[str, Any]) -> None:
         """
         Create or update a Portal Product Version.
         This method handles the creation or updating of a Portal Product Version based on the provided parameters.
@@ -554,7 +583,7 @@ class KonnectApi:
             existing_page = self.api_product_client.get_api_product_document(api_product_id, existing_page_from_list['id']) if existing_page_from_list else None
 
             if not existing_page:
-                self.logger.info("Creating page: '%s' (%s)", page['title'], page['slug'])
+                self.logger.info("Creating document: '%s' (%s)", page['title'], page['slug'])
                 page = self.api_product_client.create_api_product_document(api_product_id, {
                     "slug": page['slug'],
                     "title": page['title'],
@@ -564,7 +593,7 @@ class KonnectApi:
                 })
                 slug_to_id[page['slug']] = page['id']
             elif utils.encode_content(existing_page['content']) != page['content'] or existing_page.get('parent_document_id') != parent_id or existing_page.get('status') != page['status']:
-                self.logger.info("Updating page: '%s' (%s)", page['title'], page['slug'])
+                self.logger.info("Updating document: '%s' (%s)", page['title'], page['slug'])
                 self.api_product_client.update_api_product_document(api_product_id, existing_page['id'], {
                     "slug": page['slug'],
                     "title": page['title'],

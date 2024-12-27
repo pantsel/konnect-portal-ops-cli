@@ -17,8 +17,10 @@ logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
 def deploy_command(args, konnect: KonnectApi):
     state_content = utils.read_file_content(args.state)
     state_parsed = yaml.safe_load(state_content)
-
     product_state = ProductState().from_dict(state_parsed)
+
+    logger.info(f"Product info: {product_state.info.to_dict()}")
+
     konnect_portals = [find_konnect_portal(konnect, p.name) for p in product_state.portals]
     published_portal_ids = filter_published_portal_ids(product_state.portals, konnect_portals)
 
@@ -38,18 +40,20 @@ def handle_product_versions(konnect: KonnectApi, product_state, api_product, kon
 
         handled_versions.append(version_name)
         
-        api_product_version = konnect.create_or_update_api_product_version(
+        api_product_version = konnect.upsert_api_product_version(
             api_product=api_product,
             version_name=version_name,
             gateway_service=gateway_service
         )
 
-        konnect.create_or_update_api_product_version_spec(api_product['id'], api_product_version['id'], oas_data_base64)
+        konnect.upsert_api_product_version_spec(api_product['id'], api_product_version['id'], oas_data_base64)
 
         for p in version.portals:
             portal = next((portal for portal in konnect_portals if portal['name'] == p.name), None)
-            logger.info(f"Using '{portal['name']}' ('{portal['id']}') for subsequent operations")
-            manage_portal_product_version(konnect, portal, api_product, api_product_version, p.config)
+            if portal:
+                manage_portal_product_version(konnect, portal, api_product, api_product_version, p.config)
+            else:
+                logger.warning(f"Skipping version '{version_name}' operations on '{p.name}' - API product not published on this portal")
 
         delete_unused_portal_versions(konnect, product_state, version, api_product_version, konnect_portals)
         
@@ -82,6 +86,7 @@ def load_oas_data(spec_file: str) -> tuple:
     return oas_data, oas_data_base64
 
 def manage_portal_product_version(konnect: KonnectApi, portal: dict, api_product: dict, api_product_version: dict, config: PortalConfig):
+
     options = {
         "deprecated": config.deprecated,
         "publish_status": config.publish_status,
@@ -90,7 +95,7 @@ def manage_portal_product_version(konnect: KonnectApi, portal: dict, api_product
         "auth_strategy_ids": config.auth_strategy_ids
     }
 
-    konnect.create_or_update_portal_product_version(
+    konnect.upsert_portal_product_version(
         portal=portal,
         api_product_version=api_product_version,
         api_product=api_product,
