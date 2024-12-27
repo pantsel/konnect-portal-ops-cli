@@ -4,7 +4,7 @@ info:
   description: A simple API Product for requests to httpbin
 documents:
   sync: true
-  dir: examples/docs/httpbin
+  dir: examples/products/httpbin/docs
 portals:
   - name: dev_portal
   - name: prod_portal

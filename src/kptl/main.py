@@ -10,7 +10,6 @@ from kptl import logger, __version__, constants
 from kptl.konnect import KonnectApi
 from kptl.konnect.state import Portal, PortalConfig, GatewayService, ProductState
 from kptl.helpers import utils
-import json
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
