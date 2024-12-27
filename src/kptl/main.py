@@ -10,6 +10,7 @@ from kptl import logger, __version__, constants
 from kptl.konnect import KonnectApi
 from kptl.konnect.state import Portal, PortalConfig, GatewayService, ProductState
 from kptl.helpers import utils
+import json
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
@@ -21,7 +22,8 @@ def deploy_command(args, konnect: KonnectApi):
 
     logger.info(f"Product info: {product_state.info.to_dict()}")
 
-    konnect_portals = [find_konnect_portal(konnect, p.name) for p in product_state.portals]
+    konnect_portals = [find_konnect_portal(konnect, p.id if p.id else p.name) for p in product_state.portals]
+
     published_portal_ids = filter_published_portal_ids(product_state.portals, konnect_portals)
 
     api_product = konnect.upsert_api_product(product_state.info.name, product_state.info.description, published_portal_ids)
@@ -49,7 +51,7 @@ def handle_product_versions(konnect: KonnectApi, product_state, api_product, kon
         konnect.upsert_api_product_version_spec(api_product['id'], api_product_version['id'], oas_data_base64)
 
         for p in version.portals:
-            portal = next((portal for portal in konnect_portals if portal['name'] == p.name), None)
+            portal = next((portal for portal in konnect_portals if portal['id'] == p.id or portal['name'] == p.name), None)
             if portal:
                 manage_portal_product_version(konnect, portal, api_product, api_product_version, p.config)
             else:

@@ -50,9 +50,10 @@ class Portal:
     """
     Class representing a portal.
     """
-    def __init__(self, name: str, config: PortalConfig = None):
+    def __init__(self, id: str = None, name: str = None, config: PortalConfig = None):
         if config is None:
             config = PortalConfig()
+        self.id = id
         self.name = name
         self.config = config
 
@@ -163,6 +164,7 @@ class ProductState:
         )
         self.portals = [
             Portal(
+                id=p.get('id'),
                 name=p.get('name'),
                 config=PortalConfig(
                     publish_status=p.get('config', {}).get('publish_status', "published"),
@@ -178,6 +180,7 @@ class ProductState:
                 ),
                 portals=[
                     Portal(
+                        id=p.get('id'),
                         name=p.get('name'),
                         config=PortalConfig(
                             deprecated=p.get('config', {}).get('deprecated', False),
