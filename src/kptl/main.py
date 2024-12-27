@@ -15,7 +15,6 @@ LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
 
 def deploy_command(args, konnect: KonnectApi):
-    logger.info("Executing deploy command")
     state_content = utils.read_file_content(args.state)
     state_parsed = yaml.safe_load(state_content)
 
@@ -25,8 +24,8 @@ def deploy_command(args, konnect: KonnectApi):
 
     api_product = konnect.upsert_api_product(product_state.info.name, product_state.info.description, published_portal_ids)
 
-    if product_state.documents.sync and product_state.documents.dir:
-        konnect.sync_api_product_documents(api_product['id'], product_state.documents.dir)
+    if product_state.documents.sync and product_state.documents.directory:
+        konnect.sync_api_product_documents(api_product['id'], product_state.documents.directory)
 
     handle_product_versions(konnect, product_state, api_product, konnect_portals)
 
@@ -129,6 +128,7 @@ def get_parser_args() -> argparse.Namespace:
 
     deploy_parser = subparsers.add_parser('deploy', help='Deploy the API product', parents=[common_parser])
     deploy_parser.add_argument("state", type=str, help="Path to the API product state file")
+    # deploy_parser.add_argument("--dry-run", action="store_true", help="Perform a dry-run of the deployment")
 
     delete_parser = subparsers.add_parser('delete', help='Delete API product', parents=[common_parser])
     delete_parser.add_argument("name", type=str, help="The name of the API product to delete")
