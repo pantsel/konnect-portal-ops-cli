@@ -13,7 +13,8 @@ portals:
     config:
       publish_status: published
 versions:
-  - spec: examples/api-specs/v1/httpbin.yaml
+  - name: "1.0.0"
+    spec: examples/api-specs/v1/httpbin.yaml
     gateway_service:
       id: null
       control_plane_id: null
@@ -35,7 +36,8 @@ versions:
           application_registration:
             enabled: false
             auto_approve: false
-  - spec: examples/api-specs/v2/httpbin.yaml
+  - name: "2.0.0"
+    spec: examples/api-specs/v2/httpbin.yaml
     gateway_service:
       id: null
       control_plane_id: null
