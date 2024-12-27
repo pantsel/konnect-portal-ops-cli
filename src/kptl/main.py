@@ -15,7 +15,7 @@ import json
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
 
-def deploy_command(args, konnect: KonnectApi):
+def sync_command(args, konnect: KonnectApi):
     state_content = utils.read_file_content(args.state)
     state_parsed = yaml.safe_load(state_content)
     product_state = ProductState().from_dict(state_parsed)
@@ -63,10 +63,10 @@ def handle_product_versions(konnect: KonnectApi, product_state, api_product, kon
 
 def create_gateway_service(gateway_service):
     if gateway_service.id and gateway_service.control_plane_id:
-        return GatewayService(
-            id=gateway_service.id,
-            control_plane_id=gateway_service.control_plane_id
-        )
+        return {
+            "id": gateway_service.id,
+            "control_plane_id": gateway_service.control_plane_id
+        }
     return None
 
 def delete_unused_portal_versions(konnect, product_state, version, api_product_version, konnect_portals):
@@ -133,9 +133,8 @@ def get_parser_args() -> argparse.Namespace:
     common_parser.add_argument("--http-proxy", type=str, help="HTTP Proxy URL", default=None)
     common_parser.add_argument("--https-proxy", type=str, help="HTTPS Proxy URL", default=None)
 
-    deploy_parser = subparsers.add_parser('deploy', help='Deploy the API product', parents=[common_parser])
+    deploy_parser = subparsers.add_parser('sync', help='Sync API product with Konnect', parents=[common_parser])
     deploy_parser.add_argument("state", type=str, help="Path to the API product state file")
-    # deploy_parser.add_argument("--dry-run", action="store_true", help="Perform a dry-run of the deployment")
 
     delete_parser = subparsers.add_parser('delete', help='Delete API product', parents=[common_parser])
     delete_parser.add_argument("name", type=str, help="The name of the API product to delete")
@@ -228,8 +227,8 @@ def main() -> None:
         }
     )
 
-    if args.command == 'deploy':
-        deploy_command(args, konnect)
+    if args.command == 'sync':
+        sync_command(args, konnect)
     elif args.command == 'delete':
         delete_command(args, konnect)
     else:

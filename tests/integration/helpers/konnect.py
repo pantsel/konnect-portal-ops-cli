@@ -109,3 +109,11 @@ class KonnectHelper:
         response = requests.get(f"{self.test_server_url}/v2/portals", timeout=10)
         portal = next(portal for portal in response.json()["data"] if portal["name"] == portal_name)
         return portal
+    
+    def get_api_product_by_name(self, product_name: str) -> Dict[str, Any]:
+        """
+        Get the API product by name.
+        """
+        response = requests.get(f"{self.test_server_url}/v2/api-products", timeout=10)
+        api_product = next(api_product for api_product in response.json()["data"] if api_product["name"] == product_name)
+        return api_product
