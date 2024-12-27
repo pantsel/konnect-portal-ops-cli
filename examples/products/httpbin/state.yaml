@@ -3,8 +3,8 @@ info:
   name: HTTPBin API
   description: A simple API Product for requests to /httpbin
 documents:
-  sync: false
-  dir: examples/docs/httpbin
+  sync: true
+  dir: examples/products/httpbin/docs
 portals:
   - name: dev_portal
     config:
