@@ -1,12 +1,19 @@
-version: 1.0.0
+_version: 1.0.0
 info:
-  name: httpbin
-  description: Example Konnect state file for httpbin v1
-  spec: examples/api-specs/v1/httpbin.yaml
-product:
-  documents:
-    sync: true
-    dir: examples/docs/httpbin
-  portals:
-    - name: dev_portal
-    - name: prod_portal
+  name: HTTPBin API
+  description: A simple API Product for requests to /httpbin
+documents:
+  sync: false
+  dir: examples/docs/httpbin
+portals:
+  - name: dev_portal
+  - name: prod_portal
+versions:
+  - spec: examples/api-specs/v1/httpbin.yaml
+    portals:
+      - name: dev_portal   
+      - name: prod_portal
+  - spec: examples/api-specs/v2/httpbin.yaml
+    portals:
+      - name: dev_portal
+      - name: prod_portal

@@ -40,6 +40,21 @@ class KonnectApi:
 
         return response['data'][0] if response['data'] else None
     
+    def delete_portal_product_version(self, portal_id: str, api_product_version_id: str) -> None:
+        """
+        Delete a portal product version.
+
+        Args:
+            portal_id (str): The ID of the portal.
+            api_product_version_id (str): The ID of the API product version.
+
+        Returns:
+            None
+        """
+        self.logger.info("Deleting portal product version: '%s' (%s)", api_product_version_id, api_product_version_id)
+        self.portal_client.delete_portal_product_version(portal_id, api_product_version_id)
+        self.logger.info("Portal product version '%s' deleted successfully.", api_product_version_id)
+
     def find_api_product_version_by_name(self, api_product_id: str, name: str) -> Optional[Dict[str, Any]]:
         """
         Find an API product version by its name.
@@ -59,6 +74,19 @@ class KonnectApi:
 
         return response['data'][0] if response['data'] else None
 
+    def list_api_product_versions(self, api_product_id: str) -> List[Dict[str, Any]]:
+        """
+        List all API product versions.
+
+        Args:
+            api_product_id (str): The ID of the API product.
+
+        Returns:
+            List[Dict[str, Any]]: The list of API product versions.
+        """
+        response = self.api_product_client.list_api_product_versions(api_product_id)
+        return response['data']
+    
     def find_portal(self, portal: str) -> Optional[Dict[str, Any]]:
         """
         Find a portal by its name or ID.
@@ -82,6 +110,21 @@ class KonnectApi:
 
         return response['data'][0] if response['data'] else None
 
+    def delete_api_product_version(self, api_product_id: str, api_product_version_id: str) -> None:
+        """
+        Delete an API product version.
+
+        Args:
+            api_product_id (str): The ID of the API product.
+            api_product_version_id (str): The ID of the API product version.
+
+        Returns:
+            None
+        """
+        self.logger.info("Deleting API product version: '%s' (%s)", api_product_version_id, api_product_version_id)
+        self.api_product_client.delete_api_product_version(api_product_id, api_product_version_id)
+        self.logger.info("API product version '%s' deleted successfully.", api_product_version_id)
+    
     def find_portal_product_version(self, portal_id: str, product_version_id: str) -> Optional[Dict[str, Any]]:
         """
         Find a portal product version by its ID.
