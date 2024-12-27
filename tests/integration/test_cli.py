@@ -91,9 +91,15 @@ def test_simple_state(sync_command: List[str], tmp_path: pytest.TempPathFactory)
         - name: {PORTAL_PROD}
     versions:
         - spec: {SPEC_V1_PATH}
+          gateway_service:
+            id: test-id
+            control_plane_id: test-control-plane-id
           portals:
             - name: {PORTAL_DEV}
             - name: {PORTAL_PROD}
+              config:
+                  publish_status: published  
+                  deprecated: true
         - spec: {SPEC_V2_PATH}
           portals:
             - name: {PORTAL_DEV}
@@ -131,12 +137,31 @@ def test_simple_state(sync_command: List[str], tmp_path: pytest.TempPathFactory)
     assert product_version_v1 is not None
     assert product_version_v2 is not None
 
-    # Assert product versions are published to dev and prod portals
+    # Assert product versions are linked to gateway service
+    assert product_version_v1["gateway_service"]["id"] == "test-id"
+    assert product_version_v1["gateway_service"]["control_plane_id"] == "test-control-plane-id"
+
+    # Assert product publish status to dev and prod portals
     dev_portal_product_version_v1 = konnect.get_portal_product_version_by_product_version_id(dev_portal["id"], product_version_v1["id"])
     dev_portal_product_version_v2 = konnect.get_portal_product_version_by_product_version_id(dev_portal["id"], product_version_v2["id"])
+    prod_portal_product_version_v1 = konnect.get_portal_product_version_by_product_version_id(prod_portal["id"], product_version_v1["id"])
+    prod_portal_product_version_v2 = konnect.get_portal_product_version_by_product_version_id(prod_portal["id"], product_version_v2["id"])
+
+    # print("#################################### dev_portal_product_version_v1")
+    # print(dev_portal_product_version_v1)
+
+    # print("#################################### prod_portal_product_version_v1")
+    # print(prod_portal_product_version_v1)
     
     assert dev_portal_product_version_v1["publish_status"] == "published"
     assert dev_portal_product_version_v2["publish_status"] == "published"
+
+    assert prod_portal_product_version_v1["publish_status"] == "published"
+    assert prod_portal_product_version_v2["publish_status"] == "published"
+
+    # Assert product version deprecation
+    # assert dev_portal_product_version_v1["deprecated"] is False
+    # assert prod_portal_product_version_v1["deprecated"] is True
 
 # def test_missing_gateway_service_args(sync_command: List[str]) -> None:
 #     """Test missing gateway service arguments."""

@@ -121,7 +121,8 @@ class ProductVersion:
     """
     Class representing a product version.
     """
-    def __init__(self, spec: str, gateway_service: GatewayService, portals: list[Portal]):
+    def __init__(self, spec: str, gateway_service: GatewayService, portals: list[Portal], name: str = None):
+        self.name = name
         self.spec = spec
         self.gateway_service = gateway_service
         self.portals = portals
@@ -173,6 +174,7 @@ class ProductState:
         ]
         self.versions = [
             ProductVersion(
+                name=v.get('name'),
                 spec=v.get('spec'),
                 gateway_service=GatewayService(
                     id=v.get('gateway_service', {}).get('id'),

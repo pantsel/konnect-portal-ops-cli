@@ -33,11 +33,11 @@ def sync_command(args, konnect: KonnectApi):
 
     handle_product_versions(konnect, product_state, api_product, konnect_portals)
 
-def handle_product_versions(konnect: KonnectApi, product_state, api_product, konnect_portals):
+def handle_product_versions(konnect: KonnectApi, product_state: ProductState, api_product, konnect_portals):
     handled_versions = []
     for version in product_state.versions:
         oas_data, oas_data_base64 = load_oas_data(version.spec)
-        version_name = oas_data.get('info').get('version')
+        version_name = version.name or oas_data.get('info').get('version')
         gateway_service = create_gateway_service(version.gateway_service)
 
         handled_versions.append(version_name)
