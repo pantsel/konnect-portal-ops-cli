@@ -338,8 +338,8 @@ versions:
 Defines the different versions of the API product, including their specifications, gateway service details, and portal configurations. Each version can have different settings for deprecation, publication status, authentication strategies, and application registration.
 
 - **versions**: (Required) Defines the different versions of the API product.
-  - **name**: (Optional) The name of the version.
-  - **spec**: (Required) The specification file for the version.
+  - **name**: (Optional) The name of the version. Defaults to the version of the OAS file.
+  - **spec**: (Required) The Open API Specification file for the version.
   - **gateway_service**: (Optional) Details of the gateway service linked to the version.
     - **id**: (Optional) The ID of the gateway service.
     - **control_plane_id**: (Optional) The control plane ID of the gateway service.
