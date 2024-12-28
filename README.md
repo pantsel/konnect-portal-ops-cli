@@ -22,7 +22,7 @@ Ensure that the required Konnect Developer Portals are set up before using this 
     - [⚠️ Deprecate API Product Version from a Portal](#️-deprecate-api-product-version-from-a-portal)
     - [🔗 Link Gateway Services to API Product versions](#-link-gateway-services-to-api-product-versions)
     - [📚 Managing API Products Documentation](#-managing-api-products-documentation)
-- [CLI Configuration](#cli-configuration)
+- [Logging](#logging)
 - [Local Development](#local-development)
 - [Testing](#testing)
 
@@ -246,22 +246,11 @@ Then run the sync command:
 $ kptl sync httpbin_state.yaml --config .config.yaml
 ```
 
-## CLI Configuration
+## Logging
 
-The CLI supports the following variables for configuration in a `yaml` file:  
+The CLI uses the `logging` module to log messages to the console. The default log level is set to `INFO`.
 
-| Variable        | Description                            |
-| --------------- | -------------------------------------- |
-| `konnect_url`   | Konnect API server URL.                |
-| `konnect_token` | Token for authenticating API requests. |
-| `http_proxy`    | HTTP proxy URL.                        |
-| `https_proxy`   | HTTPS proxy URL.                       |
-
-And the following environment variables:
-
-| Variable    | Description                                                                     |
-| ----------- | ------------------------------------------------------------------------------- |
-| `LOG_LEVEL` | Logging verbosity level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). Default: `INFO`. |
+To change the log level, set the `LOG_LEVEL` environment variable to one of the following values: `DEBUG`, `INFO`, `WARNING`, or `ERROR`.
 
 ## Local Development
 
