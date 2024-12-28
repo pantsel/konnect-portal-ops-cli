@@ -69,7 +69,7 @@ kptl [command] [options]
 
 #### `sync`
 
-Synchronize the predefined API Product state with Konnect Developer Portals.
+Synchronize the predefined API Product state with Konnect.
 
 ```shell
 kptl sync state_file.yaml --config .config.yaml
@@ -77,7 +77,7 @@ kptl sync state_file.yaml --config .config.yaml
 
 #### `delete`
 
-Delete the API Product and its associations from Konnect.
+Delete the API Product and its associations.
 
 ```shell
 kptl delete product_name_or_id --config .config.yaml
