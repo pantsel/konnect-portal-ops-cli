@@ -84,6 +84,12 @@ class KonnectHelper:
         response = requests.post(f"{self.test_server_url}/v2/api-products", json=data, timeout=10)
         return response.json()
     
+    def delete_api_product(self, api_product_id: str) -> None:
+        """
+        Delete an API product.
+        """
+        requests.delete(f"{self.test_server_url}/v2/api-products/{api_product_id}", timeout=10)
+    
     def list_portal_product_versions(self, portal_id: str) -> List[Dict[str, Any]]:
         """
         List the portal product versions.

@@ -187,8 +187,67 @@ def test_delete_api_product_by_name(delete_command: List[str]) -> None:
 
     assert result.returncode == 0
 
+def test_sync_product_conflicts(sync_command: List[str], tmp_path: pytest.TempPathFactory) -> None:
+    """
+        Test sync product conflict. Since the sync command relies on the product name to create or update the product,
+        there should be a maximum of one product with the same name in Konnect. If there are multiple products with the same name,
+        the sync command should fail.
+    """
+    state = tmp_path / "state.yaml"
+    state.write_text(TEST_STATE)
+
+    konnect.create_api_product({
+        "name": PRODUCT_NAME,
+        "description": "A simple API Product for requests to /httpbin",
+        "portal_ids": []
+    })
+
+    result = subprocess.run(
+        sync_command + [
+            str(state),
+            "--konnect-token", "test-token",
+            "--konnect-url", TEST_SERVER_URL
+        ],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+
+    # We're good so far. Only one product with the same name exists so the sync command 
+    # will use that product for subsequent operations.
+    assert result.returncode == 0
+
+    konnect.create_api_product({
+        "name": PRODUCT_NAME,
+        "description": "Another simple API Product for requests to /httpbin",
+        "portal_ids": []
+    })
+
+    all_products = konnect.list_api_products()
+    assert len(all_products) == 2
+    assert all(p["name"] == PRODUCT_NAME for p in all_products)
+
+    result = subprocess.run(
+        sync_command + [
+            str(state),
+            "--konnect-token", "test-token",
+            "--konnect-url", TEST_SERVER_URL
+        ],
+        capture_output=True,
+        text=True,
+        check=False
+    )
+
+    # The sync command should fail because there are multiple products with the same name
+    assert result.returncode == 1
+
+    # Clean up
+    for product in all_products:
+        konnect.delete_api_product(product["id"])
+
+
 def test_delete_product_conflicts(sync_command: List[str], delete_command: List[str], tmp_path: pytest.TempPathFactory) -> None:
-    """Test API product conflict."""
+    """Test delete product conflict."""
     state = tmp_path / "state.yaml"
     state.write_text(TEST_STATE)
 
