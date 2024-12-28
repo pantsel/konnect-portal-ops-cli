@@ -19,7 +19,7 @@ Ensure that the required Konnect Developer Portals are set up before using this 
   - [Common Arguments](#common-arguments)
   - [Advanced examples](#advanced-examples)
     - [🚫 Unpublish API Product Versions](#-unpublish-api-product-versions)
-    - [⚠️ Deprecate API Product Version from a Portal](#️-deprecate-api-product-version-from-a-portal)
+    - [⚠️ Deprecate API Product Versions](#️-deprecate-api-product-versions)
     - [🔗 Link Gateway Services to API Product versions](#-link-gateway-services-to-api-product-versions)
     - [📚 Managing API Products Documentation](#-managing-api-products-documentation)
 - [Logging](#logging)
@@ -173,7 +173,7 @@ Then run the sync command:
 $ kptl sync httpbin_state.yaml --config .config.yaml
 ```
 
-#### ⚠️ Deprecate API Product Version from a Portal
+#### ⚠️ Deprecate API Product Versions
 
 To deprecate an API Product version from a portal, update the state file to set the `deprecated` to `true` for the desired portal.
 
@@ -230,7 +230,7 @@ How it works:
 
 For an example documents folder structure and use-cases, see the [examples/products/httbin/docs](examples/products/httbin/docs) directory.
 
-To sync the API Product documents with Konnect, update the state file to include the `documents` section with the `sync` flag set to `true` and the `dir` pointing to the documents directory.
+To sync the API Product documents, update the state file to include the `documents` section with the `sync` flag set to `true` and the `dir` pointing to the documents directory.
 
 ```yaml
 # httpbin_state.yaml
