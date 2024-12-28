@@ -27,12 +27,6 @@ Before using the CLI, ensure you have your developer portals set up on Konnect. 
   - [Documents](#documents)
   - [Portals](#portals)
   - [Versions](#versions)
-  - [Detailed Explanation](#detailed-explanation)
-    - [Version](#version-1)
-    - [Info](#info-1)
-    - [Documents](#documents-1)
-    - [Portals](#portals-1)
-    - [Versions](#versions-1)
 - [Logging](#logging)
 - [Development](#development)
   - [Requirements](#requirements)
@@ -242,6 +236,8 @@ _version: 1.0.0
 
 Specifies the version of the state file format.
 
+- **_version**: (Required) Specifies the version of the state file format. Default is `1.0.0`.
+
 ### Info
 
 ```yaml
@@ -252,6 +248,10 @@ info:
 
 Contains metadata about the API product, including its name and description.
 
+- **info**: (Required) Contains metadata about the API product.
+  - **name**: (Required) The name of the API product.
+  - **description**: (Optional) A description of the API product.
+
 ### Documents
 
 ```yaml
@@ -261,6 +261,10 @@ documents:
 ```
 
 Defines the synchronization settings and directory for the API documentation.
+
+- **documents**: (Optional) Defines the synchronization settings and directory for the API documentation.
+  - **sync**: (Required) A boolean indicating whether to sync the documents.
+  - **dir**: (Required) The directory where the documents are stored.
 
 ### Portals
 
@@ -275,6 +279,11 @@ portals:
 ```
 
 Lists the portals where the API product will be published, along with their publication status.
+
+- **portals**: (Optional) Lists the portals where the API product will be published.
+  - **name**: (Required) The name of the portal.
+  - **config**: (Optional) Configuration for the portal.
+    - **publish_status**: (Optional) The publication status of the portal. Default is `published`.
 
 ### Versions
 
@@ -327,35 +336,6 @@ versions:
 ```
 
 Defines the different versions of the API product, including their specifications, gateway service details, and portal configurations. Each version can have different settings for deprecation, publication status, authentication strategies, and application registration.
-
-### Detailed Explanation
-
-To better understand the structure, here is a detailed explanation of each section based on the `from_dict` method of the `ProductState` class:
-
-#### Version
-
-- **_version**: (Required) Specifies the version of the state file format. Default is `1.0.0`.
-
-#### Info
-
-- **info**: (Required) Contains metadata about the API product.
-  - **name**: (Required) The name of the API product.
-  - **description**: (Optional) A description of the API product.
-
-#### Documents
-
-- **documents**: (Optional) Defines the synchronization settings and directory for the API documentation.
-  - **sync**: (Required) A boolean indicating whether to sync the documents.
-  - **dir**: (Required) The directory where the documents are stored.
-
-#### Portals
-
-- **portals**: (Optional) Lists the portals where the API product will be published.
-  - **name**: (Required) The name of the portal.
-  - **config**: (Optional) Configuration for the portal.
-    - **publish_status**: (Optional) The publication status of the portal. Default is `published`.
-
-#### Versions
 
 - **versions**: (Required) Defines the different versions of the API product.
   - **name**: (Optional) The name of the version.
@@ -412,4 +392,3 @@ To run the tests, use the following command from the root directory:
 ```shell
 make test
 ```
-````
