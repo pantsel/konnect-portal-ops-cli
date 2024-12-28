@@ -15,9 +15,9 @@ Ensure that the required Konnect Developer Portals are set up before using this 
   - [Available Commands](#available-commands)
     - [`sync`](#sync)
     - [`delete`](#delete)
-  - [`explain`](#explain)
+    - [`explain`](#explain)
   - [Common Arguments](#common-arguments)
-  - [Advanced Usage](#advanced-usage)
+  - [Advanced examples](#advanced-examples)
     - [🚫 Unpublish API Product Versions](#-unpublish-api-product-versions)
     - [⚠️ Deprecate API Product Version from a Portal](#️-deprecate-api-product-version-from-a-portal)
     - [🔗 Link Gateway Services to API Product versions](#-link-gateway-services-to-api-product-versions)
@@ -126,7 +126,7 @@ to skip the interactive confirmation prompt, use the `--yes` flag:
 $ kptl delete product_name_or_id --config .config.yaml --yes
 ```
 
-### `explain`
+#### `explain`
 
 Explain the API Product state file and the operations that will be performed on Konnect.
 
@@ -146,7 +146,9 @@ The CLI supports the following arguments:
 | `--http-proxy`    | No                               | HTTP proxy URL.                                                            |
 | `--https-proxy`   | No                               | HTTPS proxy URL.                                                           |
 
-### Advanced Usage
+### Advanced examples
+
+For a full state file example, see the [examples/products/httpbin/httpbin_state.yaml](examples/products/httpbin/httpbin_state.yaml) file.
 
 #### 🚫 Unpublish API Product Versions
 
