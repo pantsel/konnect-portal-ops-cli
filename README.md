@@ -22,13 +22,12 @@ Ensure that the required Konnect Developer Portals are set up before using this 
     - [⚠️ Deprecate API Product Versions](#️-deprecate-api-product-versions)
     - [🔗 Link Gateway Services to API Product versions](#-link-gateway-services-to-api-product-versions)
     - [📚 Managing API Products Documentation](#-managing-api-products-documentation)
-- [State file explanation](#state-file-explanation)
+- [Full State File Explanation](#full-state-file-explanation)
   - [Version](#version)
   - [Info](#info)
   - [Documents](#documents)
   - [Portals](#portals)
   - [Versions](#versions)
-  - [Summary](#summary)
 - [Logging](#logging)
 - [Local Development](#local-development)
 - [Testing](#testing)
@@ -255,10 +254,11 @@ Then run the sync command:
 $ kptl sync httpbin_state.yaml --config .config.yaml
 ```
 
-## State file explanation
+## Full State File Explanation
 
+The example state file at [examples/products/httpbin/httpbin_state.yaml](examples/products/httpbin/httpbin_state.yaml) defines the configuration for the HTTPBin API product. 
 
-This `state.yaml` file defines the configuration for the HTTPBin API product. Below is a breakdown of its structure and key components:
+Below is a detailed breakdown of its structure and key components:
 
 ### Version
 ```yaml
@@ -269,89 +269,91 @@ Specifies the version of the state file format.
 ### Info
 ```yaml
 info:
-  name: HTTPBin API
-  description: A simple API Product for requests to /httpbin
+   name: HTTPBin API
+   description: A simple API Product for requests to /httpbin
 ```
 Contains metadata about the API product, including its name and description.
 
 ### Documents
 ```yaml
 documents:
-  sync: true
-  dir: examples/products/httpbin/docs
+   sync: true
+   dir: examples/products/httpbin/docs
 ```
 Defines the synchronization settings and directory for the API documentation.
 
 ### Portals
 ```yaml
 portals:
-  - name: dev_portal
-    config:
-      publish_status: published
-  - name: prod_portal
-    config:
-      publish_status: unpublished
+   - name: dev_portal
+      config:
+         publish_status: published
+   - name: prod_portal
+      id: <prod_portal_id>
+      config:
+         publish_status: unpublished
 ```
-Lists the portals where the API product will be published, along with their publication status.
+Lists the portals where the API product will be published, along with their publication status. If the portal `id` is specified, it will take precedence over the portal name for operations. The `config.publish_status` is optional and defaults to `published`.
 
 ### Versions
 ```yaml
 versions:
-  - name: "1.0.0"
-    spec: examples/api-specs/v1/httpbin.yaml
-    gateway_service:
-      id: null
-      control_plane_id: null
-    portals:
-      - name: dev_portal
-        config:
-          deprecated: true
-          publish_status: published
-          auth_strategy_ids: []
-          application_registration:
-            enabled: false
-            auto_approve: false
-      - name: prod_portal
-        config:
-          deprecated: true
-          publish_status: published
-          auth_strategy_ids: []
-          application_registration:
-            enabled: false
-            auto_approve: false
-  - name: "2.0.0"
-    spec: examples/api-specs/v2/httpbin.yaml
-    gateway_service:
-      id: null
-      control_plane_id: null
-    portals:
-      - name: dev_portal
-        config:
-          deprecated: false
-          publish_status: published
-          auth_strategy_ids: []
-          application_registration:
-            enabled: false
-            auto_approve: false
-      - name: prod_portal
-        config:
-          deprecated: false
-          publish_status: published
-          auth_strategy_ids: []
-          application_registration:
-            enabled: false
-            auto_approve: false
+   - name: "1.0.0"
+      spec: examples/api-specs/v1/httpbin.yaml
+      gateway_service:
+         id: null
+         control_plane_id: null
+      portals:
+         - name: dev_portal
+            config:
+               deprecated: true
+               publish_status: published
+               auth_strategy_ids: []
+               application_registration:
+                  enabled: false
+                  auto_approve: false
+         - name: prod_portal
+            config:
+               deprecated: true
+               publish_status: published
+               auth_strategy_ids: []
+               application_registration:
+                  enabled: false
+                  auto_approve: false
+   - name: "2.0.0"
+      spec: examples/api-specs/v2/httpbin.yaml
+      gateway_service:
+         id: null
+         control_plane_id: null
+      portals:
+         - name: dev_portal
+            config:
+               deprecated: false
+               publish_status: published
+               auth_strategy_ids: []
+               application_registration:
+                  enabled: false
+                  auto_approve: false
+         - name: prod_portal
+            config:
+               deprecated: false
+               publish_status: published
+               auth_strategy_ids: []
+               application_registration:
+                  enabled: false
+                  auto_approve: false
 ```
 Defines the different versions of the API product, including their specifications, gateway service details, and portal configurations. Each version can have different settings for deprecation, publication status, authentication strategies, and application registration.
 
-### Summary
-- **Version**: Specifies the format version of the state file.
-- **Info**: Contains metadata about the API product.
-- **Documents**: Defines documentation synchronization settings.
-- **Portals**: Lists the portals and their publication statuses.
-- **Versions**: Details the different versions of the API product and their configurations.
-
-This file is essential for managing the lifecycle and publication of the HTTPBin API product across different environments and versions.
+- The `version.name` field is optional and defaults to the version specified in the OAS spec file.
+- The `gateway_service` section is optional and can be used to link a Gateway Service to the API Product version.
+- The `portals` section lists the portals where the API Product version will be published, along with their configurations.
+- The `portal.config` is optional:
+   - `deprecated`: defaults to `false`.
+   - `publish_status`: defaults to `published`.
+   - `auth_strategy_ids`: defaults to an empty list.
+   - `application_registration.enabled`: defaults to `false`.
+   - `application_registration.auto_approve`: defaults to `false`.
 
 ## Logging
 
