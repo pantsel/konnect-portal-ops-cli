@@ -1,5 +1,5 @@
 """
-Module for Konnect API state classes.
+Module for Konnect API state Models.
 """
 
 from typing import Any, Dict, List
