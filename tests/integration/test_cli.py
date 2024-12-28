@@ -21,6 +21,33 @@ DOCS_EMPTY_PATH: str = "examples/docs_empty"
 PORTAL_DEV: str = "dev_portal"
 PORTAL_PROD: str = "prod_portal"
 PRODUCT_NAME: str = "HTTPBin API"
+TEST_STATE = f"""
+    _version: 1.0.0
+    info:
+        name: {PRODUCT_NAME}
+        description: A simple API Product for requests to /httpbin
+    documents:
+        sync: true
+        dir: {DOCS_PATH}
+    portals:
+        - name: {PORTAL_DEV}
+        - name: {PORTAL_PROD}
+    versions:
+        - spec: {SPEC_V1_PATH}
+          gateway_service:
+            id: test-id
+            control_plane_id: test-control-plane-id
+          portals:
+            - name: {PORTAL_DEV}
+            - name: {PORTAL_PROD}
+              config:
+                  publish_status: published  
+                  deprecated: true
+        - spec: {SPEC_V2_PATH}
+          portals:
+            - name: {PORTAL_DEV}
+            - name: {PORTAL_PROD}
+    """
 
 konnect: KonnectHelper = KonnectHelper(TEST_SERVER_URL, DOCS_PATH)
 
@@ -74,36 +101,17 @@ def test_missing_required_args(sync_command: List[str]) -> None:
     assert result.returncode != 0
     assert "the following arguments are required" in result.stderr
 
-def test_state(sync_command: List[str], tmp_path: pytest.TempPathFactory) -> None:
+def test_explain(cli_command: List[str], tmp_path: pytest.TempPathFactory) -> None:
+    """Test the explain command."""
+    state = tmp_path / "state.yaml"
+    state.write_text(TEST_STATE)
+    result = subprocess.run(cli_command + ["explain", tmp_path / "state.yaml"], capture_output=True, text=True, check=True)
+    assert result.returncode == 0
+
+def test_sync(sync_command: List[str], tmp_path: pytest.TempPathFactory) -> None:
     """Test state."""
     state = tmp_path / "state.yaml"
-    state.write_text(f"""
-    _version: 1.0.0
-    info:
-        name: {PRODUCT_NAME}
-        description: A simple API Product for requests to /httpbin
-    documents:
-        sync: true
-        dir: {DOCS_PATH}
-    portals:
-        - name: {PORTAL_DEV}
-        - name: {PORTAL_PROD}
-    versions:
-        - spec: {SPEC_V1_PATH}
-          gateway_service:
-            id: test-id
-            control_plane_id: test-control-plane-id
-          portals:
-            - name: {PORTAL_DEV}
-            - name: {PORTAL_PROD}
-              config:
-                  publish_status: published  
-                  deprecated: true
-        - spec: {SPEC_V2_PATH}
-          portals:
-            - name: {PORTAL_DEV}
-            - name: {PORTAL_PROD}
-    """)
+    state.write_text(TEST_STATE)
 
     result = subprocess.run(
         sync_command + [
@@ -159,7 +167,7 @@ def test_state(sync_command: List[str], tmp_path: pytest.TempPathFactory) -> Non
     assert prod_portal_product_version_v1["deprecated"] is True
 
     
-def test_delete_api_product(delete_command: List[str]) -> None:
+def test_delete_api_product_by_name(delete_command: List[str]) -> None:
     """Test deleting API product."""
 
     result = subprocess.run(
@@ -182,27 +190,7 @@ def test_delete_api_product(delete_command: List[str]) -> None:
 def test_delete_product_conflicts(sync_command: List[str], delete_command: List[str], tmp_path: pytest.TempPathFactory) -> None:
     """Test API product conflict."""
     state = tmp_path / "state.yaml"
-    state.write_text(f"""
-    _version: 1.0.0
-    info:
-        name: {PRODUCT_NAME}
-        description: A simple API Product for requests to /httpbin
-    documents:
-        sync: true
-        dir: {DOCS_PATH}
-    portals:
-        - name: {PORTAL_DEV}
-        - name: {PORTAL_PROD}
-    versions:
-        - spec: {SPEC_V1_PATH}
-          portals:
-            - name: {PORTAL_DEV}
-            - name: {PORTAL_PROD}
-        - spec: {SPEC_V2_PATH}
-          portals:
-            - name: {PORTAL_DEV}
-            - name: {PORTAL_PROD}
-    """)
+    state.write_text(TEST_STATE)
 
     result = subprocess.run(
         sync_command + [
@@ -225,9 +213,6 @@ def test_delete_product_conflicts(sync_command: List[str], delete_command: List[
         "description": "A simple API Product for requests to /httpbin"
     })
 
-    all_products = konnect.list_api_products()
-    assert len(all_products) == 2
-
     result = subprocess.run(
         delete_command + [
             PRODUCT_NAME,
@@ -242,6 +227,10 @@ def test_delete_product_conflicts(sync_command: List[str], delete_command: List[
 
     # The deletion should fail because there are multiple products with the same name
     assert result.returncode == 1
+    
+    # Ensure there are still 2 products available
+    all_products = konnect.list_api_products()
+    assert len(all_products) == 2
 
     result = subprocess.run(
         delete_command + [
@@ -257,5 +246,12 @@ def test_delete_product_conflicts(sync_command: List[str], delete_command: List[
 
     # The deletion should succeed because the product ID is provided
     assert result.returncode == 0
+
+     # Ensure there's only 1 product available
+    all_products = konnect.list_api_products()
+    assert len(all_products) == 1
+
+    # Ensure the remaining product is not the one that was deleted
+    assert all_products[0]["id"] != api_product["id"]
     
     
