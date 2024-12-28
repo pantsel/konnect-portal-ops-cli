@@ -281,7 +281,8 @@ portals:
 Lists the portals where the API product will be published, along with their publication status.
 
 - **portals**: (Optional) Lists the portals where the API product will be published.
-  - **name**: (Required) The name of the portal.
+  - **id**: (Required - if `name` is not set) The ID of the portal. ID takes precedence over name for related operations.
+  - **name**: (Required - if `id` is not set) The name of the portal. At least one of `id` or `name` is required.
   - **config**: (Optional) Configuration for the portal.
     - **publish_status**: (Optional) The publication status of the portal. Default is `published`.
 
@@ -344,7 +345,8 @@ Defines the different versions of the API product, including their specification
     - **id**: (Optional) The ID of the gateway service.
     - **control_plane_id**: (Optional) The control plane ID of the gateway service.
   - **portals**: (Optional) Lists the portals where the version will be published.
-    - **name**: (Required) The name of the portal.
+    - **id**: (Required - if `name` is not set) The ID of the portal. ID takes precedence over name for related operations.
+    - **name**: (Required - if `id` is not set) The name of the portal. At least one of `id` or `name` is required.
     - **config**: (Optional) Configuration for the portal.
       - **deprecated**: (Optional) A boolean indicating whether the version is deprecated. Default is `false`.
       - **publish_status**: (Optional) The publication status of the version. Default is `published`.
