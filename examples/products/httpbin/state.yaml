@@ -1,0 +1,61 @@
+_version: 1.0.0
+info:
+  name: HTTPBin API
+  description: A simple API Product for requests to /httpbin
+documents:
+  sync: true
+  dir: examples/products/httpbin/docs
+portals:
+  - name: dev_portal
+    config:
+      publish_status: published
+  - name: prod_portal
+    config:
+      publish_status: unpublished
+versions:
+  - name: "1.0.0"
+    spec: examples/api-specs/v1/httpbin.yaml
+    gateway_service:
+      id: null
+      control_plane_id: null
+    portals:
+      - name: dev_portal
+        config:
+          deprecated: true
+          publish_status: published
+          auth_strategy_ids: []
+          application_registration:
+            enabled: false
+            auto_approve: false
+            
+      - name: prod_portal
+        config:
+          deprecated: true
+          publish_status: published
+          auth_strategy_ids: []
+          application_registration:
+            enabled: false
+            auto_approve: false
+  - name: "2.0.0"
+    spec: examples/api-specs/v2/httpbin.yaml
+    gateway_service:
+      id: null
+      control_plane_id: null
+    portals:
+      - name: dev_portal
+        config:
+          deprecated: false
+          publish_status: published
+          auth_strategy_ids: []
+          application_registration:
+            enabled: false
+            auto_approve: false
+            
+      - name: prod_portal
+        config:
+          deprecated: false
+          publish_status: published
+          auth_strategy_ids: []
+          application_registration:
+            enabled: false
+            auto_approve: false

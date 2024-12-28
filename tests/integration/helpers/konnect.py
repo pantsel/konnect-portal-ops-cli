@@ -70,6 +70,13 @@ class KonnectHelper:
         self.check_parent_document_id(documents, "0-5-api-philosophy", "0-introduction")
         self.check_parent_document_id(documents, "1-1-child-of-authentication", "1-authentication")
 
+    def list_portal_product_versions(self, portal_id: str) -> List[Dict[str, Any]]:
+        """
+        List the portal product versions.
+        """
+        response = requests.get(f"{self.test_server_url}/v2/portals/{portal_id}/product-versions", timeout=10)
+        return response.json()["data"]
+    
     def get_portal_product_version_by_product_version_id(self, portal_id: str, product_version_id: str) -> Dict[str, Any]:
         """
         Get the portal product version by product version ID.
@@ -109,3 +116,11 @@ class KonnectHelper:
         response = requests.get(f"{self.test_server_url}/v2/portals", timeout=10)
         portal = next(portal for portal in response.json()["data"] if portal["name"] == portal_name)
         return portal
+    
+    def get_api_product_by_name(self, product_name: str) -> Dict[str, Any]:
+        """
+        Get the API product by name.
+        """
+        response = requests.get(f"{self.test_server_url}/v2/api-products", timeout=10)
+        api_product = next(api_product for api_product in response.json()["data"] if api_product["name"] == product_name)
+        return api_product

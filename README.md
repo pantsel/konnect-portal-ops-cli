@@ -1,237 +1,396 @@
 # Konnect Dev Portal Ops CLI <!-- omit in toc -->
 
-A rather opinionated CLI tool for managing API products on **Konnect Developer Portals**.
+A rather opinionated CLI tool for managing API products on **Konnect Developer Portals**. This tool allows you to publish, deprecate, unpublish, or delete API products and their versions based on state files.
 
-The tool is designed to perform various operations, such as publishing, deprecating, unpublishing, or deleting API products and their versions based on OpenAPI Specification (OAS) files.
+Before using the CLI, ensure you have your developer portals set up on Konnect. For more information, see the [Konnect documentation](https://docs.konghq.com/konnect/dev-portal/).
 
-Ensure that the required Konnect Developer Portals are set up before using this tool.
-
-> **Note:** The CLI is still under active development. Some features may not be fully supported yet. Use it responsibly and report any issues you encounter.
+> **Note:** The CLI is under active development. Some features may not be fully supported yet. Use responsibly and report any issues.
 
 ## Table of Contents <!-- omit in toc -->
 - [Features](#features)
-- [How It Works](#how-it-works)
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Arguments](#arguments)
+  - [Available Commands](#available-commands)
+    - [`sync`](#sync)
+    - [`delete`](#delete)
+    - [`explain`](#explain)
+  - [Common Arguments](#common-arguments)
   - [Examples](#examples)
-    - [🚀 Publish an API Product and Version to a Portal](#-publish-an-api-product-and-version-to-a-portal)
-    - [🔗 Link a Gateway Service to an API Product Version](#-link-a-gateway-service-to-an-api-product-version)
-    - [🚀 Publish a New Version of the API Product to a Portal](#-publish-a-new-version-of-the-api-product-to-a-portal)
-    - [⚠️ Deprecate an API Version on a Portal](#️-deprecate-an-api-version-on-a-portal)
-    - [🚫 Unpublish an API Version from a Portal](#-unpublish-an-api-version-from-a-portal)
-    - [🚫 Unpublish an API Product from a Portal](#-unpublish-an-api-product-from-a-portal)
-    - [📚 Managing API Products Documentation](#-managing-api-products-documentation)
-    - [🗑️ Completely Delete an API Product and Its Associations](#️-completely-delete-an-api-product-and-its-associations)
-- [CLI Configuration](#cli-configuration)
-- [Local Development](#local-development)
+    - [Sync API Product State](#sync-api-product-state)
+    - [Unpublish API Product Versions](#unpublish-api-product-versions)
+    - [Deprecate API Product Versions](#deprecate-api-product-versions)
+    - [Link Gateway Services to API Product Versions](#link-gateway-services-to-api-product-versions)
+    - [Manage API Products Documentation](#manage-api-products-documentation)
+- [State File Explanation](#state-file-explanation)
+  - [Version](#version)
+  - [Info](#info)
+  - [Documents](#documents)
+  - [Portals](#portals)
+  - [Versions](#versions)
+- [Logging](#logging)
+- [Development](#development)
+  - [Requirements](#requirements)
 - [Testing](#testing)
 
 ## Features
 
-- **Publish or update API Products and Versions** on a Konnect Dev Portal.  
+- **Publish or update API Products and Versions** on a Konnect Dev Portal.
 - Link **Gateway Services** to **API Product Versions**.
 - Manage **API Product Documents**.
-- **Deprecate or unpublish API versions**.  
-- **Delete API products** and their associations.  
-- Supports **non-interactive modes** for automation.  
-
-## How It Works
-
-The CLI tool requires two primary inputs:
-- The path to an OpenAPI Specification (OAS) file.
-- The name of the Konnect portal to perform operations on.
-
-It then parses the OAS file to extract essential information for identifying the API Product and its version:
-
-- The `info.title` field in the OAS file serves as the API Product name, acting as the primary identifier for idempotent operations.
-- The `info.description` field in the OAS file provides the API Product description.
-- The `info.version` field in the OAS file denotes the API Product Version name, which is the primary identifier for version-specific idempotent operations.
-
-Finally, the tool executes the following operations:
-1. Creates or updates the API Product on the Portal.
-2. Creates or updates the associated API Product Version.
-3. Ensures the OAS file is linked to the API Product Version.
-4. Publishes the API Product and its Version on the Portal.
-5. If a documents folder is provided, the tool synchronizes its contents with the API Product documentation on the Portal. This includes publishing new documents, updating existing ones, and removing documents that are no longer present in the folder.
-
-Flow:
-
-```mermaid
-graph LR
-    A[Parse OAS File] --> B[Create or Update API Product]
-    B --> C[Create or Update API Product Version]
-    C --> D[Attach OAS File to API Product Version]
-    D --> E[Publish API Product and Version]
-    E --> F[Sync API Product Documentation]
-```
+- **Deprecate or unpublish API versions**.
+- **Delete API products** and their associations.
+- Supports **non-interactive modes** for automation.
 
 ## Installation
 
 1. Install the CLI using `pip`:
 
-   ```shell
-   $ pip install kptl
-   ```
+    ```shell
+    pip install kptl
+    ```
 
-2. (Optional) Create a `yaml` config file to set the configuration variables.  
-   ```yaml
-      # .config.yaml
-      konnect_url: https://us.api.konghq.com
-      konnect_token: <your-konnect-token>
-   ```
+2. (Optional) Create a `yaml` config file to set the CLI configuration variables:
+
+    ```yaml
+    # $HOME/.kptl.config.yaml
+    konnect_url: https://us.api.konghq.com
+    konnect_token: <your-konnect-token>
+    http_proxy: http://proxy.example.com:8080 # Optional
+    https_proxy: https://proxy.example.com:8080 # Optional
+    ```
 
 ## Usage
 
-Run the script using the following command:  
-
 ```shell
-$ kptl [options]  
+kptl [command] [options]
 ```
 
-### Arguments
+### Available Commands
 
-| Option                               | Required                                                | Description                                                                     |
-| ------------------------------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `--oas-spec`                         | **Yes**                                                 | Path to the OAS spec file.                                                      |
-| `--docs`                             | No                                                      | Path to the API product documents folder.                                       |
-| `--konnect-portal-name`              | **Yes** (except for `--delete`)                         | Name of the Konnect portal to perform operations on.                            |
-| `--konnect-token`                    | **Yes** (except for `--config`)                         | The Konnect spat or kpat token.                                                 |
-| `--konnect-url`                      | **Yes** (except for `--config`)                         | The Konnect API server URL.                                                     |
-| `--deprecate`                        | No                                                      | Deprecate the API product version on the portal.                                |
-| `--gateway-service-id`               | No                                                      | The id of the gateway service to link to the API product version.               |
-| `--gateway-service-control-plane-id` | No                                                      | The id of the gateway service control plane to link to the API product version. |
-| `--application-registration-enabled` | No                                                      | Enable application registration for the API product on the portal.              |
-| `--auto-aprove-registration`         | No                                                      | Automatically approve application registrations for the API product.            |
-| `--auth-strategy-ids`                | No                                                      | Comma-separated list of authentication strategy IDs.                            |
-| `--unpublish {product,version}`      | No                                                      | Unpublish the API product or version from the portal.                           |
-| `--delete`                           | No                                                      | Delete the API product and it's associations.                                   |
-| `--yes`                              | No                                                      | Skip confirmation prompts (useful for non-interactive environments).            |
-| `--config`                           | **Yes** (except for `--konnect-token`, `--konnect-url`) | Path to the configuration file.                                                 |
-| `--http-proxy`                       | No                                                      | HTTP proxy URL.                                                                 |
-| `--https-proxy`                      | No                                                      | HTTPS proxy URL.                                                                |
+#### `sync`
+
+Synchronize the predefined API Product state with Konnect.
+
+```shell
+kptl sync state_file.yaml --config .config.yaml
+```
+
+#### `delete`
+
+Delete the API Product and its associations.
+
+```shell
+kptl delete product_name_or_id --config .config.yaml
+```
+
+To skip the interactive confirmation prompt, use the `--yes` flag:
+
+```shell
+kptl delete product_name_or_id --config .config.yaml --yes
+```
+
+#### `explain`
+
+Explain the API Product state file and the operations that will be performed on Konnect.
+
+```shell
+kptl explain state_file.yaml
+```
+
+### Common Arguments
+
+| Option            | Required                         | Description                                                                |
+| ----------------- | -------------------------------- | -------------------------------------------------------------------------- |
+| `--konnect-token` | **Yes** (if config file not set) | The Konnect token to use for authentication.                               |
+| `--konnect-url`   | **Yes** (if config file not set) | The Konnect API server URL.                                                |
+| `--config`        | No                               | Path to the CLI configuration file. Defaults to `$HOME/.kptl.config.yaml`. |
+| `--http-proxy`    | No                               | HTTP proxy URL.                                                            |
+| `--https-proxy`   | No                               | HTTPS proxy URL.                                                           |
 
 ### Examples
 
-#### 🚀 Publish an API Product and Version to a Portal
+#### Sync API Product State
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
-   --konnect-portal-name my-portal 
+Example state file:
+
+```yaml
+# state.yaml
+_version: 1.0.0
+info:
+  name: HTTPBin API
+  description: A simple API Product for requests to httpbin
+portals:
+  - name: dev_portal
+  - name: prod_portal
+versions:
+  - name: "1.0.0"
+    spec: examples/api-specs/v1/httpbin.yaml
+    portals:
+      - name: dev_portal
+      - name: prod_portal
+  - name: "2.0.0"
+    spec: examples/api-specs/v2/httpbin.yaml
+    portals:
+      - name: dev_portal
+      - name: prod_portal
 ```
 
-#### 🔗 Link a Gateway Service to an API Product Version
+To sync the API Product state with Konnect, run:
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
-   --konnect-portal-name my-portal \
-   --gateway-service-id <gateway-service-id>
-   --gateway-service-control-plane-id <gateway-service-control-plane-id>
+```shell
+kptl sync state.yaml --config .config.yaml
 ```
 
-#### 🚀 Publish a New Version of the API Product to a Portal
+#### Unpublish API Product Versions
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v2/httpbin.yaml \
-   --konnect-portal-name my-portal
+To unpublish an API Product version from a portal, update the state file to set the `publish_status` to `unpublished` for the desired portal.
+
+```yaml
+# state.yaml
+versions:
+  - name: "1.0.0"
+    spec: examples/api-specs/v1/httpbin.yaml
+    portals:
+      - name: dev_portal
+        config:
+          publish_status: unpublished
 ```
 
-#### ⚠️ Deprecate an API Version on a Portal
+Then run the sync command:
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
-   --konnect-portal-name my-portal --deprecate
+```shell
+kptl sync state.yaml --config .config.yaml
 ```
 
-#### 🚫 Unpublish an API Version from a Portal
+#### Deprecate API Product Versions
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
-   --konnect-portal-name my-portal \
-   --unpublish version
+To deprecate an API Product version from a portal, update the state file to set `deprecated` to `true` for the desired portal.
+
+```yaml
+# state.yaml
+versions:
+  - name: "1.0.0"
+    spec: examples/api-specs/v1/httpbin.yaml
+    portals:
+      - name: dev_portal
+        config:
+          deprecated: true
 ```
 
-#### 🚫 Unpublish an API Product from a Portal
+Then run the sync command:
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
-   --konnect-portal-name my-portal \
-   --unpublish product
+```shell
+kptl sync state.yaml --config .config.yaml
 ```
 
-#### 📚 Managing API Products Documentation
+#### Link Gateway Services to API Product Versions
 
-How it works:
-- All related API Product documents must be present in a directory.
-- All `.md` files in the directory are considered documentation files.
-- The ordering and inheritance of documents are based on the file name prefixes (ex: `1_,1.1_,1.2_,2_,3_,3.1_`).
-- By default, all documents get published. If you want to unpublish a document, add the `__unpublished` tag at the end of the file name.
-- Existing API Product documents that are not present in the documents folder will be deleted.
+To link a Gateway Service to an API Product version, update the state file to include the `gateway_service` section with the appropriate `id` and `control_plane_id`.
 
-For an example documents folder structure and use-cases, see the [examples/docs](examples/docs) directory.
-
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
-   --docs ../examples/docs/httpbin \
-   --konnect-portal-name my-portal
+```yaml
+# state.yaml
+versions:
+  - name: "1.0.0"
+    spec: examples/api-specs/v1/httpbin.yaml
+    gateway_service:
+      id: <gateway-service-id>
+      control_plane_id: <control-plane-id>
 ```
 
-#### 🗑️ Completely Delete an API Product and Its Associations
+Then run the sync command:
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v1/httpbin.yaml --delete --yes
+```shell
+kptl sync state.yaml --config .config.yaml
 ```
 
-## CLI Configuration
+#### Manage API Products Documentation
 
-The CLI supports the following variables for configuration in a `yaml` file:  
+To manage API Product documents, ensure all related documents are present in a directory. The ordering and inheritance of documents are based on file name prefixes (e.g., `1_, 1.1_, 1.2_, 2_, 3_, 3.1_`). By default, all documents get published. To unpublish a document, add the `__unpublished` tag at the end of the file name. Existing API Product documents not present in the documents folder will be deleted.
 
-| Variable        | Description                            |
-| --------------- | -------------------------------------- |
-| `konnect_url`   | Konnect API server URL.                |
-| `konnect_token` | Token for authenticating API requests. |
+For an example documents folder structure, see the [examples/products/httpbin/docs](examples/products/httpbin/docs) directory.
 
-And the following environment variables:
+To sync the API Product documents, update the state file to include the `documents` section with the `sync` flag set to `true` and the `dir` pointing to the documents directory.
 
-| Variable    | Description                                                                     |
-| ----------- | ------------------------------------------------------------------------------- |
-| `LOG_LEVEL` | Logging verbosity level (`DEBUG`, `INFO`, `WARNING`, `ERROR`). Default: `INFO`. |
+```yaml
+# state.yaml
+documents:
+  sync: true
+  dir: examples/products/httpbin/docs
+```
 
-## Local Development
+Then run the sync command:
 
-***Requirements***
+```shell
+kptl sync state.yaml --config .config.yaml
+```
 
-- Python 3+  
-- `PyYaml`: For parsing YAML-based files.  
+## State File Explanation
+
+The example state file at [examples/products/httpbin/state.yaml](examples/products/httpbin/state.yaml) defines the configuration for the HTTPBin API product.
+
+### Version
+
+```yaml
+_version: 1.0.0
+```
+
+Specifies the version of the state file format.
+
+- **_version**: (Required) Specifies the version of the state file format. Default is `1.0.0`.
+
+### Info
+
+```yaml
+info:
+  name: HTTPBin API
+  description: A simple API Product for requests to /httpbin
+```
+
+Contains metadata about the API product, including its name and description.
+
+- **info**: (Required) Contains metadata about the API product.
+  - **name**: (Required) The name of the API product.
+  - **description**: (Optional) A description of the API product.
+
+### Documents
+
+```yaml
+documents:
+  sync: true
+  dir: examples/products/httpbin/docs
+```
+
+Defines the synchronization settings and directory for the API documentation.
+
+- **documents**: (Optional) Defines the synchronization settings and directory for the API documentation.
+  - **sync**: (Required) A boolean indicating whether to sync the documents.
+  - **dir**: (Required) The directory where the documents are stored.
+
+### Portals
+
+```yaml
+portals:
+  - name: dev_portal
+    config:
+      publish_status: published
+  - name: prod_portal
+    config:
+      publish_status: unpublished
+```
+
+Lists the portals where the API product will be published, along with their publication status.
+
+- **portals**: (Optional) Lists the portals where the API product will be published.
+  - **id**: (Required - if `name` is not set) The ID of the portal. ID takes precedence over name for related operations.
+  - **name**: (Required - if `id` is not set) The name of the portal. At least one of `id` or `name` is required.
+  - **config**: (Optional) Configuration for the portal.
+    - **publish_status**: (Optional) The publication status of the portal. Default is `published`.
+
+### Versions
+
+```yaml
+versions:
+  - name: "1.0.0"
+    spec: examples/api-specs/v1/httpbin.yaml
+    gateway_service:
+      id: null
+      control_plane_id: null
+    portals:
+      - name: dev_portal
+        config:
+          deprecated: true
+          publish_status: published
+          auth_strategy_ids: []
+          application_registration:
+            enabled: false
+            auto_approve: false
+      - name: prod_portal
+        config:
+          deprecated: true
+          publish_status: published
+          auth_strategy_ids: []
+          application_registration:
+            enabled: false
+            auto_approve: false
+  - name: "2.0.0"
+    spec: examples/api-specs/v2/httpbin.yaml
+    gateway_service:
+      id: null
+      control_plane_id: null
+    portals:
+      - name: dev_portal
+        config:
+          deprecated: false
+          publish_status: published
+          auth_strategy_ids: []
+          application_registration:
+            enabled: false
+            auto_approve: false
+      - name: prod_portal
+        config:
+          deprecated: false
+          publish_status: published
+          auth_strategy_ids: []
+          application_registration:
+            enabled: false
+            auto_approve: false
+```
+
+Defines the different versions of the API product, including their specifications, gateway service details, and portal configurations. Each version can have different settings for deprecation, publication status, authentication strategies, and application registration.
+
+- **versions**: (Required) Defines the different versions of the API product.
+  - **name**: (Optional) The name of the version. Defaults to the version of the OAS file.
+  - **spec**: (Required) The Open API Specification file for the version.
+  - **gateway_service**: (Optional) Details of the gateway service linked to the version.
+    - **id**: (Optional) The ID of the gateway service.
+    - **control_plane_id**: (Optional) The control plane ID of the gateway service.
+  - **portals**: (Optional) Lists the portals where the version will be published.
+    - **id**: (Required - if `name` is not set) The ID of the portal. ID takes precedence over name for related operations.
+    - **name**: (Required - if `id` is not set) The name of the portal. At least one of `id` or `name` is required.
+    - **config**: (Optional) Configuration for the portal.
+      - **deprecated**: (Optional) A boolean indicating whether the version is deprecated. Default is `false`.
+      - **publish_status**: (Optional) The publication status of the version. Default is `published`.
+      - **auth_strategy_ids**: (Optional) A list of authentication strategy IDs.
+      - **application_registration**: (Optional) Settings for application registration.
+        - **enabled**: (Optional) A boolean indicating whether application registration is enabled. Default is `false`.
+        - **auto_approve**: (Optional) A boolean indicating whether application registration is auto-approved. Default is `false`.
+
+## Logging
+
+The CLI uses the `logging` module to log messages to the console. The default log level is set to `INFO`.
+
+To change the log level, set the `LOG_LEVEL` environment variable to one of the following values: `DEBUG`, `INFO`, `WARNING`, or `ERROR`.
+
+## Development
+
+### Requirements
+
+- Python 3.7+
+- `PyYaml`: For parsing YAML-based files.
 - `requests`: For making HTTP requests to the Konnect API.
 
-1. Clone the repository:  
-   ```shell
-      $ git clone https://github.com/pantsel/konnect-portal-ops-cli
-   ```
+1. Clone the repository:
 
-2. Install the dependencies:  
-   ```shell
-      $ make deps
-   ```
+    ```shell
+    git clone https://github.com/pantsel/konnect-portal-ops-cli
+    ```
 
-3. Run the CLI directly:  
-   ```shell
-      $ PYTHONPATH=src python src/kptl/main.py [options]
-   ```
+2. Install the dependencies:
+
+    ```shell
+    make deps
+    ```
+
+3. Run the CLI directly:
+
+    ```shell
+    PYTHONPATH=src python src/kptl/main.py [command] [options]
+    ```
 
 ## Testing
 
-To run the tests, use the following command from the root directory:  
+To run the tests, use the following command from the root directory:
 
 ```shell
-$ make test
+make test
 ```

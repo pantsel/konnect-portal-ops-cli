@@ -1,1 +1,1 @@
-APP_NAME = "Kontext"
+APP_NAME = "kptl"

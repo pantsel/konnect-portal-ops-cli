@@ -33,8 +33,72 @@ class KonnectApi:
             Optional[Dict[str, Any]]: The API product details if found, else None.
         """
         response = self.api_product_client.list_api_products({"filter[name]": name})
+
+        if len(response['data']) > 1:
+            self.logger.error("Multiple API products found with the name: %s. Please resolve the duplicate names manually before proceeding.", name)
+            exit(1)
+
         return response['data'][0] if response['data'] else None
     
+    def find_api_product_by_id(self, api_product_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Find an API product by its ID.
+
+        Args:
+            api_product_id (str): The ID of the API product.
+
+        Returns:
+            Optional[Dict[str, Any]]: The API product details if found, else None.
+        """
+        return self.api_product_client.get_api_product(api_product_id)
+
+    def create_api_product(self, data: Dict) -> Dict[str, Any]:
+        """
+        Create an API product.
+
+        Args:
+            name (str): The name of the API product.
+            description (str): The description of the API product.
+
+        Returns:
+            Dict[str, Any]: The API product details.
+        """
+        self.logger.info("Creating API product: '%s'", data['name'])
+        api_product = self.api_product_client.create_api_product(data)
+        self.logger.info("API product '%s' created successfully.", data['name'])
+        return api_product
+    
+    def update_api_product(self, api_product_id: str, data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Update an API product.
+
+        Args:
+            api_product_id (str): The ID of the API product.
+            data (Dict[str, Any]): The data to update.
+
+        Returns:
+            Dict[str, Any]: The updated API product details.
+        """
+        self.logger.info("Updating API product: '%s' (%s)", data['name'], api_product_id)
+        api_product = self.api_product_client.update_api_product(api_product_id, data)
+        self.logger.info("API product '%s' updated successfully.", data['name'])
+        return api_product
+
+    def delete_portal_product_version(self, portal_id: str, api_product_version_id: str) -> None:
+        """
+        Delete a portal product version.
+
+        Args:
+            portal_id (str): The ID of the portal.
+            api_product_version_id (str): The ID of the API product version.
+
+        Returns:
+            None
+        """
+        self.logger.info("Deleting portal product version: '%s' (%s)", api_product_version_id, api_product_version_id)
+        self.portal_client.delete_portal_product_version(portal_id, api_product_version_id)
+        self.logger.info("Portal product version '%s' deleted successfully.", api_product_version_id)
+
     def find_api_product_version_by_name(self, api_product_id: str, name: str) -> Optional[Dict[str, Any]]:
         """
         Find an API product version by its name.
@@ -47,21 +111,64 @@ class KonnectApi:
             Optional[Dict[str, Any]]: The API product version details if found, else None.
         """
         response = self.api_product_client.list_api_product_versions(api_product_id, {"filter[name]": name})
+
+        if len(response['data']) > 1:
+            self.logger.error("Multiple API product versions found with the name: %s for product %s. Please resolve the duplicate names manually before proceeding.", name, api_product_id)
+            exit(1)
+
         return response['data'][0] if response['data'] else None
 
-    def find_portal_by_name(self, portal_name: str) -> Optional[Dict[str, Any]]:
+    def list_api_product_versions(self, api_product_id: str) -> List[Dict[str, Any]]:
         """
-        Find a portal by its name.
+        List all API product versions.
 
         Args:
-            portal_name (str): The name of the portal.
+            api_product_id (str): The ID of the API product.
+
+        Returns:
+            List[Dict[str, Any]]: The list of API product versions.
+        """
+        response = self.api_product_client.list_api_product_versions(api_product_id)
+        return response['data']
+    
+    def find_portal(self, portal: str) -> Optional[Dict[str, Any]]:
+        """
+        Find a portal by its name or ID.
+
+        Args:
+            portal (str): The name or ID of the portal.
 
         Returns:
             Optional[Dict[str, Any]]: The portal details if found, else None.
         """
-        portal = self.portal_client.list_portals({"filter[name]": portal_name})
-        return portal['data'][0] if portal['data'] else None
 
+        if utils.is_valid_uuid(portal):
+            response = self.portal_client.get_portal(portal)
+            return response if response else None
+
+        response = self.portal_client.list_portals({"filter[name]": portal})
+
+        if len(response['data']) > 1:
+            self.logger.error("Multiple portals found with the name: %s. Please resolve the duplicate names manually before proceeding.", portal)
+            exit(1)
+
+        return response['data'][0] if response['data'] else None
+
+    def delete_api_product_version(self, api_product_id: str, api_product_version_id: str) -> None:
+        """
+        Delete an API product version.
+
+        Args:
+            api_product_id (str): The ID of the API product.
+            api_product_version_id (str): The ID of the API product version.
+
+        Returns:
+            None
+        """
+        self.logger.info("Deleting API product version: '%s' (%s)", api_product_version_id, api_product_version_id)
+        self.api_product_client.delete_api_product_version(api_product_id, api_product_version_id)
+        self.logger.info("API product version '%s' deleted successfully.", api_product_version_id)
+    
     def find_portal_product_version(self, portal_id: str, product_version_id: str) -> Optional[Dict[str, Any]]:
         """
         Find a portal product version by its ID.
@@ -76,6 +183,74 @@ class KonnectApi:
         response = self.portal_client.list_portal_product_versions(portal_id, {"filter[product_version_id]": product_version_id})
         return response['data'][0] if response['data'] else None
 
+    def unpublish_api_product(self, api_title: str, portal_id: str) -> None:
+        """
+        Unpublish an API product.
+
+        Args:
+            api_title (str): The title of the API product.
+            portal_id (str): The ID of the portal.
+
+        Returns:
+            None
+        """
+        api_product = self.find_api_product_by_name(api_title)
+        if api_product:
+            self.logger.info("Unpublishing API product: '%s' (%s)", api_product['name'], api_product['id'])
+            new_portal_ids = [portal['portal_id'] for portal in api_product['portals'] if portal['portal_id'] != portal_id]
+            self.api_product_client.update_api_product(api_product['id'], {"portal_ids": new_portal_ids})
+            self.logger.info("API product '%s' unpublished successfully.", api_title)
+        else:
+            self.logger.warning("API product '%s' not found. Nothing to unpublish.", api_title)
+
+    def upsert_api_product(self, api_title: str, api_description: str, portal_ids: List[str]) -> Dict[str, Any]:
+        """
+        Create or update an API product.
+
+        Args:
+            api_title (str): The title of the API product.
+            api_description (str): The description of the API product.
+            portal_ids (List[str]): The list of portal IDs.
+            unpublish (bool): Whether to unpublish the API product.
+
+        Returns:
+            Dict[str, Any]: The API product details.
+        """
+
+        self.logger.info("Processing API product")
+        existing_api_product = self.find_api_product_by_name(api_title)
+
+        if existing_api_product:
+            if existing_api_product['description'] != api_description or existing_api_product['portal_ids'] != portal_ids:
+                
+                if set(existing_api_product['portal_ids']) != set(portal_ids):
+                    self.logger.info("Updating portals for API product '%s'.", api_title)
+                    self.logger.info("Publishing to portals: %s", [pid for pid in portal_ids if pid not in existing_api_product['portal_ids']])
+                    self.logger.info("Unpublishing from portals: %s", [pid for pid in existing_api_product['portal_ids'] if pid not in portal_ids])
+                   
+
+                api_product = self.update_api_product(
+                    existing_api_product['id'],
+                    {
+                        "name": api_title,
+                        "description": api_description,
+                        "portal_ids": portal_ids
+                    }
+                )
+            else:
+                api_product = existing_api_product
+                self.logger.info("No changes detected for API product")
+        else:
+            api_product = self.create_api_product(
+                {
+                    "name": api_title,
+                    "description": api_description,
+                    "portal_ids": portal_ids
+                }
+            )
+        
+        return api_product
+    
     def create_or_update_api_product(self, api_title: str, api_description: str, portal_id: str, unpublish: bool) -> Dict[str, Any]:
         """
         Create or update an API product.
@@ -127,7 +302,7 @@ class KonnectApi:
         self.logger.debug(json.dumps(api_product, indent=2))
         return api_product
 
-    def create_or_update_api_product_version(self, api_product: Dict[str, Any], version_name: str, gateway_service: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def upsert_api_product_version(self, api_product: Dict[str, Any], version_name: str, gateway_service: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         """
         Create or update an API product version.
 
@@ -139,7 +314,7 @@ class KonnectApi:
         Returns:
             Dict[str, Any]: The API product version details.
         """
-        self.logger.info("Processing API Product Version")
+        self.logger.info("Processing API Product Version: %s", version_name)
 
         existing_api_product_version = self.find_api_product_version_by_name(api_product['id'], version_name)
         if existing_api_product_version:
@@ -182,7 +357,7 @@ class KonnectApi:
         self.logger.debug(json.dumps(api_product_version, indent=2))
         return api_product_version
 
-    def create_or_update_api_product_version_spec(self, api_product_id: str, api_product_version_id: str, oas_file_base64: str) -> Dict[str, Any]:
+    def upsert_api_product_version_spec(self, api_product_id: str, api_product_version_id: str, oas_file_base64: str) -> Dict[str, Any]:
         """
         Create or update an API product version spec.
 
@@ -226,7 +401,79 @@ class KonnectApi:
         self.logger.debug(json.dumps(api_product_version_spec, indent=2))
         return api_product_version_spec
 
-    def create_or_update_portal_product_version(self, portal: Dict[str, Any], api_product_version: Dict[str, Any], api_product: Dict[str, Any], options: Dict[str, Any]) -> None:
+    def deprecate_portal_product_version(self, portal_id: str, api_product_name: str, api_product_version_name: str) -> None:
+        """
+        Deprecate a portal product version.
+
+        Args:
+            portal_id (str): The ID of the portal.
+            api_product_name (str): The name of the API product.
+            api_product_version_name (str): The name of the API product version.
+
+        Returns:
+            None
+        """
+        portal = self.portal_client.get_portal(portal_id)
+        if portal:
+            api_product = self.find_api_product_by_name(api_product_name)
+            if api_product:
+                api_product_version = self.find_api_product_version_by_name(api_product['id'], api_product_version_name)
+                if api_product_version:
+                    if api_product_version['deprecated']:
+                        self.logger.info("API product version '%s' is already deprecated. Nothing to do.", api_product_version_name)
+                        return
+                    self.portal_client.update_portal_product_version(
+                        portal['id'],
+                        api_product_version['id'],
+                        {
+                            "deprecated": True
+                        }
+                    )
+                    self.logger.info("Portal Product Version '%s' for '%s' on '%s' deprecated successfully.", api_product_version_name, api_product_name, portal['name'])
+                else:
+                    self.logger.warning("API product version '%s' not found. Nothing to deprecate.", api_product_version_name)
+            else:
+                self.logger.warning("API product '%s' not found. Nothing to deprecate.", api_product_name)
+        else:
+            self.logger.warning("Portal '%s' not found. Nothing to deprecate.", portal['name'])
+    
+    def unpublish_portal_product_version(self, portal_id: str, api_product_name: str, api_product_version_name: str) -> None:
+        """
+        Unpublish a portal product version.
+
+        Args:
+            portal_name (str): The name of the portal.
+            api_product_name (str): The name of the API product.
+            api_product_version_name (str): The name of the API product version.
+
+        Returns:
+            None
+        """
+        portal = self.portal_client.get_portal(portal_id)
+        if portal:
+            api_product = self.find_api_product_by_name(api_product_name)
+            if api_product:
+                api_product_version = self.find_api_product_version_by_name(api_product['id'], api_product_version_name)
+                if api_product_version:
+                    if api_product_version['publish_status'] == "unpublished":
+                        self.logger.info("API product version '%s' is already unpublished. Nothing to do.", api_product_version_name)
+                        return
+                    self.portal_client.update_portal_product_version(
+                        portal['id'],
+                        api_product_version['id'],
+                        {
+                            "publish_status": "unpublished"
+                        }
+                    )
+                    self.logger.info("Portal Product Version '%s' for '%s' on '%s' unpublished successfully.", api_product_version_name, api_product_name, portal['name'])
+                else:
+                    self.logger.warning("API product version '%s' not found. Nothing to unpublish.", api_product_version_name)
+            else:
+                self.logger.warning("API product '%s' not found. Nothing to unpublish.", api_product_name)
+        else:
+            self.logger.warning("Portal '%s' not found. Nothing to unpublish.", portal['name'])
+    
+    def upsert_portal_product_version(self, portal: Dict[str, Any], api_product_version: Dict[str, Any], api_product: Dict[str, Any], options: Dict[str, Any]) -> None:
         """
         Create or update a Portal Product Version.
         This method handles the creation or updating of a Portal Product Version based on the provided parameters.
@@ -308,7 +555,7 @@ class KonnectApi:
 
         self.logger.info("%s Portal Product Version '%s' for '%s' on '%s'", action, api_product_version['name'], api_product['name'], portal['name'])
 
-    def delete_api_product(self, api_name: str) -> None:
+    def delete_api_product(self, identifier: str) -> None:
         """
         Delete an API product by its name.
 
@@ -318,13 +565,18 @@ class KonnectApi:
         Returns:
             None
         """
-        api_product = self.find_api_product_by_name(api_name)
+
+        if utils.is_valid_uuid(identifier):
+            api_product = self.find_api_product_by_id(identifier)
+        else:
+            api_product = self.find_api_product_by_name(identifier)
+
         if api_product:
             self.logger.info("Deleting API product: '%s' (%s)", api_product['name'], api_product['id'])
             self.api_product_client.delete_api_product(api_product['id'])
-            self.logger.info("API product '%s' deleted successfully.", api_name)
+            self.logger.info("API product '%s' deleted successfully.", api_product['name'])
         else:
-            self.logger.warning("API product '%s' not found. Nothing to delete.", api_name)
+            self.logger.warning("API product '%s' not found. Nothing to delete.", api_product['name'])
         
     def _sync_pages(self, local_pages: List[Dict[str, str]], remote_pages: List[Dict[str, str]], api_product_id: str) -> None:
         """
@@ -348,7 +600,7 @@ class KonnectApi:
             existing_page = self.api_product_client.get_api_product_document(api_product_id, existing_page_from_list['id']) if existing_page_from_list else None
 
             if not existing_page:
-                self.logger.info("Creating page: '%s' (%s)", page['title'], page['slug'])
+                self.logger.info("Creating document: '%s' (%s)", page['title'], page['slug'])
                 page = self.api_product_client.create_api_product_document(api_product_id, {
                     "slug": page['slug'],
                     "title": page['title'],
@@ -358,7 +610,7 @@ class KonnectApi:
                 })
                 slug_to_id[page['slug']] = page['id']
             elif utils.encode_content(existing_page['content']) != page['content'] or existing_page.get('parent_document_id') != parent_id or existing_page.get('status') != page['status']:
-                self.logger.info("Updating page: '%s' (%s)", page['title'], page['slug'])
+                self.logger.info("Updating document: '%s' (%s)", page['title'], page['slug'])
                 self.api_product_client.update_api_product_document(api_product_id, existing_page['id'], {
                     "slug": page['slug'],
                     "title": page['title'],
@@ -367,11 +619,12 @@ class KonnectApi:
                     "parent_document_id": parent_id
                 })
             else:
-                self.logger.info("No changes detected for page: '%s' (%s)", page['title'], page['slug'])
+                self.logger.info("No changes detected for document: '%s' (%s)", page['title'], page['slug'])
 
         # Handle deletions
         local_slugs = {page['slug'] for page in local_pages}
-        for remote_page in remote_pages:
+        remote_pages_sorted = sorted(remote_pages, key=lambda x: x['slug'].count('/'), reverse=True)
+        for remote_page in remote_pages_sorted:
             if get_slug_tail(remote_page['slug']) not in local_slugs:
                 self.logger.warning("Deleting page: '%s' (%s)", remote_page['title'], remote_page['slug'])
                 self.api_product_client.delete_api_product_document(api_product_id, remote_page['id'])
