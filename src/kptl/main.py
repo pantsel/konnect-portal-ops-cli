@@ -112,35 +112,40 @@ def delete_command(args, konnect: KonnectApi):
     if should_delete_api_product(args, args.product):
         delete_api_product(konnect, args.product)
 
-def explain_command(args, konnect: KonnectApi):
+def explain_command(args):
     state_content = utils.read_file_content(args.state)
     state_parsed = yaml.safe_load(state_content)
     product_state = ProductState().from_dict(state_parsed)
 
-    descriptions = []
-    descriptions.append(f"\nProduct Name: {product_state.info.name}")
-    descriptions.append(f"Product Description: {product_state.info.description}")
+    descriptions = [
+        f"\nProduct Name: {product_state.info.name}",
+        f"Product Description: {product_state.info.description}"
+    ]
 
     for portal in product_state.portals:
         descriptions.append(f"Portal: {portal.name} (ID: {portal.id})")
 
     for version in product_state.versions:
-        descriptions.append(f"Version: {version.name}")
-        descriptions.append(f"  Spec File: {version.spec}")
-        descriptions.append(f"  Gateway Service ID: {version.gateway_service.id}")
-        descriptions.append(f"  Control Plane ID: {version.gateway_service.control_plane_id}")
+        descriptions.extend([
+            f"Version: {version.name}",
+            f"  Spec File: {version.spec}",
+            f"  Gateway Service ID: {version.gateway_service.id}",
+            f"  Control Plane ID: {version.gateway_service.control_plane_id}"
+        ])
 
         for portal in version.portals:
-            descriptions.append(f"  Portal: {portal.name} (ID: {portal.id})")
-            descriptions.append(f"    Deprecated: {portal.config.deprecated}")
-            descriptions.append(f"    Publish Status: {portal.config.publish_status}")
-            descriptions.append(f"    Application Registration Enabled: {portal.config.application_registration.enabled}")
-            descriptions.append(f"    Auto Approve Registration: {portal.config.application_registration.auto_approve}")
-            descriptions.append(f"    Auth Strategy IDs: {portal.config.auth_strategy_ids}")
+            descriptions.extend([
+                f"  Portal: {portal.name} (ID: {portal.id})",
+                f"    Deprecated: {portal.config.deprecated}",
+                f"    Publish Status: {portal.config.publish_status}",
+                f"    Application Registration Enabled: {portal.config.application_registration.enabled}",
+                f"    Auto Approve Registration: {portal.config.application_registration.auto_approve}",
+                f"    Auth Strategy IDs: {portal.config.auth_strategy_ids}"
+            ])
 
     descriptions.append("\nOperations to be performed:")
     operation_count = 1
-    descriptions.append(f"{operation_count}. Ensure API product '{product_state.info.name}' with description '{product_state.info.description}' is up-to-date.")
+    descriptions.append(f"{operation_count}. Ensure API product '{product_state.info.name}' with description '{product_state.info.description}' exists and is up-to-date.")
     operation_count += 1
 
     if product_state.documents.sync and product_state.documents.directory:
@@ -150,23 +155,23 @@ def explain_command(args, konnect: KonnectApi):
     operation_count += 1
 
     for portal in product_state.portals:
-        if portal.config.publish_status == "published":
-            descriptions.append(f"{operation_count}. Ensure API product '{product_state.info.name}' is published on portal '{portal.name}' with ID '{portal.id}'.")
-        else:
-            descriptions.append(f"{operation_count}. Ensure API product '{product_state.info.name}' is unpublished from portal '{portal.name}' with ID '{portal.id}'.")
+        status = "published" if portal.config.publish_status == "published" else "unpublished"
+        descriptions.append(f"{operation_count}. Ensure API product '{product_state.info.name}' is {status} on portal '{portal.name}' with ID '{portal.id}'.")
         operation_count += 1
 
     for version in product_state.versions:
-        descriptions.append(f"{operation_count}. Ensure API product version '{version.name}' with spec file '{version.spec}' is up-to-date.")
+        descriptions.append(f"{operation_count}. Ensure API product version '{version.name}' with spec file '{version.spec}' exists and is up-to-date.")
         operation_count += 1
         if version.gateway_service.id and version.gateway_service.control_plane_id:
             descriptions.append(f"  Ensure it is linked to Gateway Service with ID '{version.gateway_service.id}' and Control Plane ID '{version.gateway_service.control_plane_id}'.")
         for portal in version.portals:
-            descriptions.append(f"{operation_count}. Ensure portal product version {version.name} on portal '{portal.name}' is up-to-date with publish status '{portal.config.publish_status}'.")
-            descriptions.append(f"  - Deprecated: {portal.config.deprecated}")
-            descriptions.append(f"  - Auth Strategy IDs: {portal.config.auth_strategy_ids}")
-            descriptions.append(f"  - Application Registration Enabled: {portal.config.application_registration.enabled}")
-            descriptions.append(f"  - Auto Approve Registration: {portal.config.application_registration.auto_approve}")
+            descriptions.extend([
+                f"{operation_count}. Ensure portal product version {version.name} on portal '{portal.name}' is up-to-date with publish status '{portal.config.publish_status}'.",
+                f"  - Deprecated: {portal.config.deprecated}",
+                f"  - Auth Strategy IDs: {portal.config.auth_strategy_ids}",
+                f"  - Application Registration Enabled: {portal.config.application_registration.enabled}",
+                f"  - Auto Approve Registration: {portal.config.application_registration.auto_approve}"
+            ])
             operation_count += 1
 
     logger.info("\n".join(descriptions))
@@ -280,7 +285,7 @@ def main() -> None:
     args = get_parser_args()
 
     if args.command == 'explain':
-        explain_command(args, None)
+        explain_command(args)
         sys.exit(0)
 
     config = read_config_file(args.config)

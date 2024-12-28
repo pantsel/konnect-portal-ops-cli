@@ -15,16 +15,13 @@ Ensure that the required Konnect Developer Portals are set up before using this 
   - [Available Commands](#available-commands)
     - [`sync`](#sync)
     - [`delete`](#delete)
+  - [`explain`](#explain)
   - [Common Arguments](#common-arguments)
-  - [Examples](#examples)
-    - [🚀 Publish an API Product and Version to a Portal](#-publish-an-api-product-and-version-to-a-portal)
-    - [🔗 Link a Gateway Service to an API Product Version](#-link-a-gateway-service-to-an-api-product-version)
-    - [🚀 Publish a New Version of the API Product to a Portal](#-publish-a-new-version-of-the-api-product-to-a-portal)
-    - [⚠️ Deprecate an API Version on a Portal](#️-deprecate-an-api-version-on-a-portal)
-    - [🚫 Unpublish an API Version from a Portal](#-unpublish-an-api-version-from-a-portal)
-    - [🚫 Unpublish an API Product from a Portal](#-unpublish-an-api-product-from-a-portal)
+  - [Advanced Usage](#advanced-usage)
+    - [🚫 Unpublish API Product Versions](#-unpublish-api-product-versions)
+    - [⚠️ Deprecate API Product Version from a Portal](#️-deprecate-api-product-version-from-a-portal)
+    - [🔗 Link Gateway Services to API Product versions](#-link-gateway-services-to-api-product-versions)
     - [📚 Managing API Products Documentation](#-managing-api-products-documentation)
-    - [🗑️ Completely Delete an API Product and Its Associations](#️-completely-delete-an-api-product-and-its-associations)
 - [CLI Configuration](#cli-configuration)
 - [Local Development](#local-development)
 - [Testing](#testing)
@@ -129,6 +126,14 @@ to skip the interactive confirmation prompt, use the `--yes` flag:
 $ kptl delete product_name_or_id --config .config.yaml --yes
 ```
 
+### `explain`
+
+Explain the API Product state file and the operations that will be performed on Konnect.
+
+```shell
+$ kptl explain httpbin_state.yaml
+```
+
 ### Common Arguments
 
 The CLI supports the following arguments:
@@ -141,58 +146,75 @@ The CLI supports the following arguments:
 | `--http-proxy`    | No                               | HTTP proxy URL.                                                            |
 | `--https-proxy`   | No                               | HTTPS proxy URL.                                                           |
 
-### Examples
+### Advanced Usage
 
-#### 🚀 Publish an API Product and Version to a Portal
+#### 🚫 Unpublish API Product Versions
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
-   --konnect-portal-name my-portal 
+To unpublish an API Product version from a portal, update the state file to set the `publish_status` to `unpublished` for the desired portal.
+
+```yaml
+# httpbin_state.yaml
+...
+versions:
+   - name: "1.0.0"
+      spec: examples/api-specs/v1/httpbin.yaml
+      portals:
+         - name: dev_portal
+            config:
+               publish_status: unpublished
+...
 ```
 
-#### 🔗 Link a Gateway Service to an API Product Version
+Then run the sync command:
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
-   --konnect-portal-name my-portal \
-   --gateway-service-id <gateway-service-id>
-   --gateway-service-control-plane-id <gateway-service-control-plane-id>
+```shell
+$ kptl sync httpbin_state.yaml --config .config.yaml
 ```
 
-#### 🚀 Publish a New Version of the API Product to a Portal
+#### ⚠️ Deprecate API Product Version from a Portal
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v2/httpbin.yaml \
-   --konnect-portal-name my-portal
+To deprecate an API Product version from a portal, update the state file to set the `deprecated` to `true` for the desired portal.
+
+```yaml
+# httpbin_state.yaml
+...
+versions:
+   - name: "1.0.0"
+      spec: examples/api-specs/v1/httpbin.yaml
+      portals:
+         - name: dev_portal
+            config:
+               deprecated: true
+...
+
 ```
 
-#### ⚠️ Deprecate an API Version on a Portal
+Then run the sync command:
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
-   --konnect-portal-name my-portal --deprecate
+```shell
+$ kptl sync httpbin_state.yaml --config .config.yaml
 ```
 
-#### 🚫 Unpublish an API Version from a Portal
+#### 🔗 Link Gateway Services to API Product versions
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
-   --konnect-portal-name my-portal \
-   --unpublish version
+To link a Gateway Service to an API Product version, update the state file to include the `gateway_service` section with the appropriate `id` and `control_plane_id`.
+
+```yaml
+# httpbin_state.yaml
+...
+versions:
+   - name: "1.0.0"
+      spec: examples/api-specs/v1/httpbin.yaml
+      gateway_service:
+         id: <gateway-service-id>
+         control_plane_id: <control-plane-id>
+...
 ```
 
-#### 🚫 Unpublish an API Product from a Portal
+Then run the sync command:
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
-   --konnect-portal-name my-portal \
-   --unpublish product
+```shell
+$ kptl sync httpbin_state.yaml --config .config.yaml
 ```
 
 #### 📚 Managing API Products Documentation
@@ -204,20 +226,24 @@ How it works:
 - By default, all documents get published. If you want to unpublish a document, add the `__unpublished` tag at the end of the file name.
 - Existing API Product documents that are not present in the documents folder will be deleted.
 
-For an example documents folder structure and use-cases, see the [examples/docs](examples/docs) directory.
+For an example documents folder structure and use-cases, see the [examples/products/httbin/docs](examples/products/httbin/docs) directory.
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v1/httpbin.yaml \
-   --docs ../examples/docs/httpbin \
-   --konnect-portal-name my-portal
+To sync the API Product documents with Konnect, update the state file to include the `documents` section with the `sync` flag set to `true` and the `dir` pointing to the documents directory.
+
+```yaml
+# httpbin_state.yaml
+...
+info: ...
+documents:
+   sync: true
+   dir: examples/products/httpbin/docs
+...
 ```
 
-#### 🗑️ Completely Delete an API Product and Its Associations
+Then run the sync command:
 
-```bash
-$ kptl --config .config.yaml \
-   --oas-spec ../examples/api-specs/v1/httpbin.yaml --delete --yes
+```shell
+$ kptl sync httpbin_state.yaml --config .config.yaml
 ```
 
 ## CLI Configuration
@@ -228,6 +254,8 @@ The CLI supports the following variables for configuration in a `yaml` file:
 | --------------- | -------------------------------------- |
 | `konnect_url`   | Konnect API server URL.                |
 | `konnect_token` | Token for authenticating API requests. |
+| `http_proxy`    | HTTP proxy URL.                        |
+| `https_proxy`   | HTTPS proxy URL.                       |
 
 And the following environment variables:
 
@@ -255,7 +283,7 @@ And the following environment variables:
 
 3. Run the CLI directly:  
    ```shell
-      $ PYTHONPATH=src python src/kptl/main.py [options]
+      $ PYTHONPATH=src python src/kptl/main.py [command] [options]
    ```
 
 ## Testing
