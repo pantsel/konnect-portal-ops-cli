@@ -158,6 +158,7 @@ def test_state(sync_command: List[str], tmp_path: pytest.TempPathFactory) -> Non
     assert dev_portal_product_version_v1["deprecated"] is False
     assert prod_portal_product_version_v1["deprecated"] is True
 
+    
 def test_delete_api_product(delete_command: List[str]) -> None:
     """Test deleting API product."""
 
@@ -177,3 +178,84 @@ def test_delete_api_product(delete_command: List[str]) -> None:
     assert len(response.json()["data"]) == 0
 
     assert result.returncode == 0
+
+def test_delete_product_conflicts(sync_command: List[str], delete_command: List[str], tmp_path: pytest.TempPathFactory) -> None:
+    """Test API product conflict."""
+    state = tmp_path / "state.yaml"
+    state.write_text(f"""
+    _version: 1.0.0
+    info:
+        name: {PRODUCT_NAME}
+        description: A simple API Product for requests to /httpbin
+    documents:
+        sync: true
+        dir: {DOCS_PATH}
+    portals:
+        - name: {PORTAL_DEV}
+        - name: {PORTAL_PROD}
+    versions:
+        - spec: {SPEC_V1_PATH}
+          portals:
+            - name: {PORTAL_DEV}
+            - name: {PORTAL_PROD}
+        - spec: {SPEC_V2_PATH}
+          portals:
+            - name: {PORTAL_DEV}
+            - name: {PORTAL_PROD}
+    """)
+
+    result = subprocess.run(
+        sync_command + [
+            str(state),
+            "--konnect-token", "test-token",
+            "--konnect-url", TEST_SERVER_URL
+        ],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+
+    assert result.returncode == 0
+
+    api_product = konnect.get_api_product_by_name(PRODUCT_NAME)
+
+    # Create API product with the same name
+    konnect.create_api_product({
+        "name": PRODUCT_NAME,
+        "description": "A simple API Product for requests to /httpbin"
+    })
+
+    all_products = konnect.list_api_products()
+    assert len(all_products) == 2
+
+    result = subprocess.run(
+        delete_command + [
+            PRODUCT_NAME,
+            "--konnect-token", "test-token",
+            "--konnect-url", TEST_SERVER_URL,
+            "--yes"
+        ],
+        capture_output=True,
+        text=True,
+        check=False
+    )
+
+    # The deletion should fail because there are multiple products with the same name
+    assert result.returncode == 1
+
+    result = subprocess.run(
+        delete_command + [
+            api_product["id"],
+            "--konnect-token", "test-token",
+            "--konnect-url", TEST_SERVER_URL,
+            "--yes"
+        ],
+        capture_output=True,
+        text=True,
+        check=True
+    )
+
+    # The deletion should succeed because the product ID is provided
+    assert result.returncode == 0
+    
+    

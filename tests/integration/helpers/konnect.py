@@ -70,6 +70,20 @@ class KonnectHelper:
         self.check_parent_document_id(documents, "0-5-api-philosophy", "0-introduction")
         self.check_parent_document_id(documents, "1-1-child-of-authentication", "1-authentication")
 
+    def list_api_products(self) -> List[Dict[str, Any]]:
+        """
+        List the API products.
+        """
+        response = requests.get(f"{self.test_server_url}/v2/api-products", timeout=10)
+        return response.json()["data"]
+    
+    def create_api_product(self, data: Dict[str, str]) -> Dict[str, Any]:
+        """
+        Create an API product.
+        """
+        response = requests.post(f"{self.test_server_url}/v2/api-products", json=data, timeout=10)
+        return response.json()
+    
     def list_portal_product_versions(self, portal_id: str) -> List[Dict[str, Any]]:
         """
         List the portal product versions.
