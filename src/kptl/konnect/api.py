@@ -40,6 +40,18 @@ class KonnectApi:
 
         return response['data'][0] if response['data'] else None
     
+    def find_api_product_by_id(self, api_product_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Find an API product by its ID.
+
+        Args:
+            api_product_id (str): The ID of the API product.
+
+        Returns:
+            Optional[Dict[str, Any]]: The API product details if found, else None.
+        """
+        return self.api_product_client.get_api_product(api_product_id)
+
     def create_api_product(self, data: Dict) -> Dict[str, Any]:
         """
         Create an API product.
@@ -543,7 +555,7 @@ class KonnectApi:
 
         self.logger.info("%s Portal Product Version '%s' for '%s' on '%s'", action, api_product_version['name'], api_product['name'], portal['name'])
 
-    def delete_api_product(self, api_name: str) -> None:
+    def delete_api_product(self, identifier: str) -> None:
         """
         Delete an API product by its name.
 
@@ -553,13 +565,18 @@ class KonnectApi:
         Returns:
             None
         """
-        api_product = self.find_api_product_by_name(api_name)
+
+        if utils.is_valid_uuid(identifier):
+            api_product = self.find_api_product_by_id(identifier)
+        else:
+            api_product = self.find_api_product_by_name(identifier)
+
         if api_product:
             self.logger.info("Deleting API product: '%s' (%s)", api_product['name'], api_product['id'])
             self.api_product_client.delete_api_product(api_product['id'])
-            self.logger.info("API product '%s' deleted successfully.", api_name)
+            self.logger.info("API product '%s' deleted successfully.", api_product['name'])
         else:
-            self.logger.warning("API product '%s' not found. Nothing to delete.", api_name)
+            self.logger.warning("API product '%s' not found. Nothing to delete.", api_product['name'])
         
     def _sync_pages(self, local_pages: List[Dict[str, str]], remote_pages: List[Dict[str, str]], api_product_id: str) -> None:
         """

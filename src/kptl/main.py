@@ -109,8 +109,67 @@ def filter_published_portal_ids(product_portals: list[Portal], portals):
 
 def delete_command(args, konnect: KonnectApi):
     logger.info("Executing delete command")
-    if should_delete_api_product(args, args.name):
-        delete_api_product(konnect, args.name)
+    if should_delete_api_product(args, args.product):
+        delete_api_product(konnect, args.product)
+
+def explain_command(args, konnect: KonnectApi):
+    state_content = utils.read_file_content(args.state)
+    state_parsed = yaml.safe_load(state_content)
+    product_state = ProductState().from_dict(state_parsed)
+
+    descriptions = []
+    descriptions.append(f"\nProduct Name: {product_state.info.name}")
+    descriptions.append(f"Product Description: {product_state.info.description}")
+
+    for portal in product_state.portals:
+        descriptions.append(f"Portal: {portal.name} (ID: {portal.id})")
+
+    for version in product_state.versions:
+        descriptions.append(f"Version: {version.name}")
+        descriptions.append(f"  Spec File: {version.spec}")
+        descriptions.append(f"  Gateway Service ID: {version.gateway_service.id}")
+        descriptions.append(f"  Control Plane ID: {version.gateway_service.control_plane_id}")
+
+        for portal in version.portals:
+            descriptions.append(f"  Portal: {portal.name} (ID: {portal.id})")
+            descriptions.append(f"    Deprecated: {portal.config.deprecated}")
+            descriptions.append(f"    Publish Status: {portal.config.publish_status}")
+            descriptions.append(f"    Application Registration Enabled: {portal.config.application_registration.enabled}")
+            descriptions.append(f"    Auto Approve Registration: {portal.config.application_registration.auto_approve}")
+            descriptions.append(f"    Auth Strategy IDs: {portal.config.auth_strategy_ids}")
+
+    descriptions.append("\nOperations to be performed:")
+    operation_count = 1
+    descriptions.append(f"{operation_count}. Ensure API product '{product_state.info.name}' with description '{product_state.info.description}' is up-to-date.")
+    operation_count += 1
+
+    if product_state.documents.sync and product_state.documents.directory:
+        descriptions.append(f"{operation_count}. Ensure documents are synced from directory '{product_state.documents.directory}'.")
+    else:
+        descriptions.append(f"{operation_count}. Document sync will be skipped.")
+    operation_count += 1
+
+    for portal in product_state.portals:
+        if portal.config.publish_status == "published":
+            descriptions.append(f"{operation_count}. Ensure API product '{product_state.info.name}' is published on portal '{portal.name}' with ID '{portal.id}'.")
+        else:
+            descriptions.append(f"{operation_count}. Ensure API product '{product_state.info.name}' is unpublished from portal '{portal.name}' with ID '{portal.id}'.")
+        operation_count += 1
+
+    for version in product_state.versions:
+        descriptions.append(f"{operation_count}. Ensure API product version '{version.name}' with spec file '{version.spec}' is up-to-date.")
+        operation_count += 1
+        if version.gateway_service.id and version.gateway_service.control_plane_id:
+            descriptions.append(f"  Ensure it is linked to Gateway Service with ID '{version.gateway_service.id}' and Control Plane ID '{version.gateway_service.control_plane_id}'.")
+        for portal in version.portals:
+            descriptions.append(f"{operation_count}. Ensure portal product version {version.name} on portal '{portal.name}' is up-to-date with publish status '{portal.config.publish_status}'.")
+            descriptions.append(f"  - Deprecated: {portal.config.deprecated}")
+            descriptions.append(f"  - Auth Strategy IDs: {portal.config.auth_strategy_ids}")
+            descriptions.append(f"  - Application Registration Enabled: {portal.config.application_registration.enabled}")
+            descriptions.append(f"  - Auto Approve Registration: {portal.config.application_registration.auto_approve}")
+            operation_count += 1
+
+    logger.info("\n".join(descriptions))
 
 def get_parser_args() -> argparse.Namespace:
     """
@@ -127,8 +186,8 @@ def get_parser_args() -> argparse.Namespace:
 
     common_parser = argparse.ArgumentParser(add_help=False)
     common_parser.add_argument("--config", type=str, help="Path to the CLI configuration file")
-    common_parser.add_argument("--konnect-token", type=str, help="The Konnect spat or kpat token", required="--config" not in sys.argv)
-    common_parser.add_argument("--konnect-url", type=str, help="The Konnect API server URL", required="--config" not in sys.argv)
+    common_parser.add_argument("--konnect-token", type=str, help="The Konnect spat or kpat token")
+    common_parser.add_argument("--konnect-url", type=str, help="The Konnect API server URL")
     common_parser.add_argument("--http-proxy", type=str, help="HTTP Proxy URL", default=None)
     common_parser.add_argument("--https-proxy", type=str, help="HTTPS Proxy URL", default=None)
 
@@ -136,17 +195,20 @@ def get_parser_args() -> argparse.Namespace:
     deploy_parser.add_argument("state", type=str, help="Path to the API product state file")
 
     delete_parser = subparsers.add_parser('delete', help='Delete API product', parents=[common_parser])
-    delete_parser.add_argument("name", type=str, help="The name of the API product to delete")
+    delete_parser.add_argument("product", type=str, help="The name or ID of the API product to delete")
     delete_parser.add_argument("--yes", action="store_true", help="Skip confirmation prompt")
+
+    describe_parser = subparsers.add_parser('explain', help='Explain the actions that will be performed on Konnect')
+    describe_parser.add_argument("state", type=str, help="Path to the API product state file")
 
     return parser.parse_args()
 
-def delete_api_product(konnect: KonnectApi, api_name: str) -> None:
+def delete_api_product(konnect: KonnectApi, identifier: str) -> None:
     """
     Delete the API product.
     """
     try:
-        konnect.delete_api_product(api_name)
+        konnect.delete_api_product(identifier)
     except Exception as e:
         logger.error(f"Error: {str(e)}")
         sys.exit(1)
@@ -184,6 +246,7 @@ def read_config_file(config_file: str) -> dict:
     Read the configuration file.
     """
     try:
+        config_file = config_file or os.path.join(os.getenv("HOME"), ".kptl.config.yaml")
         file = utils.read_file_content(config_file)
         return yaml.safe_load(file)
     except Exception as e:
@@ -215,7 +278,12 @@ def main() -> None:
     Main function for the kptl module.
     """
     args = get_parser_args()
-    config = read_config_file(args.config) if args.config else {}
+
+    if args.command == 'explain':
+        explain_command(args, None)
+        sys.exit(0)
+
+    config = read_config_file(args.config)
     
     konnect = KonnectApi(
         token= args.konnect_token if args.konnect_token else config.get("konnect_token"),

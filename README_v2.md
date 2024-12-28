@@ -10,10 +10,12 @@ Ensure that the required Konnect Developer Portals are set up before using this 
 
 ## Table of Contents <!-- omit in toc -->
 - [Features](#features)
-- [How It Works](#how-it-works)
 - [Installation](#installation)
 - [Usage](#usage)
-  - [Arguments](#arguments)
+  - [Available Commands](#available-commands)
+    - [`sync`](#sync)
+    - [`delete`](#delete)
+  - [Common Arguments](#common-arguments)
   - [Examples](#examples)
     - [🚀 Publish an API Product and Version to a Portal](#-publish-an-api-product-and-version-to-a-portal)
     - [🔗 Link a Gateway Service to an API Product Version](#-link-a-gateway-service-to-an-api-product-version)
@@ -36,36 +38,6 @@ Ensure that the required Konnect Developer Portals are set up before using this 
 - **Delete API products** and their associations.  
 - Supports **non-interactive modes** for automation.  
 
-## How It Works
-
-The CLI tool requires two primary inputs:
-- The path to an OpenAPI Specification (OAS) file.
-- The name of the Konnect portal to perform operations on.
-
-It then parses the OAS file to extract essential information for identifying the API Product and its version:
-
-- The `info.title` field in the OAS file serves as the API Product name, acting as the primary identifier for idempotent operations.
-- The `info.description` field in the OAS file provides the API Product description.
-- The `info.version` field in the OAS file denotes the API Product Version name, which is the primary identifier for version-specific idempotent operations.
-
-Finally, the tool executes the following operations:
-1. Creates or updates the API Product on the Portal.
-2. Creates or updates the associated API Product Version.
-3. Ensures the OAS file is linked to the API Product Version.
-4. Publishes the API Product and its Version on the Portal.
-5. If a documents folder is provided, the tool synchronizes its contents with the API Product documentation on the Portal. This includes publishing new documents, updating existing ones, and removing documents that are no longer present in the folder.
-
-Flow:
-
-```mermaid
-graph LR
-    A[Parse OAS File] --> B[Create or Update API Product]
-    B --> C[Create or Update API Product Version]
-    C --> D[Attach OAS File to API Product Version]
-    D --> E[Publish API Product and Version]
-    E --> F[Sync API Product Documentation]
-```
-
 ## Installation
 
 1. Install the CLI using `pip`:
@@ -74,42 +46,100 @@ graph LR
    $ pip install kptl
    ```
 
-2. (Optional) Create a `yaml` config file to set the configuration variables.  
+2. (Optional) Create a `yaml` config file to set the CLI configuration variables.  
    ```yaml
-      # .config.yaml
+      # $HOME/.kptl.config.yaml
       konnect_url: https://us.api.konghq.com
       konnect_token: <your-konnect-token>
+      http_proxy: http://proxy.example.com:8080 # Optional
+      https_proxy: https://proxy.example.com:8080 # Optional
    ```
 
 ## Usage
 
-Run the script using the following command:  
-
 ```shell
-$ kptl [options]  
+$ kptl [command] [options]
 ```
 
-### Arguments
+### Available Commands
 
-| Option                               | Required                                                | Description                                                                     |
-| ------------------------------------ | ------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `--oas-spec`                         | **Yes**                                                 | Path to the OAS spec file.                                                      |
-| `--docs`                             | No                                                      | Path to the API product documents folder.                                       |
-| `--konnect-portal-name`              | **Yes** (except for `--delete`)                         | Name of the Konnect portal to perform operations on.                            |
-| `--konnect-token`                    | **Yes** (except for `--config`)                         | The Konnect spat or kpat token.                                                 |
-| `--konnect-url`                      | **Yes** (except for `--config`)                         | The Konnect API server URL.                                                     |
-| `--deprecate`                        | No                                                      | Deprecate the API product version on the portal.                                |
-| `--gateway-service-id`               | No                                                      | The id of the gateway service to link to the API product version.               |
-| `--gateway-service-control-plane-id` | No                                                      | The id of the gateway service control plane to link to the API product version. |
-| `--application-registration-enabled` | No                                                      | Enable application registration for the API product on the portal.              |
-| `--auto-aprove-registration`         | No                                                      | Automatically approve application registrations for the API product.            |
-| `--auth-strategy-ids`                | No                                                      | Comma-separated list of authentication strategy IDs.                            |
-| `--unpublish {product,version}`      | No                                                      | Unpublish the API product or version from the portal.                           |
-| `--delete`                           | No                                                      | Delete the API product and it's associations.                                   |
-| `--yes`                              | No                                                      | Skip confirmation prompts (useful for non-interactive environments).            |
-| `--config`                           | **Yes** (except for `--konnect-token`, `--konnect-url`) | Path to the configuration file.                                                 |
-| `--http-proxy`                       | No                                                      | HTTP proxy URL.                                                                 |
-| `--https-proxy`                      | No                                                      | HTTPS proxy URL.                                                                |
+#### `sync`
+
+Synchronize the predefined API Product state with Konnect Developer Portals using the `sync` command. 
+
+This command uses API Product state files to determine the operations to perform on Konnect.
+
+Example of a simple state file:
+
+```yaml
+# httpbin_state.yaml
+_version: 1.0.0 # API Product Configuration file version
+info:
+   name: HTTPBin API # API Product name
+   description: A simple API Product for requests to httpbin # API Product description
+portals: # List of portals to publish the API Product to
+   - name: dev_portal
+   - name: prod_portal
+versions: # List of API Product versions
+   - name: "1.0.0" # API Product version name. Optional - defaults to the version in the OAS spec.
+      spec: examples/api-specs/v1/httpbin.yaml # Path to the OAS spec file for the API Product version
+      portals: # List of portals to publish the API Product version to
+         - name: dev_portal   
+         - name: prod_portal
+   - name: "2.0.0"
+      spec: examples/api-specs/v2/httpbin.yaml
+      portals:
+         - name: dev_portal
+         - name: prod_portal
+```
+
+To sync the API Product state with Konnect, run:
+
+```shell
+$ kptl sync httpbin_state.yaml --config .config.yaml
+```
+
+This command will:
+1. Ensure the API Product is created on Konnect.
+2. Publish the API Product to the specified portals.
+3. Create the API Product versions on Konnect.
+4. Upload the defined API specifications to the respective API Product versions.
+5. Publish the API Product versions to the specified portals.
+
+```mermaid
+graph LR
+    A[API Product State File] --> B[Create API Product]
+    B --> C[Publish API Product]
+    C --> D[Create API Product Versions]
+    D --> E[Upload API Specifications]
+    E --> F[Publish API Product Versions]
+```
+
+#### `delete`
+
+Delete the API Product and its associations from Konnect using the `delete` command.
+
+```shell
+$ kptl delete product_name_or_id --config .config.yaml
+```
+
+to skip the interactive confirmation prompt, use the `--yes` flag:
+
+```shell
+$ kptl delete product_name_or_id --config .config.yaml --yes
+```
+
+### Common Arguments
+
+The CLI supports the following arguments:
+
+| Option            | Required                         | Description                                                                |
+| ----------------- | -------------------------------- | -------------------------------------------------------------------------- |
+| `--konnect-token` | **Yes** (if config file not set) | The Konnect token to use for authentication.                               |
+| `--konnect-url`   | **Yes** (if config file not set) | The Konnect API server URL.                                                |
+| `--config`        | No                               | Path to the CLI configuration file. Defaults to `$HOME/.kptl.config.yaml`. |
+| `--http-proxy`    | No                               | HTTP proxy URL.                                                            |
+| `--https-proxy`   | No                               | HTTPS proxy URL.                                                           |
 
 ### Examples
 

@@ -11,7 +11,7 @@ portals:
       publish_status: published
   - name: prod_portal
     config:
-      publish_status: published
+      publish_status: unpublished
 versions:
   - name: "1.0.0"
     spec: examples/api-specs/v1/httpbin.yaml
