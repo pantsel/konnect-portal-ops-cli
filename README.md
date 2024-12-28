@@ -365,7 +365,7 @@ To change the log level, set the `LOG_LEVEL` environment variable to one of the 
 
 ### Requirements
 
-- Python 3+
+- Python 3.7+
 - `PyYaml`: For parsing YAML-based files.
 - `requests`: For making HTTP requests to the Konnect API.
 

@@ -7,8 +7,8 @@ import os
 import sys
 import yaml
 from kptl import logger, __version__, constants
-from kptl.konnect import KonnectApi
-from kptl.konnect.state import Portal, PortalConfig, GatewayService, ProductState
+from kptl.konnect.api import KonnectApi
+from kptl.konnect.models import ProductState, Portal, PortalConfig
 from kptl.helpers import utils
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
