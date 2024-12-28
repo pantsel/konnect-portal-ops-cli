@@ -1,6 +1,8 @@
 # Konnect Dev Portal Ops CLI <!-- omit in toc -->
 
-A CLI tool for managing API products on **Konnect Developer Portals**. This tool allows you to publish, deprecate, unpublish, or delete API products and their versions based on state files.
+A rather opinionated CLI tool for managing API products on **Konnect Developer Portals**. This tool allows you to publish, deprecate, unpublish, or delete API products and their versions based on state files.
+
+Before using the CLI, ensure you have your developer portals set up on Konnect. For more information, see the [Konnect documentation](https://docs.konghq.com/konnect/dev-portal/).
 
 > **Note:** The CLI is under active development. Some features may not be fully supported yet. Use responsibly and report any issues.
 
@@ -25,6 +27,12 @@ A CLI tool for managing API products on **Konnect Developer Portals**. This tool
   - [Documents](#documents)
   - [Portals](#portals)
   - [Versions](#versions)
+  - [Detailed Explanation](#detailed-explanation)
+    - [Version](#version-1)
+    - [Info](#info-1)
+    - [Documents](#documents-1)
+    - [Portals](#portals-1)
+    - [Versions](#versions-1)
 - [Logging](#logging)
 - [Development](#development)
   - [Requirements](#requirements)
@@ -320,6 +328,51 @@ versions:
 
 Defines the different versions of the API product, including their specifications, gateway service details, and portal configurations. Each version can have different settings for deprecation, publication status, authentication strategies, and application registration.
 
+### Detailed Explanation
+
+To better understand the structure, here is a detailed explanation of each section based on the `from_dict` method of the `ProductState` class:
+
+#### Version
+
+- **_version**: (Required) Specifies the version of the state file format. Default is `1.0.0`.
+
+#### Info
+
+- **info**: (Required) Contains metadata about the API product.
+  - **name**: (Required) The name of the API product.
+  - **description**: (Optional) A description of the API product.
+
+#### Documents
+
+- **documents**: (Optional) Defines the synchronization settings and directory for the API documentation.
+  - **sync**: (Required) A boolean indicating whether to sync the documents.
+  - **dir**: (Required) The directory where the documents are stored.
+
+#### Portals
+
+- **portals**: (Optional) Lists the portals where the API product will be published.
+  - **name**: (Required) The name of the portal.
+  - **config**: (Optional) Configuration for the portal.
+    - **publish_status**: (Optional) The publication status of the portal. Default is `published`.
+
+#### Versions
+
+- **versions**: (Required) Defines the different versions of the API product.
+  - **name**: (Optional) The name of the version.
+  - **spec**: (Required) The specification file for the version.
+  - **gateway_service**: (Optional) Details of the gateway service linked to the version.
+    - **id**: (Optional) The ID of the gateway service.
+    - **control_plane_id**: (Optional) The control plane ID of the gateway service.
+  - **portals**: (Optional) Lists the portals where the version will be published.
+    - **name**: (Required) The name of the portal.
+    - **config**: (Optional) Configuration for the portal.
+      - **deprecated**: (Optional) A boolean indicating whether the version is deprecated. Default is `false`.
+      - **publish_status**: (Optional) The publication status of the version. Default is `published`.
+      - **auth_strategy_ids**: (Optional) A list of authentication strategy IDs.
+      - **application_registration**: (Optional) Settings for application registration.
+        - **enabled**: (Optional) A boolean indicating whether application registration is enabled. Default is `false`.
+        - **auto_approve**: (Optional) A boolean indicating whether application registration is auto-approved. Default is `false`.
+
 ## Logging
 
 The CLI uses the `logging` module to log messages to the console. The default log level is set to `INFO`.
@@ -359,3 +412,4 @@ To run the tests, use the following command from the root directory:
 ```shell
 make test
 ```
+````
