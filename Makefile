@@ -29,7 +29,7 @@ install: setup
 	@echo "Local install complete, run 'kptl --help' to verify"
 
 .PHONY: publish
-publish: setup
+publish: cleann setup
 	twine upload --non-interactive dist/*
 	@echo "Publish complete"
 
