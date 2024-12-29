@@ -7,7 +7,8 @@ import os
 import sys
 from typing import Dict, List
 import yaml
-from kptl import logger, __version__, constants
+from kptl import __version__
+from kptl.config import constants, logger
 from kptl.konnect.api import KonnectApi
 from kptl.konnect.models.schema import ProductState, Portal, PortalConfig, ProductVersion
 from kptl.helpers import utils

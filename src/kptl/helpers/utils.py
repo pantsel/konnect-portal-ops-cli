@@ -9,7 +9,7 @@ import yaml
 import os
 
 
-from kptl.logger import Logger
+from kptl.config.logger import Logger
 
 def read_file_content(file_path: str) -> str:
     """Read the content of a file and return it as a string."""
