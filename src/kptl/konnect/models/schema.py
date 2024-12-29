@@ -112,7 +112,17 @@ class ApiProductState:
                 [
                 ApiProductVersionPortal(
                     portal_id=p.get('portal_id'),
-                    portal_name=p.get('portal_name')
+                    portal_name=p.get('portal_name'),
+                    deprecated=p.get('deprecated', False),
+                    publish_status=p.get('publish_status', "published"),
+                    application_registration_enabled=p.get('application_registration_enabled', False),
+                    auto_approve_registration=p.get('auto_approve_registration', False),
+                    auth_strategies=[
+                        ApiProductVersionAuthStrategy(
+                            id=a.get('id'),
+                            name=a.get('name')
+                        ) for a in p.get('auth_strategies', [])
+                    ]
                 ) for p in v.get('portals', [])
                 ],
                 key=lambda portal: portal.portal_name

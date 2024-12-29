@@ -108,8 +108,8 @@ def diff_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
 
     print(
         get_edits_string(
-            json.dumps(remote_state_dict_clean, indent=2, sort_keys=True),
-            json.dumps(local_state_dict_clean, indent=2, sort_keys=True)
+            yaml.dump(remote_state_dict_clean, indent=2, sort_keys=True),
+            yaml.dump(local_state_dict_clean, indent=2, sort_keys=True)
         )
     )
 
