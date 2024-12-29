@@ -100,17 +100,17 @@ class ApiProductState:
             ],
             key=lambda portal: portal.portal_name
         )
-        self.versions = [
+        self.versions = sorted(
+            [
             ApiProductVersion(
-            name=v.get('name'),
-            spec=v.get('spec'),
-            gateway_service=GatewayService(
+                name=v.get('name'),
+                spec=v.get('spec'),
+                gateway_service=GatewayService(
                 id=v.get('gateway_service', {}).get('id'),
                 control_plane_id=v.get('gateway_service', {}).get('control_plane_id')
-            ),
-            portals=sorted(
-                [
-                ApiProductVersionPortal(
+                ),
+                portals=sorted(
+                [ApiProductVersionPortal(
                     portal_id=p.get('portal_id'),
                     portal_name=p.get('portal_name'),
                     deprecated=p.get('deprecated', False),
@@ -118,17 +118,19 @@ class ApiProductState:
                     application_registration_enabled=p.get('application_registration_enabled', False),
                     auto_approve_registration=p.get('auto_approve_registration', False),
                     auth_strategies=[
-                        ApiProductVersionAuthStrategy(
-                            id=a.get('id'),
-                            name=a.get('name')
-                        ) for a in p.get('auth_strategies', [])
+                    ApiProductVersionAuthStrategy(
+                        id=a.get('id'),
+                        name=a.get('name')
+                    ) for a in p.get('auth_strategies', [])
                     ]
                 ) for p in v.get('portals', [])
                 ],
                 key=lambda portal: portal.portal_name
-            )
+                )
             ) for v in data.get('versions', [])
-        ]
+            ],
+            key=lambda version: version.name
+        )
 
         return self
     
