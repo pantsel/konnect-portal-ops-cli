@@ -6,8 +6,9 @@ import json
 import os
 from typing import List, Optional, Dict, Any
 
+from kptl.konnect.models.schema import Portal, ProductState, ProductVersion
 from kptl.logger import Logger
-from kptl.clients import ApiProductClient, PortalManagementClient
+from kptl.konnect.services import ApiProductClient, PortalManagementClient
 from kptl.helpers import utils
 from kptl.helpers.api_product_documents import parse_directory, get_slug_tail
 
@@ -648,3 +649,4 @@ class KonnectApi:
 
         self.logger.info("Processing documents in '%s'", directory)
         self._sync_pages(local_pages, remote_pages, api_product_id)
+

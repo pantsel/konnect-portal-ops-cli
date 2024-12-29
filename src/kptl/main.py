@@ -5,114 +5,28 @@ Main module for kptl.
 import argparse
 import os
 import sys
+from typing import Dict, List
 import yaml
 from kptl import logger, __version__, constants
 from kptl.konnect.api import KonnectApi
-from kptl.konnect.models import ProductState, Portal, PortalConfig
+from kptl.konnect.models.schema import ProductState, Portal, PortalConfig, ProductVersion
 from kptl.helpers import utils
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
 
-def sync_command(args, konnect: KonnectApi):
-    state_content = utils.read_file_content(args.state)
-    state_parsed = yaml.safe_load(state_content)
-    product_state = ProductState().from_dict(state_parsed)
-
-    logger.info(f"Product info: {product_state.info.to_dict()}")
-
-    konnect_portals = [find_konnect_portal(konnect, p.id if p.id else p.name) for p in product_state.portals]
-
-    published_portal_ids = filter_published_portal_ids(product_state.portals, konnect_portals)
-
-    api_product = konnect.upsert_api_product(product_state.info.name, product_state.info.description, published_portal_ids)
-
-    if product_state.documents.sync and product_state.documents.directory:
-        konnect.sync_api_product_documents(api_product['id'], product_state.documents.directory)
-
-    handle_product_versions(konnect, product_state, api_product, konnect_portals)
-
-def handle_product_versions(konnect: KonnectApi, product_state: ProductState, api_product, konnect_portals):
-    handled_versions = []
-    for version in product_state.versions:
-        oas_data, oas_data_base64 = load_oas_data(version.spec)
-        version_name = version.name or oas_data.get('info').get('version')
-        gateway_service = create_gateway_service(version.gateway_service)
-
-        handled_versions.append(version_name)
-        
-        api_product_version = konnect.upsert_api_product_version(
-            api_product=api_product,
-            version_name=version_name,
-            gateway_service=gateway_service
-        )
-
-        konnect.upsert_api_product_version_spec(api_product['id'], api_product_version['id'], oas_data_base64)
-
-        for p in version.portals:
-            portal = next((portal for portal in konnect_portals if portal['id'] == p.id or portal['name'] == p.name), None)
-            if portal:
-                manage_portal_product_version(konnect, portal, api_product, api_product_version, p.config)
-            else:
-                logger.warning(f"Skipping version '{version_name}' operations on '{p.name}' - API product not published on this portal")
-
-        delete_unused_portal_versions(konnect, product_state, version, api_product_version, konnect_portals)
-        
-    delete_unused_versions(konnect, api_product, handled_versions)
-
-def create_gateway_service(gateway_service):
-    if gateway_service.id and gateway_service.control_plane_id:
-        return {
-            "id": gateway_service.id,
-            "control_plane_id": gateway_service.control_plane_id
-        }
-    return None
-
-def delete_unused_portal_versions(konnect, product_state, version, api_product_version, konnect_portals):
-    for portal in product_state.portals:
-        if portal.name not in [p.name for p in version.portals]:
-            portal_id = next((p['id'] for p in konnect_portals if p['name'] == portal.name), None)
-            konnect.delete_portal_product_version(portal_id, api_product_version['id'])
-
-def delete_unused_versions(konnect, api_product, handled_versions):
-    existing_api_product_versions = konnect.list_api_product_versions(api_product['id'])
-    for existing_version in existing_api_product_versions:
-        if existing_version['name'] not in handled_versions:
-            konnect.delete_api_product_version(api_product['id'], existing_version['id'])
-
-def load_oas_data(spec_file: str) -> tuple:
-    oas_file = utils.read_file_content(spec_file)
-    oas_data = parse_yaml(oas_file)
-    oas_data_base64 = utils.encode_content(oas_file)
-    return oas_data, oas_data_base64
-
-def manage_portal_product_version(konnect: KonnectApi, portal: dict, api_product: dict, api_product_version: dict, config: PortalConfig):
-
-    options = {
-        "deprecated": config.deprecated,
-        "publish_status": config.publish_status,
-        "application_registration_enabled": config.application_registration.enabled,
-        "auto_approve_registration": config.application_registration.auto_approve,
-        "auth_strategy_ids": config.auth_strategy_ids
-    }
-
-    konnect.upsert_portal_product_version(
-        portal=portal,
-        api_product_version=api_product_version,
-        api_product=api_product,
-        options=options
-    )
-
-def filter_published_portal_ids(product_portals: list[Portal], portals):
-    portal_ids = [p['id'] for p in portals]
-    return [portal_ids[i] for i in range(len(portal_ids)) if product_portals[i].config.publish_status == "published"]
-
-def delete_command(args, konnect: KonnectApi):
+def delete_command(args: argparse.Namespace, konnect: KonnectApi):
+    """
+    Execute the delete command.
+    """
     logger.info("Executing delete command")
     if should_delete_api_product(args, args.product):
-        delete_api_product(konnect, args.product)
+        konnect.delete_api_product(args.product)
 
-def explain_command(args):
+def explain_command(args: argparse.Namespace):
+    """
+    Explain the actions that will be performed on Konnect.
+    """
     state_content = utils.read_file_content(args.state)
     state_parsed = yaml.safe_load(state_content)
     product_state = ProductState().from_dict(state_parsed)
@@ -176,6 +90,113 @@ def explain_command(args):
 
     logger.info("\n".join(descriptions))
 
+def sync_command(args, konnect: KonnectApi):
+    """
+    Sync the API product with Konnect.
+    """
+    state_content = utils.read_file_content(args.state)
+    state_parsed = yaml.safe_load(state_content)
+    product_state = ProductState().from_dict(state_parsed)
+
+    logger.info("Product info: %s", product_state.info.to_dict())
+
+    konnect_portals = [find_konnect_portal(konnect, p.id if p.id else p.name) for p in product_state.portals]
+
+    published_portal_ids = filter_published_portal_ids(product_state.portals, konnect_portals)
+
+    api_product = konnect.upsert_api_product(product_state.info.name, product_state.info.description, published_portal_ids)
+
+    if product_state.documents.sync and product_state.documents.directory:
+        konnect.sync_api_product_documents(api_product['id'], product_state.documents.directory)
+
+    handle_product_versions(konnect, product_state, api_product, konnect_portals)
+
+def handle_product_versions(konnect: KonnectApi, product_state: ProductState, api_product, konnect_portals):
+    """
+    Handle the versions of the API product.
+    """
+    handled_versions = []
+    for version in product_state.versions:
+        oas_data, oas_data_base64 = utils.load_oas_data(version.spec)
+        version_name = version.name or oas_data.get('info').get('version')
+        gateway_service = create_gateway_service(version.gateway_service)
+
+        handled_versions.append(version_name)
+        
+        api_product_version = konnect.upsert_api_product_version(
+            api_product=api_product,
+            version_name=version_name,
+            gateway_service=gateway_service
+        )
+
+        konnect.upsert_api_product_version_spec(api_product['id'], api_product_version['id'], oas_data_base64)
+
+        for p in version.portals:
+            portal = next((portal for portal in konnect_portals if portal['id'] == p.id or portal['name'] == p.name), None)
+            if portal:
+                manage_portal_product_version(konnect, portal, api_product, api_product_version, p.config)
+            else:
+                logger.warning("Skipping version '%s' operations on '%s' - API product not published on this portal", version_name, p.name)
+
+        delete_unused_portal_versions(konnect, product_state, version, api_product_version, konnect_portals)
+        
+    delete_unused_product_versions(konnect, api_product, handled_versions)
+
+def delete_unused_portal_versions(konnect: KonnectApi, product_state: ProductState, version: ProductVersion, api_product_version: Dict[str, any], konnect_portals: List[Portal]) -> None:
+    """
+    Delete unused portal versions.
+    """
+    for portal in product_state.portals:
+        if portal.name not in [p.name for p in version.portals]:
+            portal_id = next((p['id'] for p in konnect_portals if p['name'] == portal.name), None)
+            konnect.delete_portal_product_version(portal_id, api_product_version['id'])
+
+def create_gateway_service(gateway_service):
+    """
+    Create a gateway service.
+    """
+    if gateway_service.id and gateway_service.control_plane_id:
+        return {
+            "id": gateway_service.id,
+            "control_plane_id": gateway_service.control_plane_id
+        }
+    return None
+
+def delete_unused_product_versions(konnect: KonnectApi, api_product, handled_versions):
+    """
+    Delete unused versions of the API product.
+    """
+    existing_api_product_versions = konnect.list_api_product_versions(api_product['id'])
+    for existing_version in existing_api_product_versions:
+        if existing_version['name'] not in handled_versions:
+            konnect.delete_api_product_version(api_product['id'], existing_version['id'])
+
+def manage_portal_product_version(konnect: KonnectApi, portal: dict, api_product: dict, api_product_version: dict, config: PortalConfig):
+    """
+    Manage the portal product version.
+    """
+    options = {
+        "deprecated": config.deprecated,
+        "publish_status": config.publish_status,
+        "application_registration_enabled": config.application_registration.enabled,
+        "auto_approve_registration": config.application_registration.auto_approve,
+        "auth_strategy_ids": config.auth_strategy_ids
+    }
+
+    konnect.upsert_portal_product_version(
+        portal=portal,
+        api_product_version=api_product_version,
+        api_product=api_product,
+        options=options
+    )
+
+def filter_published_portal_ids(product_portals: list[Portal], portals):
+    """
+    Filter the published portal IDs.
+    """
+    portal_ids = [p['id'] for p in portals]
+    return [portal_ids[i] for i in range(len(portal_ids)) if product_portals[i].config.publish_status == "published"]
+
 def get_parser_args() -> argparse.Namespace:
     """
     Parse command-line arguments.
@@ -208,54 +229,21 @@ def get_parser_args() -> argparse.Namespace:
 
     return parser.parse_args()
 
-def delete_api_product(konnect: KonnectApi, identifier: str) -> None:
-    """
-    Delete the API product.
-    """
-    try:
-        konnect.delete_api_product(identifier)
-    except Exception as e:
-        logger.error(f"Error: {str(e)}")
-        sys.exit(1)
-
 def find_konnect_portal(konnect: KonnectApi, portal_name: str) -> dict:
     """
     Find the Konnect portal by name.
     """
     try:
         portal = konnect.find_portal(portal_name)
-        logger.info(f"Fetching Portal information for '{portal_name}'")
+        logger.info("Fetching Portal information for '%s'", portal_name)
 
         if not portal:
-            logger.error(f"Portal with name {portal_name} not found")
+            logger.error("Portal with name %s not found", portal_name)
             sys.exit(1)
 
         return portal
     except Exception as e:
-        logger.error(f"Failed to get Portal information: {str(e)}")
-        sys.exit(1)
-
-def parse_yaml(file_content: str) -> dict:
-    """
-    Parse YAML content.
-    """
-    try:
-        return yaml.safe_load(file_content)
-    except Exception as e:
-        logger.error(f"Error parsing YAML content: {str(e)}")
-        sys.exit(1)
-
-
-def read_config_file(config_file: str) -> dict:
-    """
-    Read the configuration file.
-    """
-    try:
-        config_file = config_file or os.path.join(os.getenv("HOME"), ".kptl.config.yaml")
-        file = utils.read_file_content(config_file)
-        return yaml.safe_load(file)
-    except Exception as e:
-        logger.error(f"Error reading config file: {str(e)}")
+        logger.error("Failed to get Portal information: %s", str(e))
         sys.exit(1)
 
 def confirm_deletion(api_name: str) -> bool:
@@ -288,7 +276,7 @@ def main() -> None:
         explain_command(args)
         sys.exit(0)
 
-    config = read_config_file(args.config)
+    config = utils.read_config_file(args.config)
     
     konnect = KonnectApi(
         token= args.konnect_token if args.konnect_token else config.get("konnect_token"),
@@ -299,6 +287,7 @@ def main() -> None:
         }
     )
 
+    
     if args.command == 'sync':
         sync_command(args, konnect)
     elif args.command == 'delete':

@@ -2,14 +2,23 @@
 Utility functions.
 """
 
-import argparse
 import base64
 import re
+import sys
+import yaml
+import os
+
+
+from kptl.logger import Logger
 
 def read_file_content(file_path: str) -> str:
     """Read the content of a file and return it as a string."""
-    with open(file_path, 'rb') as f:
-        return f.read()
+    try:
+        with open(file_path, 'rb') as f:
+            return f.read()
+    except FileNotFoundError:
+        Logger().error("File not found: %s", file_path)
+        sys.exit(1)
 
 def encode_content(content) -> str:
     """Encode the given content to a base64 string."""
@@ -34,3 +43,32 @@ def slugify(title: str) -> str:
 def is_valid_uuid(uuid: str) -> bool:
     """Check if the given string is a valid UUID."""
     return re.match(r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$', uuid) is not None
+
+def parse_yaml(file_content: str) -> dict:
+    """
+    Parse YAML content.
+    """
+    try:
+        return yaml.safe_load(file_content)
+    except yaml.YAMLError as e:
+        Logger().error("Error parsing YAML content: %s", e)
+        sys.exit(1)
+
+def load_oas_data(spec_file: str) -> tuple:
+    """Load and parse OAS data from a specification file."""
+    oas_file = read_file_content(spec_file)
+    oas_data = parse_yaml(oas_file)
+    oas_data_base64 = encode_content(oas_file)
+    return oas_data, oas_data_base64
+
+def read_config_file(config_file: str) -> dict:
+    """
+    Read the configuration file.
+    """
+    try:
+        config_file = config_file or os.path.join(os.getenv("HOME"), ".kptl.config.yaml")
+        file = read_file_content(config_file)
+        return yaml.safe_load(file)
+    except Exception as e:
+        Logger().error("Error reading config file: %s", str(e))
+        sys.exit(1)
