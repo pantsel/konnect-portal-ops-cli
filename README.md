@@ -381,10 +381,16 @@ To change the log level, set the `LOG_LEVEL` environment variable to one of the 
     make deps
     ```
 
-3. Run the CLI directly:
+3. Install the CLI in editable mode:
 
     ```shell
-    PYTHONPATH=src python src/kptl/main.py [command] [options]
+    cd konnect-portal-ops-cli && pip install -e .
+    ```
+
+4. Run the CLI:
+
+    ```shell
+    kptl [command] [options]
     ```
 
 ## Testing
