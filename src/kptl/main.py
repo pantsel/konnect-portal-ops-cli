@@ -15,7 +15,7 @@ from kptl.helpers import utils
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
 
-def delete_command(args: argparse.Namespace, konnect: KonnectApi):
+def delete_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
     """
     Execute the delete command.
     """
@@ -23,7 +23,7 @@ def delete_command(args: argparse.Namespace, konnect: KonnectApi):
     if should_delete_api_product(args, args.product):
         konnect.delete_api_product(args.product)
 
-def explain_command(args: argparse.Namespace):
+def explain_command(args: argparse.Namespace) -> None:
     """
     Explain the actions that will be performed on Konnect.
     """
@@ -90,7 +90,7 @@ def explain_command(args: argparse.Namespace):
 
     logger.info("\n".join(descriptions))
 
-def sync_command(args, konnect: KonnectApi):
+def sync_command(args, konnect: KonnectApi) -> None:
     """
     Sync the API product with Konnect.
     """
@@ -111,7 +111,7 @@ def sync_command(args, konnect: KonnectApi):
 
     handle_product_versions(konnect, product_state, api_product, konnect_portals)
 
-def handle_product_versions(konnect: KonnectApi, product_state: ProductState, api_product, konnect_portals):
+def handle_product_versions(konnect: KonnectApi, product_state: ProductState, api_product, konnect_portals) -> None:
     """
     Handle the versions of the API product.
     """
@@ -151,7 +151,7 @@ def delete_unused_portal_versions(konnect: KonnectApi, product_state: ProductSta
             portal_id = next((p['id'] for p in konnect_portals if p['name'] == portal.name), None)
             konnect.delete_portal_product_version(portal_id, api_product_version['id'])
 
-def create_gateway_service(gateway_service):
+def create_gateway_service(gateway_service) -> dict:
     """
     Create a gateway service.
     """
@@ -162,7 +162,7 @@ def create_gateway_service(gateway_service):
         }
     return None
 
-def delete_unused_product_versions(konnect: KonnectApi, api_product, handled_versions):
+def delete_unused_product_versions(konnect: KonnectApi, api_product, handled_versions) -> None:
     """
     Delete unused versions of the API product.
     """
@@ -171,7 +171,7 @@ def delete_unused_product_versions(konnect: KonnectApi, api_product, handled_ver
         if existing_version['name'] not in handled_versions:
             konnect.delete_api_product_version(api_product['id'], existing_version['id'])
 
-def manage_portal_product_version(konnect: KonnectApi, portal: dict, api_product: dict, api_product_version: dict, config: PortalConfig):
+def manage_portal_product_version(konnect: KonnectApi, portal: dict, api_product: dict, api_product_version: dict, config: PortalConfig) -> None:
     """
     Manage the portal product version.
     """
