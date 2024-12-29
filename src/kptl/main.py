@@ -11,7 +11,7 @@ from kptl import __version__
 from kptl.config import constants, logger
 from kptl.konnect.api import KonnectApi
 from kptl.konnect.models.schema import ProductState, Portal, PortalConfig, ProductVersion
-from kptl.helpers import utils
+from kptl.helpers import utils, commands
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
@@ -32,64 +32,10 @@ def explain_command(args: argparse.Namespace) -> None:
     state_parsed = yaml.safe_load(state_content)
     product_state = ProductState().from_dict(state_parsed)
 
-    descriptions = [
-        f"\nProduct Name: {product_state.info.name}",
-        f"Product Description: {product_state.info.description}"
-    ]
+    expl = commands.explain_product_state(product_state)
 
-    for portal in product_state.portals:
-        descriptions.append(f"Portal: {portal.name} (ID: {portal.id})")
-
-    for version in product_state.versions:
-        descriptions.extend([
-            f"Version: {version.name}",
-            f"  Spec File: {version.spec}",
-            f"  Gateway Service ID: {version.gateway_service.id}",
-            f"  Control Plane ID: {version.gateway_service.control_plane_id}"
-        ])
-
-        for portal in version.portals:
-            descriptions.extend([
-                f"  Portal: {portal.name} (ID: {portal.id})",
-                f"    Deprecated: {portal.config.deprecated}",
-                f"    Publish Status: {portal.config.publish_status}",
-                f"    Application Registration Enabled: {portal.config.application_registration.enabled}",
-                f"    Auto Approve Registration: {portal.config.application_registration.auto_approve}",
-                f"    Auth Strategy IDs: {portal.config.auth_strategy_ids}"
-            ])
-
-    descriptions.append("\nOperations to be performed:")
-    operation_count = 1
-    descriptions.append(f"{operation_count}. Ensure API product '{product_state.info.name}' with description '{product_state.info.description}' exists and is up-to-date.")
-    operation_count += 1
-
-    if product_state.documents.sync and product_state.documents.directory:
-        descriptions.append(f"{operation_count}. Ensure documents are synced from directory '{product_state.documents.directory}'.")
-    else:
-        descriptions.append(f"{operation_count}. Document sync will be skipped.")
-    operation_count += 1
-
-    for portal in product_state.portals:
-        status = "published" if portal.config.publish_status == "published" else "unpublished"
-        descriptions.append(f"{operation_count}. Ensure API product '{product_state.info.name}' is {status} on portal '{portal.name}' with ID '{portal.id}'.")
-        operation_count += 1
-
-    for version in product_state.versions:
-        descriptions.append(f"{operation_count}. Ensure API product version '{version.name}' with spec file '{version.spec}' exists and is up-to-date.")
-        operation_count += 1
-        if version.gateway_service.id and version.gateway_service.control_plane_id:
-            descriptions.append(f"  Ensure it is linked to Gateway Service with ID '{version.gateway_service.id}' and Control Plane ID '{version.gateway_service.control_plane_id}'.")
-        for portal in version.portals:
-            descriptions.extend([
-                f"{operation_count}. Ensure portal product version {version.name} on portal '{portal.name}' is up-to-date with publish status '{portal.config.publish_status}'.",
-                f"  - Deprecated: {portal.config.deprecated}",
-                f"  - Auth Strategy IDs: {portal.config.auth_strategy_ids}",
-                f"  - Application Registration Enabled: {portal.config.application_registration.enabled}",
-                f"  - Auto Approve Registration: {portal.config.application_registration.auto_approve}"
-            ])
-            operation_count += 1
-
-    logger.info("\n".join(descriptions))
+    logger.info(expl)
+    
 
 def sync_command(args, konnect: KonnectApi) -> None:
     """
