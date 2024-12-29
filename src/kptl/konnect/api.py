@@ -358,6 +358,20 @@ class KonnectApi:
         self.logger.debug(json.dumps(api_product_version, indent=2))
         return api_product_version
 
+    def get_api_product_version_spec(self, api_product_id: str, api_product_version_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get the API product version spec.
+
+        Args:
+            api_product_id (str): The ID of the API product.
+            api_product_version_id (str): The ID of the API product version.
+
+        Returns:
+            Optional[Dict[str, Any]]: The API product version spec details if found, else None.
+        """
+        response = self.api_product_client.list_api_product_version_specs(api_product_id, api_product_version_id)
+        return response['data'][0] if response['data'] else None
+    
     def upsert_api_product_version_spec(self, api_product_id: str, api_product_version_id: str, oas_file_base64: str) -> Dict[str, Any]:
         """
         Create or update an API product version spec.

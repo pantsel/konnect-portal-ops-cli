@@ -72,3 +72,7 @@ def read_config_file(config_file: str) -> dict:
     except Exception as e:
         Logger().error("Error reading config file: %s", str(e))
         sys.exit(1)
+
+def is_file_path(path: str) -> bool:
+    """Check if the given path is a file path."""
+    return os.path.isfile(path) 

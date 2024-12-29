@@ -4,19 +4,17 @@ Main module for kptl.
 
 import argparse
 import os
-import pprint
 import sys
 from typing import Callable, Dict, List
 import yaml
 from kptl import __version__
 from kptl.config import constants, logger
 from kptl.konnect.api import KonnectApi
-from kptl.konnect.models.schema import GatewayService, ApiProduct, ApiProductState, ApiProductVersionPortal, ApiProductVersion
+from kptl.konnect.models.schema import ApiProductPortal, GatewayService, ApiProduct, ApiProductState, ApiProductVersionPortal, ApiProductVersion
 from kptl.helpers import utils, commands
 import json
 from deepdiff import DeepDiff, Delta
 import difflib
-from dataclasses import dataclass
 import dataclasses
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
@@ -32,6 +30,8 @@ def get_edits_string(old: str, new: str) -> str:
     
     for line in lines:
         line = line.rstrip()
+        if len(line) > 100:
+            line = line[:97] + "..."
         if line.startswith("+"):
             result += GREEN(line) + "\n"
         elif line.startswith("-"):
@@ -42,6 +42,15 @@ def get_edits_string(old: str, new: str) -> str:
             result += line + "\n"
 
     return result
+
+def remove_portal_ids(state_dict: dict) -> dict:
+    new_state_dict = state_dict.copy()
+    for portal in new_state_dict.get('portals', []):
+        portal.pop('portal_id', None)
+    for version in new_state_dict.get('versions', []):
+        for portal in version.get('portals', []):
+            portal.pop('portal_id', None)
+    return new_state_dict
 
 def diff_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
     state_content = utils.read_file_content(args.state)
@@ -56,53 +65,64 @@ def diff_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
     portals = [find_konnect_portal(konnect, p['portal_id']) for p in api_product['portals']]
 
     product_versions = konnect.list_api_product_versions(api_product['id'])
-    print(json.dumps(product_versions, indent=2))
 
     remote_state.info = ApiProduct(
         name=api_product['name'],
         description=api_product['description']
     )
-    remote_state.portals = [ApiProductVersionPortal(
+
+    remote_state.portals = sorted([ApiProductPortal(
         portal_id=p['id'],
         portal_name=p['name'],
-    ) for p in portals]
+    ) for p in portals], key=lambda portal: portal.portal_name)
 
-    remote_state.versions = [ApiProductVersion(
+    remote_state.versions = sorted([ApiProductVersion(
         name=v['name'],
-        spec="test",
+        spec=get_encoded_api_product_version_spec_content(konnect, api_product['id'], v['id']),
         gateway_service=GatewayService({
             "id": v['gateway_service']['id'],
             "control_plane_id": v['gateway_service']['control_plane_id']
         } if v['gateway_service'] else None),
-        portals=[ApiProductVersionPortal(
+        portals=sorted([ApiProductVersionPortal(
             portal_id=p['portal_id'],
             portal_name=p['portal_name'],
-            config=PortalConfig(
-                publish_status=p['publish_status'],
-                deprecated=p['deprecated'],
-                auth_strategy_ids=[strategy['id'] for strategy in p['auth_strategies']],
-                application_registration=ApplicationRegistration(
-                    enabled=p['application_registration_enabled'],
-                    auto_approve=p['auto_approve_registration']
-                )
-            )
-        ) for p in v['portals']]
-    ) for v in product_versions]
+            publish_status=p['publish_status'],
+            deprecated=p['deprecated'],
+            auth_strategies=p['auth_strategies'],
+            application_registration_enabled=p['application_registration_enabled'],
+            auto_approve_registration=p['auto_approve_registration']
+        ) for p in v['portals']], key=lambda portal: portal.portal_name)
+    ) for v in product_versions], key=lambda version: version.name)
 
-    # print(json.dumps(remote_state.to_dict(), indent=2))
+    # Before the diff, there are a couple of things we need to do:
+    # ============================================================
 
-    # print(json.dumps(remote_state.to_dict(), indent=2))
+    # 1. Encode the OAS spec content for the local state versions so that it can be compared with the remote state.
+    local_state.encode_versions_spec_content()
 
-    # diff = DeepDiff(local_state.to_dict(), remote_state.to_dict()).custom_report_result(
-    # delta = Delta(diff)
-    # print(diff)
+    # 2. Remove portal IDs from the state dictionaries to ensure they don't affect the diff.
+    #### Portal names are unique and portal-related lists are sorted by portal name.
+    #### @TODO: Maybe there's a better way to handle this.
+    remote_state_dict_clean = remove_portal_ids(dataclasses.asdict(remote_state))
+    local_state_dict_clean = remove_portal_ids(dataclasses.asdict(local_state))
 
     print(
-    get_edits_string(
-        json.dumps(dataclasses.asdict(remote_state), indent=2, sort_keys=True),
-        json.dumps(dataclasses.asdict(local_state), indent=2, sort_keys=True)
+        get_edits_string(
+            json.dumps(remote_state_dict_clean, indent=2, sort_keys=True),
+            json.dumps(local_state_dict_clean, indent=2, sort_keys=True)
+        )
     )
-)
+
+def get_encoded_api_product_version_spec_content(konnect: KonnectApi, api_product_id: str, api_product_version_id: str) -> str:
+    """
+    Get the encoded API product version spec.
+    """
+    spec = konnect.get_api_product_version_spec(api_product_id, api_product_version_id)
+    
+    if not spec:
+        return ""
+    
+    return utils.encode_content(spec['content'])
 
 def delete_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
     """

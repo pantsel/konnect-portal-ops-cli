@@ -4,6 +4,7 @@ Module for Konnect API state Models.
 
 from typing import Any, Dict, List
 from dataclasses import dataclass, field
+from kptl.helpers import utils
 
 @dataclass
 class ApiProductVersionAuthStrategy:
@@ -90,37 +91,42 @@ class ApiProductState:
             sync=data.get('documents', {}).get('sync', False),
             directory=data.get('documents', {}).get('dir', None)
         )
-        self.portals = [
+        self.portals = sorted(
+            [
             ApiProductPortal(
                 portal_id=p.get('portal_id'),
                 portal_name=p.get('portal_name')
             ) for p in data.get('portals', [])
-        ]
+            ],
+            key=lambda portal: portal.portal_name
+        )
         self.versions = [
             ApiProductVersion(
-                name=v.get('name'),
-                spec=v.get('spec'),
-                gateway_service=GatewayService(
-                    id=v.get('gateway_service', {}).get('id'),
-                    control_plane_id=v.get('gateway_service', {}).get('control_plane_id')
-                ),
-                portals=[
-                    ApiProductVersionPortal(
-                        portal_id=p.get('portal_id'),
-                        portal_name=p.get('portal_name'),
-                        deprecated=p.get('deprecated', False),
-                        publish_status=p.get('publish_status', "published"),
-                        application_registration_enabled=p.get('application_registration_enabled', False),
-                        auto_approve_registration=p.get('auto_approve_registration', False),
-                        auth_strategies=[
-                            ApiProductVersionAuthStrategy(
-                                id=a.get('id'),
-                                name=a.get('name')
-                            ) for a in p.get('auth_strategies', [])
-                        ]
-                    ) for p in v.get('portals', [])
-                ]
+            name=v.get('name'),
+            spec=v.get('spec'),
+            gateway_service=GatewayService(
+                id=v.get('gateway_service', {}).get('id'),
+                control_plane_id=v.get('gateway_service', {}).get('control_plane_id')
+            ),
+            portals=sorted(
+                [
+                ApiProductVersionPortal(
+                    portal_id=p.get('portal_id'),
+                    portal_name=p.get('portal_name')
+                ) for p in v.get('portals', [])
+                ],
+                key=lambda portal: portal.portal_name
+            )
             ) for v in data.get('versions', [])
         ]
 
         return self
+    
+    def encode_versions_spec_content(self):
+        """
+        Encode the version specs content to base64.
+        """
+        for version in self.versions:
+            _, oas_data_base64 = utils.load_oas_data(version.spec)
+            version.spec = oas_data_base64
+            
