@@ -11,7 +11,7 @@ import yaml
 from kptl import __version__
 from kptl.config import constants, logger
 from kptl.konnect.api import KonnectApi
-from kptl.konnect.models.schema import ApplicationRegistration, GatewayService, ApiProduct, ProductState, ApiProductVersionPortal, PortalConfig, ApiProductVersion, ApiProductPortal
+from kptl.konnect.models.schema import GatewayService, ApiProduct, ApiProductState, ApiProductVersionPortal, ApiProductVersion
 from kptl.helpers import utils, commands
 import json
 from deepdiff import DeepDiff, Delta
@@ -46,9 +46,9 @@ def get_edits_string(old: str, new: str) -> str:
 def diff_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
     state_content = utils.read_file_content(args.state)
     state_parsed = yaml.safe_load(state_content)
-    local_state = ProductState().from_dict(state_parsed)
+    local_state = ApiProductState().from_dict(state_parsed)
 
-    remote_state = ProductState()
+    remote_state = ApiProductState()
 
     api_product = konnect.find_api_product_by_name(local_state.info.name)
     api_product['portal_ids'] = [p['portal_id'] for p in api_product['portals']]
@@ -104,8 +104,6 @@ def diff_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
     )
 )
 
-
-
 def delete_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
     """
     Execute the delete command.
@@ -120,7 +118,7 @@ def explain_command(args: argparse.Namespace) -> None:
     """
     state_content = utils.read_file_content(args.state)
     state_parsed = yaml.safe_load(state_content)
-    product_state = ProductState().from_dict(state_parsed)
+    product_state = ApiProductState().from_dict(state_parsed)
 
     expl = commands.explain_product_state(product_state)
 
@@ -132,7 +130,7 @@ def sync_command(args, konnect: KonnectApi) -> None:
     """
     state_content = utils.read_file_content(args.state)
     state_parsed = yaml.safe_load(state_content)
-    product_state = ProductState().from_dict(state_parsed)
+    product_state = ApiProductState().from_dict(state_parsed)
 
     logger.info("Product info: %s", dataclasses.asdict(product_state.info))
 
@@ -147,7 +145,7 @@ def sync_command(args, konnect: KonnectApi) -> None:
 
     handle_product_versions(konnect, product_state, api_product, konnect_portals)
 
-def handle_product_versions(konnect: KonnectApi, product_state: ProductState, api_product: Dict[str, any], konnect_portals: List[Dict[str, any]]) -> None:
+def handle_product_versions(konnect: KonnectApi, product_state: ApiProductState, api_product: Dict[str, any], konnect_portals: List[Dict[str, any]]) -> None:
     """
     Handle the versions of the API product.
     """
@@ -178,7 +176,7 @@ def handle_product_versions(konnect: KonnectApi, product_state: ProductState, ap
         
     delete_unused_product_versions(konnect, api_product, handled_versions)
 
-def delete_unused_portal_versions(konnect: KonnectApi, product_state: ProductState, version: ApiProductVersion, api_product_version: Dict[str, any], konnect_portals: List[ApiProductVersionPortal]) -> None:
+def delete_unused_portal_versions(konnect: KonnectApi, product_state: ApiProductState, version: ApiProductVersion, api_product_version: Dict[str, any], konnect_portals: List[ApiProductVersionPortal]) -> None:
     """
     Delete unused portal versions.
     """

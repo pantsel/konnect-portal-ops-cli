@@ -6,24 +6,6 @@ from typing import Any, Dict, List
 from dataclasses import dataclass, field
 
 @dataclass
-class ApplicationRegistration:
-    """
-    Class representing application registration settings.
-    """
-    enabled: bool
-    auto_approve: bool
-
-@dataclass
-class PortalConfig:
-    """
-    Class representing portal configuration.
-    """
-    deprecated: bool = False
-    publish_status: str = "published"
-    auth_strategy_ids: List[str] = field(default_factory=list)
-    application_registration: ApplicationRegistration = field(default_factory=lambda: ApplicationRegistration(enabled=False, auto_approve=False))
-
-@dataclass
 class ApiProductVersionAuthStrategy:
     """
     Class representing an auth strategy.
@@ -87,7 +69,7 @@ class ApiProductPortal:
     portal_name: str
 
 @dataclass
-class ProductState:
+class ApiProductState:
     """
     Class representing the state of a product in Konnect.
     """

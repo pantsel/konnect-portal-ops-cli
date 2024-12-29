@@ -30,23 +30,22 @@ TEST_STATE = f"""
         sync: true
         dir: {DOCS_PATH}
     portals:
-        - name: {PORTAL_DEV}
-        - name: {PORTAL_PROD}
+        - portal_name: {PORTAL_DEV}
+        - portal_name: {PORTAL_PROD}
     versions:
         - spec: {SPEC_V1_PATH}
           gateway_service:
             id: test-id
             control_plane_id: test-control-plane-id
           portals:
-            - name: {PORTAL_DEV}
-            - name: {PORTAL_PROD}
-              config:
-                  publish_status: published  
-                  deprecated: true
+            - portal_name: {PORTAL_DEV}
+            - portal_name: {PORTAL_PROD}
+              publish_status: published  
+              deprecated: true
         - spec: {SPEC_V2_PATH}
           portals:
-            - name: {PORTAL_DEV}
-            - name: {PORTAL_PROD}
+            - portal_name: {PORTAL_DEV}
+            - portal_name: {PORTAL_PROD}
     """
 
 konnect: KonnectHelper = KonnectHelper(TEST_SERVER_URL, DOCS_PATH)
@@ -312,5 +311,3 @@ def test_delete_product_conflicts(sync_command: List[str], delete_command: List[
 
     # Ensure the remaining product is not the one that was deleted
     assert all_products[0]["id"] != api_product["id"]
-    
-    

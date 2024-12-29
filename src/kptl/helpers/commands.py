@@ -1,9 +1,9 @@
 
 
-from kptl.konnect.models.schema import ProductState
+from kptl.konnect.models.schema import ApiProductState
 
 
-def explain_product_state(product_state: ProductState) -> None:
+def explain_product_state(product_state: ApiProductState) -> None:
     """
     Generates a detailed explanation of the given product state and the operations to be performed.
 
@@ -28,7 +28,7 @@ def explain_product_state(product_state: ProductState) -> None:
     ]
 
     for portal in product_state.portals:
-        output.append(f"Portal: {portal.name} (ID: {portal.id})")
+        output.append(f"Portal: {portal.portal_name} (ID: {portal.portal_id})")
 
     for version in product_state.versions:
         output.extend([
@@ -41,11 +41,11 @@ def explain_product_state(product_state: ProductState) -> None:
         for portal in version.portals:
             output.extend([
                 f"  Portal: {portal.portal_name} (ID: {portal.portal_id})",
-                f"    Deprecated: {portal.config.deprecated}",
-                f"    Publish Status: {portal.config.publish_status}",
-                f"    Application Registration Enabled: {portal.config.application_registration.enabled}",
-                f"    Auto Approve Registration: {portal.config.application_registration.auto_approve}",
-                f"    Auth Strategy IDs: {portal.config.auth_strategy_ids}"
+                f"    Deprecated: {portal.deprecated}",
+                f"    Publish Status: {portal.publish_status}",
+                f"    Application Registration Enabled: {portal.application_registration_enabled}",
+                f"    Auto Approve Registration: {portal.auto_approve_registration}",
+                f"    Auth Strategies: {portal.auth_strategies}"
             ])
 
     output.append("\nOperations to be performed:")
@@ -60,8 +60,7 @@ def explain_product_state(product_state: ProductState) -> None:
     operation_count += 1
 
     for portal in product_state.portals:
-        status = "published" if portal.config.publish_status == "published" else "unpublished"
-        output.append(f"{operation_count}. Ensure API product '{product_state.info.name}' is {status} on portal '{portal.name}' with ID '{portal.id}'.")
+        output.append(f"{operation_count}. Ensure API product '{product_state.info.name}' is published on portal '{portal.portal_name}' with ID '{portal.portal_id}'.")
         operation_count += 1
 
     for version in product_state.versions:
@@ -71,11 +70,11 @@ def explain_product_state(product_state: ProductState) -> None:
             output.append(f"  Ensure it is linked to Gateway Service with ID '{version.gateway_service.id}' and Control Plane ID '{version.gateway_service.control_plane_id}'.")
         for portal in version.portals:
             output.extend([
-                f"{operation_count}. Ensure portal product version {version.name} on portal '{portal.portal_name}' is up-to-date with publish status '{portal.config.publish_status}'.",
-                f"  - Deprecated: {portal.config.deprecated}",
-                f"  - Auth Strategy IDs: {portal.config.auth_strategy_ids}",
-                f"  - Application Registration Enabled: {portal.config.application_registration.enabled}",
-                f"  - Auto Approve Registration: {portal.config.application_registration.auto_approve}"
+                f"{operation_count}. Ensure portal product version {version.name} on portal '{portal.portal_name}' is up-to-date with publish status '{portal.publish_status}'.",
+                f"  - Deprecated: {portal.deprecated}",
+                f"  - Auth Strategies: {portal.auth_strategies}",
+                f"  - Application Registration Enabled: {portal.application_registration_enabled}",
+                f"  - Auto Approve Registration: {portal.auto_approve_registration}"
             ])
             operation_count += 1
 
