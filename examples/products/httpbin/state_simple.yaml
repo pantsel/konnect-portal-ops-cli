@@ -9,13 +9,11 @@ portals:
   - portal_name: dev_portal
   - portal_name: prod_portal
 versions:
-  - name: "1.0.0"
-    spec: examples/api-specs/v1/httpbin.yaml
+  - spec: examples/api-specs/v1/httpbin.yaml
     portals:
       - portal_name: dev_portal   
       - portal_name: prod_portal
-  - name: "2.0.0"
-    spec: examples/api-specs/v2/httpbin.yaml
+  - spec: examples/api-specs/v2/httpbin.yaml
     portals:
       - portal_name: dev_portal
       - portal_name: prod_portal

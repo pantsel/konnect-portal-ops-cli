@@ -103,7 +103,7 @@ class ApiProductState:
         self.versions = sorted(
             [
             ApiProductVersion(
-                name=v.get('name'),
+                name=self.get_version_name(v),
                 spec=v.get('spec'),
                 gateway_service=GatewayService(
                 id=v.get('gateway_service', {}).get('id'),
@@ -133,6 +133,16 @@ class ApiProductState:
         )
 
         return self
+    
+    def get_version_name(self, version: ApiProductVersion):
+        """
+        Get the version name.
+        """
+        if version.get('name'):
+            return version.get('name')
+        
+        oas_data, _ = utils.load_oas_data(version.get('spec'))
+        return oas_data.get('info', {}).get('version')
     
     def encode_versions_spec_content(self):
         """
