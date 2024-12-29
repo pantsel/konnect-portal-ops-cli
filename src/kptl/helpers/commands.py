@@ -40,7 +40,7 @@ def explain_product_state(product_state: ProductState) -> None:
 
         for portal in version.portals:
             output.extend([
-                f"  Portal: {portal.name} (ID: {portal.id})",
+                f"  Portal: {portal.portal_name} (ID: {portal.portal_id})",
                 f"    Deprecated: {portal.config.deprecated}",
                 f"    Publish Status: {portal.config.publish_status}",
                 f"    Application Registration Enabled: {portal.config.application_registration.enabled}",
@@ -71,7 +71,7 @@ def explain_product_state(product_state: ProductState) -> None:
             output.append(f"  Ensure it is linked to Gateway Service with ID '{version.gateway_service.id}' and Control Plane ID '{version.gateway_service.control_plane_id}'.")
         for portal in version.portals:
             output.extend([
-                f"{operation_count}. Ensure portal product version {version.name} on portal '{portal.name}' is up-to-date with publish status '{portal.config.publish_status}'.",
+                f"{operation_count}. Ensure portal product version {version.name} on portal '{portal.portal_name}' is up-to-date with publish status '{portal.config.publish_status}'.",
                 f"  - Deprecated: {portal.config.deprecated}",
                 f"  - Auth Strategy IDs: {portal.config.auth_strategy_ids}",
                 f"  - Application Registration Enabled: {portal.config.application_registration.enabled}",

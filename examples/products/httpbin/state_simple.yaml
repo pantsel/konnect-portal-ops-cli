@@ -6,16 +6,16 @@ documents:
   sync: true
   dir: examples/products/httpbin/docs
 portals:
-  - name: dev_portal
-  - name: prod_portal
+  - portal_name: dev_portal
+  - portal_name: prod_portal
 versions:
   - name: "1.0.0"
     spec: examples/api-specs/v1/httpbin.yaml
     portals:
-      - name: dev_portal   
-      - name: prod_portal
+      - portal_name: dev_portal   
+      - portal_name: prod_portal
   - name: "2.0.0"
     spec: examples/api-specs/v2/httpbin.yaml
     portals:
-      - name: dev_portal
-      - name: prod_portal
+      - portal_name: dev_portal
+      - portal_name: prod_portal

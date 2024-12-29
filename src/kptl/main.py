@@ -4,17 +4,107 @@ Main module for kptl.
 
 import argparse
 import os
+import pprint
 import sys
-from typing import Dict, List
+from typing import Callable, Dict, List
 import yaml
 from kptl import __version__
 from kptl.config import constants, logger
 from kptl.konnect.api import KonnectApi
-from kptl.konnect.models.schema import ProductState, Portal, PortalConfig, ProductVersion
+from kptl.konnect.models.schema import ApplicationRegistration, GatewayService, ApiProduct, ProductState, ApiProductVersionPortal, PortalConfig, ApiProductVersion, ApiProductPortal
 from kptl.helpers import utils, commands
+import json
+from deepdiff import DeepDiff, Delta
+import difflib
+from dataclasses import dataclass
+import dataclasses
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
+
+RED: Callable[[str], str] = lambda text: f"\u001b[31m{text}\033\u001b[0m"
+GREEN: Callable[[str], str] = lambda text: f"\u001b[32m{text}\033\u001b[0m"
+
+def get_edits_string(old: str, new: str) -> str:
+    result = ""
+
+    lines = difflib.unified_diff(old.splitlines(keepends=True), new.splitlines(keepends=True), fromfile="before", tofile="after", n=1000)
+    
+    for line in lines:
+        line = line.rstrip()
+        if line.startswith("+"):
+            result += GREEN(line) + "\n"
+        elif line.startswith("-"):
+            result += RED(line) + "\n"
+        elif line.startswith("?") or line.startswith("@@"):
+            continue
+        else:
+            result += line + "\n"
+
+    return result
+
+def diff_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
+    state_content = utils.read_file_content(args.state)
+    state_parsed = yaml.safe_load(state_content)
+    local_state = ProductState().from_dict(state_parsed)
+
+    remote_state = ProductState()
+
+    api_product = konnect.find_api_product_by_name(local_state.info.name)
+    api_product['portal_ids'] = [p['portal_id'] for p in api_product['portals']]
+
+    portals = [find_konnect_portal(konnect, p['portal_id']) for p in api_product['portals']]
+
+    product_versions = konnect.list_api_product_versions(api_product['id'])
+    print(json.dumps(product_versions, indent=2))
+
+    remote_state.info = ApiProduct(
+        name=api_product['name'],
+        description=api_product['description']
+    )
+    remote_state.portals = [ApiProductVersionPortal(
+        portal_id=p['id'],
+        portal_name=p['name'],
+    ) for p in portals]
+
+    remote_state.versions = [ApiProductVersion(
+        name=v['name'],
+        spec="test",
+        gateway_service=GatewayService({
+            "id": v['gateway_service']['id'],
+            "control_plane_id": v['gateway_service']['control_plane_id']
+        } if v['gateway_service'] else None),
+        portals=[ApiProductVersionPortal(
+            portal_id=p['portal_id'],
+            portal_name=p['portal_name'],
+            config=PortalConfig(
+                publish_status=p['publish_status'],
+                deprecated=p['deprecated'],
+                auth_strategy_ids=[strategy['id'] for strategy in p['auth_strategies']],
+                application_registration=ApplicationRegistration(
+                    enabled=p['application_registration_enabled'],
+                    auto_approve=p['auto_approve_registration']
+                )
+            )
+        ) for p in v['portals']]
+    ) for v in product_versions]
+
+    # print(json.dumps(remote_state.to_dict(), indent=2))
+
+    # print(json.dumps(remote_state.to_dict(), indent=2))
+
+    # diff = DeepDiff(local_state.to_dict(), remote_state.to_dict()).custom_report_result(
+    # delta = Delta(diff)
+    # print(diff)
+
+    print(
+    get_edits_string(
+        json.dumps(dataclasses.asdict(remote_state), indent=2, sort_keys=True),
+        json.dumps(dataclasses.asdict(local_state), indent=2, sort_keys=True)
+    )
+)
+
+
 
 def delete_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
     """
@@ -34,8 +124,7 @@ def explain_command(args: argparse.Namespace) -> None:
 
     expl = commands.explain_product_state(product_state)
 
-    logger.info(expl)
-    
+    logger.info(expl)  
 
 def sync_command(args, konnect: KonnectApi) -> None:
     """
@@ -45,9 +134,9 @@ def sync_command(args, konnect: KonnectApi) -> None:
     state_parsed = yaml.safe_load(state_content)
     product_state = ProductState().from_dict(state_parsed)
 
-    logger.info("Product info: %s", product_state.info.to_dict())
+    logger.info("Product info: %s", dataclasses.asdict(product_state.info))
 
-    konnect_portals = [find_konnect_portal(konnect, p.id if p.id else p.name) for p in product_state.portals]
+    konnect_portals = [find_konnect_portal(konnect, p.portal_id if p.portal_id else p.portal_name) for p in product_state.portals]
 
     published_portal_ids = filter_published_portal_ids(product_state.portals, konnect_portals)
 
@@ -58,7 +147,7 @@ def sync_command(args, konnect: KonnectApi) -> None:
 
     handle_product_versions(konnect, product_state, api_product, konnect_portals)
 
-def handle_product_versions(konnect: KonnectApi, product_state: ProductState, api_product, konnect_portals) -> None:
+def handle_product_versions(konnect: KonnectApi, product_state: ProductState, api_product: Dict[str, any], konnect_portals: List[Dict[str, any]]) -> None:
     """
     Handle the versions of the API product.
     """
@@ -78,24 +167,24 @@ def handle_product_versions(konnect: KonnectApi, product_state: ProductState, ap
 
         konnect.upsert_api_product_version_spec(api_product['id'], api_product_version['id'], oas_data_base64)
 
-        for p in version.portals:
-            portal = next((portal for portal in konnect_portals if portal['id'] == p.id or portal['name'] == p.name), None)
-            if portal:
-                manage_portal_product_version(konnect, portal, api_product, api_product_version, p.config)
+        for version_portal in version.portals:
+            konnect_portal = next((portal for portal in konnect_portals if portal['id'] == version_portal.portal_id or portal['name'] == version_portal.portal_name), None)
+            if konnect_portal:
+                manage_portal_product_version(konnect, konnect_portal, api_product, api_product_version, version_portal)
             else:
-                logger.warning("Skipping version '%s' operations on '%s' - API product not published on this portal", version_name, p.name)
+                logger.warning("Skipping version '%s' operations on '%s' - API product not published on this portal", version_name, version_portal.portal_name)
 
         delete_unused_portal_versions(konnect, product_state, version, api_product_version, konnect_portals)
         
     delete_unused_product_versions(konnect, api_product, handled_versions)
 
-def delete_unused_portal_versions(konnect: KonnectApi, product_state: ProductState, version: ProductVersion, api_product_version: Dict[str, any], konnect_portals: List[Portal]) -> None:
+def delete_unused_portal_versions(konnect: KonnectApi, product_state: ProductState, version: ApiProductVersion, api_product_version: Dict[str, any], konnect_portals: List[ApiProductVersionPortal]) -> None:
     """
     Delete unused portal versions.
     """
     for portal in product_state.portals:
-        if portal.name not in [p.name for p in version.portals]:
-            portal_id = next((p['id'] for p in konnect_portals if p['name'] == portal.name), None)
+        if portal.portal_name not in [p.portal_name for p in version.portals]:
+            portal_id = next((p['id'] for p in konnect_portals if p['name'] == portal.portal_name), None)
             konnect.delete_portal_product_version(portal_id, api_product_version['id'])
 
 def create_gateway_service(gateway_service) -> dict:
@@ -118,31 +207,31 @@ def delete_unused_product_versions(konnect: KonnectApi, api_product, handled_ver
         if existing_version['name'] not in handled_versions:
             konnect.delete_api_product_version(api_product['id'], existing_version['id'])
 
-def manage_portal_product_version(konnect: KonnectApi, portal: dict, api_product: dict, api_product_version: dict, config: PortalConfig) -> None:
+def manage_portal_product_version(konnect: KonnectApi, konnect_portal: dict, api_product: dict, api_product_version: dict, version_portal: ApiProductVersionPortal) -> None:
     """
     Manage the portal product version.
     """
     options = {
-        "deprecated": config.deprecated,
-        "publish_status": config.publish_status,
-        "application_registration_enabled": config.application_registration.enabled,
-        "auto_approve_registration": config.application_registration.auto_approve,
-        "auth_strategy_ids": config.auth_strategy_ids
+        "deprecated": version_portal.deprecated,
+        "publish_status": version_portal.publish_status,
+        "application_registration_enabled": version_portal.application_registration_enabled,
+        "auto_approve_registration": version_portal.auto_approve_registration,
+        "auth_strategy_ids": [strategy['id'] for strategy in version_portal.auth_strategies]
     }
 
     konnect.upsert_portal_product_version(
-        portal=portal,
+        portal=konnect_portal,
         api_product_version=api_product_version,
         api_product=api_product,
         options=options
     )
 
-def filter_published_portal_ids(product_portals: list[Portal], portals) -> list[str]:
+def filter_published_portal_ids(product_portals: list[ApiProductVersionPortal], konnect_portals) -> list[str]:
     """
     Filter the published portal IDs.
     """
-    portal_ids = [p['id'] for p in portals]
-    return [portal_ids[i] for i in range(len(portal_ids)) if product_portals[i].config.publish_status == "published"]
+    portal_ids = [p['id'] for p in konnect_portals]
+    return [portal_ids[i] for i in range(len(portal_ids)) if product_portals[i]]
 
 def get_parser_args() -> argparse.Namespace:
     """
@@ -165,6 +254,9 @@ def get_parser_args() -> argparse.Namespace:
     common_parser.add_argument("--https-proxy", type=str, help="HTTPS Proxy URL", default=None)
 
     deploy_parser = subparsers.add_parser('sync', help='Sync API product with Konnect', parents=[common_parser])
+    deploy_parser.add_argument("state", type=str, help="Path to the API product state file")
+
+    deploy_parser = subparsers.add_parser('diff', help='Diff API product with Konnect', parents=[common_parser])
     deploy_parser.add_argument("state", type=str, help="Path to the API product state file")
 
     delete_parser = subparsers.add_parser('delete', help='Delete API product', parents=[common_parser])
@@ -237,6 +329,8 @@ def main() -> None:
     
     if args.command == 'sync':
         sync_command(args, konnect)
+    elif args.command == 'diff':
+        diff_command(args, konnect)
     elif args.command == 'delete':
         delete_command(args, konnect)
     else:

@@ -13,15 +13,6 @@ class ApplicationRegistration:
     enabled: bool
     auto_approve: bool
 
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "enabled": self.enabled,
-            "auto_approve": self.auto_approve
-        }
-
-    def __str__(self) -> str:
-        return f"ApplicationRegistration(enabled={self.enabled}, auto_approve={self.auto_approve})"
-
 @dataclass
 class PortalConfig:
     """
@@ -32,34 +23,26 @@ class PortalConfig:
     auth_strategy_ids: List[str] = field(default_factory=list)
     application_registration: ApplicationRegistration = field(default_factory=lambda: ApplicationRegistration(enabled=False, auto_approve=False))
 
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "deprecated": self.deprecated,
-            "publish_status": self.publish_status,
-            "auth_strategy_ids": self.auth_strategy_ids,
-            "application_registration": self.application_registration.to_dict()
-        }
-
-    def __str__(self) -> str:
-        return f"PortalConfig(deprecated={self.deprecated}, publish_status={self.publish_status}, auth_strategy_ids={self.auth_strategy_ids}, application_registration={self.application_registration})"
+@dataclass
+class ApiProductVersionAuthStrategy:
+    """
+    Class representing an auth strategy.
+    """
+    id: str
+    name: str
 
 @dataclass
-class Portal:
+class ApiProductVersionPortal:
     """
     Class representing a portal.
     """
-    id: str = None
-    name: str = None
-    config: PortalConfig = field(default_factory=PortalConfig)
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "name": self.name,
-            "config": self.config.to_dict()
-        }
-
-    def __str__(self) -> str:
-        return f"Portal(name={self.name}, config={self.config})"
+    portal_id: str = None
+    portal_name: str = None
+    publish_status: str = "published"  # can be either "published" or "unpublished"
+    deprecated: bool = False
+    application_registration_enabled: bool = False
+    auto_approve_registration: bool = False
+    auth_strategies: List[ApiProductVersionAuthStrategy] = field(default_factory=list)
 
 @dataclass
 class Documents:
@@ -69,15 +52,6 @@ class Documents:
     sync: bool
     directory: str
 
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "sync": self.sync,
-            "directory": self.directory
-        }
-
-    def __str__(self) -> str:
-        return f"Documents(sync={self.sync}, directory={self.directory})"
-
 @dataclass
 class GatewayService:
     """
@@ -86,67 +60,47 @@ class GatewayService:
     id: str = None
     control_plane_id: str = None
 
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "id": self.id,
-            "control_plane_id": self.control_plane_id
-        }
-
-    def __str__(self) -> str:
-        return f"GatewayService(id={self.id}, control_plane_id={self.control_plane_id})"
-
 @dataclass
-class ProductInfo:
+class ApiProduct:
     """
     Class representing product information.
     """
     name: str
     description: str
 
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "name": self.name,
-            "description": self.description
-        }
-
-    def __str__(self) -> str:
-        return f"ProductInfo(name={self.name}, description={self.description})"
-
 @dataclass
-class ProductVersion:
+class ApiProductVersion:
     """
     Class representing a product version.
     """
     spec: str
     gateway_service: GatewayService
-    portals: List[Portal]
+    portals: List[ApiProductVersionPortal]
     name: str = None
 
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "spec": self.spec,
-            "gateway_service": self.gateway_service.to_dict(),
-            "portals": [portal.to_dict() for portal in self.portals]
-        }
-
-    def __str__(self) -> str:
-        return f"ProductVersion(spec={self.spec}, gateway_service={self.gateway_service}, portals={self.portals})"
+@dataclass
+class ApiProductPortal:
+    """
+    Class representing a product portal.
+    """
+    portal_id: str
+    portal_name: str
 
 @dataclass
 class ProductState:
     """
     Class representing the state of a product in Konnect.
     """
-    info: ProductInfo = None
+    info: ApiProduct = None
     documents: Documents = None
-    portals: List[Portal] = field(default_factory=list)
-    versions: List[ProductVersion] = field(default_factory=list)
+    portals: List[ApiProductPortal] = field(default_factory=list)
+    versions: List[ApiProductVersion] = field(default_factory=list)
 
     def from_dict(self, data: Dict[str, Any]):
         """
         Initialize ProductState from a dictionary.
         """
-        self.info = ProductInfo(
+        self.info = ApiProduct(
             name=data.get('info', {}).get('name'),
             description=data.get('info', {}).get('description', ""),
         )
@@ -155,16 +109,13 @@ class ProductState:
             directory=data.get('documents', {}).get('dir', None)
         )
         self.portals = [
-            Portal(
-                id=p.get('id'),
-                name=p.get('name'),
-                config=PortalConfig(
-                    publish_status=p.get('config', {}).get('publish_status', "published"),
-                )
+            ApiProductPortal(
+                portal_id=p.get('portal_id'),
+                portal_name=p.get('portal_name')
             ) for p in data.get('portals', [])
         ]
         self.versions = [
-            ProductVersion(
+            ApiProductVersion(
                 name=v.get('name'),
                 spec=v.get('spec'),
                 gateway_service=GatewayService(
@@ -172,32 +123,22 @@ class ProductState:
                     control_plane_id=v.get('gateway_service', {}).get('control_plane_id')
                 ),
                 portals=[
-                    Portal(
-                        id=p.get('id'),
-                        name=p.get('name'),
-                        config=PortalConfig(
-                            deprecated=p.get('config', {}).get('deprecated', False),
-                            publish_status=p.get('config', {}).get('publish_status', "published"),
-                            auth_strategy_ids=p.get('config', {}).get('auth_strategy_ids', []),
-                            application_registration=ApplicationRegistration(
-                                enabled=p.get('config', {}).get('application_registration', {}).get('enabled', False),
-                                auto_approve=p.get('config', {}).get('application_registration', {}).get('auto_approve', False)
-                            )
-                        )
+                    ApiProductVersionPortal(
+                        portal_id=p.get('portal_id'),
+                        portal_name=p.get('portal_name'),
+                        deprecated=p.get('deprecated', False),
+                        publish_status=p.get('publish_status', "published"),
+                        application_registration_enabled=p.get('application_registration_enabled', False),
+                        auto_approve_registration=p.get('auto_approve_registration', False),
+                        auth_strategies=[
+                            ApiProductVersionAuthStrategy(
+                                id=a.get('id'),
+                                name=a.get('name')
+                            ) for a in p.get('auth_strategies', [])
+                        ]
                     ) for p in v.get('portals', [])
                 ]
             ) for v in data.get('versions', [])
         ]
 
         return self
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "info": self.info.to_dict() if self.info else None,
-            "documents": self.documents.to_dict() if self.documents else None,
-            "portals": [portal.to_dict() for portal in self.portals],
-            "versions": [version.to_dict() for version in self.versions]
-        }
-
-    def __str__(self) -> str:
-        return f"ProductState(info={self.info}, documents={self.documents}, portals={self.portals}, versions={self.versions})"

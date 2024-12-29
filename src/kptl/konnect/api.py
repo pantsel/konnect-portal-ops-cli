@@ -6,7 +6,7 @@ import json
 import os
 from typing import List, Optional, Dict, Any
 
-from kptl.konnect.models.schema import Portal, ProductState, ProductVersion
+from kptl.konnect.models.schema import ApiProductVersionPortal, ProductState, ApiProductVersion
 from kptl.config.logger import Logger
 from kptl.konnect.services import ApiProductClient, PortalManagementClient
 from kptl.helpers import utils
