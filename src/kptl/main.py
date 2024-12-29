@@ -190,7 +190,7 @@ def manage_portal_product_version(konnect: KonnectApi, portal: dict, api_product
         options=options
     )
 
-def filter_published_portal_ids(product_portals: list[Portal], portals):
+def filter_published_portal_ids(product_portals: list[Portal], portals) -> list[str]:
     """
     Filter the published portal IDs.
     """
