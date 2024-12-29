@@ -96,7 +96,7 @@ class ApiProductState:
             ApiProductPortal(
                 portal_id=p.get('portal_id'),
                 portal_name=p.get('portal_name')
-            ) for p in data.get('portals', [])
+            ) for p in data.get('portals')
             ],
             key=lambda portal: portal.portal_name
         )

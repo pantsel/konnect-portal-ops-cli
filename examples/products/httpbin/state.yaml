@@ -6,12 +6,8 @@ documents:
   sync: true
   dir: examples/products/httpbin/docs
 portals:
-  - name: dev_portal
-    config:
-      publish_status: published
-  - name: prod_portal
-    config:
-      publish_status: unpublished
+  - portal_name: dev_portal
+  - portal_name: prod_portal
 versions:
   - name: "1.0.0"
     spec: examples/api-specs/v1/httpbin.yaml
@@ -19,43 +15,36 @@ versions:
       id: null
       control_plane_id: null
     portals:
-      - name: dev_portal
-        config:
-          deprecated: true
-          publish_status: published
-          auth_strategy_ids: []
-          application_registration:
-            enabled: false
-            auto_approve: false
+      - portal_name: dev_portal
+        deprecated: true
+        publish_status: published
+        auth_strategies: []
+        application_registration_enabled: false
+        auto_approve_registration: false
             
-      - name: prod_portal
-        config:
-          deprecated: true
-          publish_status: published
-          auth_strategy_ids: []
-          application_registration:
-            enabled: false
-            auto_approve: false
+      - portal_name: prod_portal
+        deprecated: true
+        publish_status: published
+        auth_strategies: []
+        application_registration_enabled: false
+        auto_approve_registration: false
   - name: "2.0.0"
     spec: examples/api-specs/v2/httpbin.yaml
     gateway_service:
       id: null
       control_plane_id: null
     portals:
-      - name: dev_portal
-        config:
-          deprecated: false
-          publish_status: published
-          auth_strategy_ids: []
-          application_registration:
-            enabled: false
-            auto_approve: false
+      - portal_name: dev_portal
+        deprecated: false
+        publish_status: published
+        auth_strategies: []
+        application_registration_enabled: false
+        auto_approve_registration: false
             
-      - name: prod_portal
-        config:
-          deprecated: false
-          publish_status: published
-          auth_strategy_ids: []
-          application_registration:
-            enabled: false
-            auto_approve: false
+      - portal_name: prod_portal
+        deprecated: false
+        publish_status: published
+        auth_strategy_ids: []
+        auth_strategies: []
+        application_registration_enabled: false
+        auto_approve_registration: false
