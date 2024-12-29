@@ -387,7 +387,7 @@ To change the log level, set the `LOG_LEVEL` environment variable to one of the 
     cd konnect-portal-ops-cli && pip install -e .
     ```
 
-4. Run the CLI:
+4. You can now make changes to the code and test them by running the CLI:
 
     ```shell
     kptl [command] [options]
