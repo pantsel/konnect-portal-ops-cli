@@ -1,7 +1,7 @@
 _version: 1.0.0
 info:
   name: HTTPBin API
-  description: A simple API Product for requests to httpbins
+  description: A simple API Product for requests to httpbin
 documents:
   sync: true
   dir: examples/products/httpbin/docs
@@ -11,13 +11,9 @@ portals:
 versions:
   - spec: examples/api-specs/v1/httpbin.yaml
     portals:
-      - portal_name: dev_portal  
-        deprecated: true
-        publish_status: unpublished
+      - portal_name: dev_portal   
+      - portal_name: prod_portal
   - spec: examples/api-specs/v2/httpbin.yaml
     portals:
       - portal_name: dev_portal
       - portal_name: prod_portal
-        publish_status: unpublished
-        deprecated: true
-      - portal_name: test_portal
