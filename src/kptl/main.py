@@ -11,22 +11,24 @@ from kptl import __version__
 from kptl.config import constants, logger
 from kptl.konnect.api import KonnectApi
 from kptl.konnect.models.schema import ApiProductPortal, GatewayService, ApiProduct, ApiProductState, ApiProductVersionPortal, ApiProductVersion
-from kptl.helpers import utils, commands
+from kptl.helpers import utils, commands, api_product_documents
 import json
 from deepdiff import DeepDiff, Delta
 import difflib
 import dataclasses
+import copy
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
 
 RED: Callable[[str], str] = lambda text: f"\u001b[31m{text}\033\u001b[0m"
 GREEN: Callable[[str], str] = lambda text: f"\u001b[32m{text}\033\u001b[0m"
+YELLOW: Callable[[str], str] = lambda text: f"\u001b[33m{text}\033\u001b[0m"
 
 def get_edits_string(old: str, new: str) -> str:
     result = ""
 
-    lines = difflib.unified_diff(old.splitlines(keepends=True), new.splitlines(keepends=True), fromfile="before", tofile="after", n=1000)
+    lines = difflib.unified_diff(old.splitlines(keepends=True), new.splitlines(keepends=True), fromfile="before", tofile="after", n=100000)
     
     for line in lines:
         line = line.rstrip()
@@ -43,13 +45,42 @@ def get_edits_string(old: str, new: str) -> str:
 
     return result
 
-def remove_portal_ids(state_dict: dict) -> dict:
-    new_state_dict = state_dict.copy()
+def get_summary_of_changes(old: dict, new: dict) -> str:
+    diff = DeepDiff(old, new)
+    summary = []
+
+    if 'dictionary_item_added' in diff:
+        summary.append(GREEN(f"Added: {len(diff['dictionary_item_added'])} items"))
+    if 'dictionary_item_removed' in diff:
+        summary.append(RED(f"Removed: {len(diff['dictionary_item_removed'])} items"))
+    if 'values_changed' in diff:
+        summary.append(YELLOW(f"Updated [+-]: {len(diff['values_changed'])} items"))
+    if 'iterable_item_added' in diff:
+        summary.append(GREEN(f"Added [+]: {len(diff['iterable_item_added'])} items"))
+    if 'iterable_item_removed' in diff:
+        summary.append(RED(f"Removed [-]: {len(diff['iterable_item_removed'])} items"))
+
+    human_readable_summary = "\n".join(summary)
+
+    return f"Summary:\n==================\n{human_readable_summary}"
+
+
+def prepare_for_diff(state_dict: dict) -> dict:
+    new_state_dict = copy.deepcopy(state_dict)
+
+    # Remove portal IDs from the state dictionaries to ensure they don't affect the diff.
+    #### Portal names are unique and portal-related lists are sorted by portal name.
+    #### @TODO: Maybe there's a better way to handle this.
     for portal in new_state_dict.get('portals', []):
         portal.pop('portal_id', None)
     for version in new_state_dict.get('versions', []):
         for portal in version.get('portals', []):
             portal.pop('portal_id', None)
+
+    # We only need documents data (pages) to show in diff.
+    if new_state_dict.get('documents', None):
+        new_state_dict['documents'] = new_state_dict['documents']['data']
+    
     return new_state_dict
 
 def diff_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
@@ -63,6 +94,18 @@ def diff_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
     api_product['portal_ids'] = [p['portal_id'] for p in api_product['portals']]
 
     portals = [find_konnect_portal(konnect, p['portal_id']) for p in api_product['portals']]
+
+    if local_state.documents.sync and local_state.documents.directory:
+        local_docs = api_product_documents.parse_directory(local_state.documents.directory)
+        local_state.documents.set_data(local_docs)
+
+        remote_docs = konnect.list_api_product_documents(api_product['id'])
+        
+        for doc in remote_docs:
+            full_doc = konnect.get_api_product_document(api_product['id'], doc['id'])
+            doc['content'] = utils.encode_content(full_doc['content'])
+
+        remote_state.documents.set_data(remote_docs)
 
     product_versions = konnect.list_api_product_versions(api_product['id'])
 
@@ -100,11 +143,9 @@ def diff_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
     # 1. Encode the OAS spec content for the local state versions so that it can be compared with the remote state.
     local_state.encode_versions_spec_content()
 
-    # 2. Remove portal IDs from the state dictionaries to ensure they don't affect the diff.
-    #### Portal names are unique and portal-related lists are sorted by portal name.
-    #### @TODO: Maybe there's a better way to handle this.
-    remote_state_dict_clean = remove_portal_ids(dataclasses.asdict(remote_state))
-    local_state_dict_clean = remove_portal_ids(dataclasses.asdict(local_state))
+    # 2. Clean up state dictionaries in preparation for the diff.
+    remote_state_dict_clean = prepare_for_diff(dataclasses.asdict(remote_state))
+    local_state_dict_clean = prepare_for_diff(dataclasses.asdict(local_state))
 
     print(
         get_edits_string(
@@ -112,6 +153,8 @@ def diff_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
             yaml.dump(local_state_dict_clean, indent=2, sort_keys=True)
         )
     )
+
+    print(get_summary_of_changes(remote_state_dict_clean, local_state_dict_clean))
 
 def get_encoded_api_product_version_spec_content(konnect: KonnectApi, api_product_id: str, api_product_version_id: str) -> str:
     """

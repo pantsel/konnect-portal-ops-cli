@@ -644,6 +644,32 @@ class KonnectApi:
                 self.logger.warning("Deleting page: '%s' (%s)", remote_page['title'], remote_page['slug'])
                 self.api_product_client.delete_api_product_document(api_product_id, remote_page['id'])
 
+    def list_api_product_documents(self, api_product_id: str) -> List[Dict[str, Any]]:
+        """
+        List API product documents.
+
+        Args:
+            api_product_id (str): The ID of the API product.
+
+        Returns:
+            List[Dict[str, Any]]: The list of API product documents.
+        """
+        response = self.api_product_client.list_api_product_documents(api_product_id)
+        return response['data']
+    
+    def get_api_product_document(self, api_product_id: str, document_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get an API product document.
+
+        Args:
+            api_product_id (str): The ID of the API product.
+            document_id (str): The ID of the document.
+
+        Returns:
+            Optional[Dict[str, Any]]: The API product document details if found, else None.
+        """
+        return self.api_product_client.get_api_product_document(api_product_id, document_id)
+
     def sync_api_product_documents(self, api_product_id: str, directory: str) -> Dict[str, Any]:
         """
         Sync API product documents from a local directory.

@@ -4,7 +4,7 @@ Module for Konnect API state Models.
 
 from typing import Any, Dict, List
 from dataclasses import dataclass, field
-from kptl.helpers import utils
+from kptl.helpers import utils, api_product_documents
 
 @dataclass
 class ApiProductVersionAuthStrategy:
@@ -28,12 +28,40 @@ class ApiProductVersionPortal:
     auth_strategies: List[ApiProductVersionAuthStrategy] = field(default_factory=list)
 
 @dataclass
+class ApiProductDocument:
+    """
+    Class representing a document.
+    """
+    slug: str
+    title: str
+    content: str
+    status: str
+
+@dataclass
 class Documents:
     """
     Class representing documents.
     """
-    sync: bool
-    directory: str
+    sync: bool = False
+    directory: str = None
+    data: List[ApiProductDocument] = field(default_factory=list)
+
+    def set_data(self, data: List[Dict[str, str]]):
+        """
+        Set the data.
+        """
+        
+        self.data = sorted(
+            [
+            ApiProductDocument(
+                slug=api_product_documents.get_slug_tail(d.get('slug')),
+                title=d.get('title'),
+                content=d.get('content'),
+                status=d.get('status')
+            ) for d in data
+            ],
+            key=lambda document: document.slug
+        )
 
 @dataclass
 class GatewayService:
@@ -75,7 +103,7 @@ class ApiProductState:
     Class representing the state of a product in Konnect.
     """
     info: ApiProduct = None
-    documents: Documents = None
+    documents: Documents = field(default_factory=Documents)
     portals: List[ApiProductPortal] = field(default_factory=list)
     versions: List[ApiProductVersion] = field(default_factory=list)
 
@@ -89,7 +117,8 @@ class ApiProductState:
         )
         self.documents = Documents(
             sync=data.get('documents', {}).get('sync', False),
-            directory=data.get('documents', {}).get('dir', None)
+            directory=data.get('documents', {}).get('dir', None),
+            data=data.get('documents', {}).get('data', [])
         )
         self.portals = sorted(
             [
@@ -106,8 +135,8 @@ class ApiProductState:
                 name=self.get_version_name(v),
                 spec=v.get('spec'),
                 gateway_service=GatewayService(
-                id=v.get('gateway_service', {}).get('id'),
-                control_plane_id=v.get('gateway_service', {}).get('control_plane_id')
+                    id=v.get('gateway_service', {}).get('id'),
+                    control_plane_id=v.get('gateway_service', {}).get('control_plane_id')
                 ),
                 portals=sorted(
                 [ApiProductVersionPortal(
@@ -133,6 +162,14 @@ class ApiProductState:
         )
 
         return self
+    
+    def make_api_docs(self, documents: Documents):
+        """
+        Make the API docs.
+        """
+        if documents.sync:
+            self.api_docs = api_product_documents.parse_directory(documents.directory)
+
     
     def get_version_name(self, version: ApiProductVersion):
         """

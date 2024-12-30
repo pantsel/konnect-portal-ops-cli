@@ -40,7 +40,7 @@ uninstall:
 
 .PHONY: test
 test:
-	PYTHONPATH=src pytest tests/ -vv
+	PYTHONPATH=src pytest tests/ -vv -s
 
 . PHONY: deps
 deps:
