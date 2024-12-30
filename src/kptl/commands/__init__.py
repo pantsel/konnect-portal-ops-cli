@@ -3,3 +3,4 @@
 from .diff import DiffCommand
 from .delete import DeleteCommand
 from .explain import ExplainCommand
+from .sync import SyncCommand
