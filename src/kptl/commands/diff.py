@@ -136,6 +136,9 @@ class DiffCommand:
         diff = DeepDiff(old, new)
         summary = []
 
+        if not diff:
+            return f"Summary:\n==================\nNo changes detected.\n"
+
         if 'dictionary_item_added' in diff:
             summary.append(GREEN(f"Added: {len(diff['dictionary_item_added'])} items"))
         if 'dictionary_item_removed' in diff:
