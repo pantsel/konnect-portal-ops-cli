@@ -11,7 +11,8 @@ from kptl import __version__
 from kptl.config import constants, logger
 from kptl.konnect.api import KonnectApi
 from kptl.konnect.models.schema import ApiProductPortal, GatewayService, ApiProduct, ApiProductState, ApiProductVersionPortal, ApiProductVersion
-from kptl.helpers import utils, commands, api_product_documents
+from kptl.helpers import utils, api_product_documents
+from kptl.commands import DiffCommand, DeleteCommand, ExplainCommand
 import json
 from deepdiff import DeepDiff, Delta
 import difflib
@@ -20,172 +21,6 @@ import copy
 
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
 logger = logger.Logger(name=constants.APP_NAME, level=LOG_LEVEL)
-
-RED: Callable[[str], str] = lambda text: f"\u001b[31m{text}\033\u001b[0m"
-GREEN: Callable[[str], str] = lambda text: f"\u001b[32m{text}\033\u001b[0m"
-YELLOW: Callable[[str], str] = lambda text: f"\u001b[33m{text}\033\u001b[0m"
-
-def get_edits_string(old: str, new: str) -> str:
-    result = ""
-
-    lines = difflib.unified_diff(old.splitlines(keepends=True), new.splitlines(keepends=True), fromfile="before", tofile="after", n=100000)
-    
-    for line in lines:
-        line = line.rstrip()
-        if len(line) > 100:
-            line = line[:97] + "..."
-        if line.startswith("+"):
-            result += GREEN(line) + "\n"
-        elif line.startswith("-"):
-            result += RED(line) + "\n"
-        elif line.startswith("?") or line.startswith("@@"):
-            continue
-        else:
-            result += line + "\n"
-
-    return result
-
-def get_summary_of_changes(old: dict, new: dict) -> str:
-    diff = DeepDiff(old, new)
-    summary = []
-
-    if 'dictionary_item_added' in diff:
-        summary.append(GREEN(f"Added: {len(diff['dictionary_item_added'])} items"))
-    if 'dictionary_item_removed' in diff:
-        summary.append(RED(f"Removed: {len(diff['dictionary_item_removed'])} items"))
-    if 'values_changed' in diff:
-        summary.append(YELLOW(f"Updated [+-]: {len(diff['values_changed'])} items"))
-    if 'iterable_item_added' in diff:
-        summary.append(GREEN(f"Added [+]: {len(diff['iterable_item_added'])} items"))
-    if 'iterable_item_removed' in diff:
-        summary.append(RED(f"Removed [-]: {len(diff['iterable_item_removed'])} items"))
-
-    human_readable_summary = "\n".join(summary)
-
-    return f"Summary:\n==================\n{human_readable_summary}"
-
-
-def prepare_for_diff(state_dict: dict) -> dict:
-    new_state_dict = copy.deepcopy(state_dict)
-
-    # Remove portal IDs from the state dictionaries to ensure they don't affect the diff.
-    #### Portal names are unique and portal-related lists are sorted by portal name.
-    #### @TODO: Maybe there's a better way to handle this.
-    for portal in new_state_dict.get('portals', []):
-        portal.pop('portal_id', None)
-    for version in new_state_dict.get('versions', []):
-        for portal in version.get('portals', []):
-            portal.pop('portal_id', None)
-
-    # We only need documents data (pages) to show in diff.
-    if new_state_dict.get('documents', None):
-        new_state_dict['documents'] = new_state_dict['documents']['data']
-    
-    return new_state_dict
-
-def diff_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
-    state_content = utils.read_file_content(args.state)
-    state_parsed = yaml.safe_load(state_content)
-    local_state = ApiProductState().from_dict(state_parsed)
-
-    remote_state = ApiProductState()
-
-    api_product = konnect.find_api_product_by_name(local_state.info.name)
-    api_product['portal_ids'] = [p['portal_id'] for p in api_product['portals']]
-
-    portals = [find_konnect_portal(konnect, p['portal_id']) for p in api_product['portals']]
-
-    if local_state.documents.sync and local_state.documents.directory:
-        local_docs = api_product_documents.parse_directory(local_state.documents.directory)
-        local_state.documents.set_data(local_docs)
-
-        remote_docs = konnect.list_api_product_documents(api_product['id'])
-        
-        for doc in remote_docs:
-            full_doc = konnect.get_api_product_document(api_product['id'], doc['id'])
-            doc['content'] = utils.encode_content(full_doc['content'])
-
-        remote_state.documents.set_data(remote_docs)
-
-    product_versions = konnect.list_api_product_versions(api_product['id'])
-
-    remote_state.info = ApiProduct(
-        name=api_product['name'],
-        description=api_product['description']
-    )
-
-    remote_state.portals = sorted([ApiProductPortal(
-        portal_id=p['id'],
-        portal_name=p['name'],
-    ) for p in portals], key=lambda portal: portal.portal_name)
-
-    remote_state.versions = sorted([ApiProductVersion(
-        name=v['name'],
-        spec=get_encoded_api_product_version_spec_content(konnect, api_product['id'], v['id']),
-        gateway_service=GatewayService({
-            "id": v['gateway_service']['id'],
-            "control_plane_id": v['gateway_service']['control_plane_id']
-        } if v['gateway_service'] else None),
-        portals=sorted([ApiProductVersionPortal(
-            portal_id=p['portal_id'],
-            portal_name=p['portal_name'],
-            publish_status=p['publish_status'],
-            deprecated=p['deprecated'],
-            auth_strategies=p['auth_strategies'],
-            application_registration_enabled=p['application_registration_enabled'],
-            auto_approve_registration=p['auto_approve_registration']
-        ) for p in v['portals']], key=lambda portal: portal.portal_name)
-    ) for v in product_versions], key=lambda version: version.name)
-
-    # Before the diff, there are a couple of things we need to do:
-    # ============================================================
-
-    # 1. Encode the OAS spec content for the local state versions so that it can be compared with the remote state.
-    local_state.encode_versions_spec_content()
-
-    # 2. Clean up state dictionaries in preparation for the diff.
-    remote_state_dict_clean = prepare_for_diff(dataclasses.asdict(remote_state))
-    local_state_dict_clean = prepare_for_diff(dataclasses.asdict(local_state))
-
-    print(
-        get_edits_string(
-            yaml.dump(remote_state_dict_clean, indent=2, sort_keys=True),
-            yaml.dump(local_state_dict_clean, indent=2, sort_keys=True)
-        )
-    )
-
-    print(get_summary_of_changes(remote_state_dict_clean, local_state_dict_clean))
-
-def get_encoded_api_product_version_spec_content(konnect: KonnectApi, api_product_id: str, api_product_version_id: str) -> str:
-    """
-    Get the encoded API product version spec.
-    """
-    spec = konnect.get_api_product_version_spec(api_product_id, api_product_version_id)
-    
-    if not spec:
-        return ""
-    
-    return utils.encode_content(spec['content'])
-
-def delete_command(args: argparse.Namespace, konnect: KonnectApi) -> None:
-    """
-    Execute the delete command.
-    """
-    logger.info("Executing delete command")
-    if should_delete_api_product(args, args.product):
-        konnect.delete_api_product(args.product)
-
-def explain_command(args: argparse.Namespace) -> None:
-    """
-    Explain the actions that will be performed on Konnect.
-    """
-    state_content = utils.read_file_content(args.state)
-    state_parsed = yaml.safe_load(state_content)
-    product_state = ApiProductState().from_dict(state_parsed)
-
-    expl = commands.explain_product_state(product_state)
-
-    logger.info(expl)  
 
 def sync_command(args, konnect: KonnectApi) -> None:
     """
@@ -329,42 +164,22 @@ def get_parser_args() -> argparse.Namespace:
 
     return parser.parse_args()
 
-def find_konnect_portal(konnect: KonnectApi, portal_name: str) -> dict:
+def find_konnect_portal(konnect: KonnectApi, identifier: str) -> dict:
     """
-    Find the Konnect portal by name.
+    Find the Konnect portal by name or id.
     """
     try:
-        portal = konnect.find_portal(portal_name)
-        logger.info("Fetching Portal information for '%s'", portal_name)
+        portal = konnect.find_portal(identifier)
+        logger.info("Fetching Portal information for '%s'", identifier)
 
         if not portal:
-            logger.error("Portal with name %s not found", portal_name)
+            logger.error("Portal with name %s not found", identifier)
             sys.exit(1)
 
         return portal
     except Exception as e:
         logger.error("Failed to get Portal information: %s", str(e))
         sys.exit(1)
-
-def confirm_deletion(api_name: str) -> bool:
-    """
-    Confirm deletion of the API product.
-    """
-    response = input(f"Are you sure you want to delete the API product '{api_name}'? (yes/no): ")
-    return response.lower() == "yes"
-
-def should_delete_api_product(args: argparse.Namespace, api_name: str) -> bool:
-    """
-    Determine if the API product should be deleted.
-    """
-    if not args.command == "delete":
-        return False
-
-    if not args.yes and not confirm_deletion(api_name):
-        logger.info("Delete operation cancelled.")
-        sys.exit(0)
-    
-    return True
 
 def main() -> None:
     """
@@ -373,7 +188,7 @@ def main() -> None:
     args = get_parser_args()
 
     if args.command == 'explain':
-        explain_command(args)
+        ExplainCommand().execute(args)
         sys.exit(0)
 
     config = utils.read_config_file(args.config)
@@ -386,14 +201,13 @@ def main() -> None:
             "https": args.https_proxy if args.https_proxy else config.get("https_proxy")
         }
     )
-
     
     if args.command == 'sync':
         sync_command(args, konnect)
     elif args.command == 'diff':
-        diff_command(args, konnect)
+        DiffCommand(konnect).execute(args)
     elif args.command == 'delete':
-        delete_command(args, konnect)
+        DeleteCommand(konnect).execute(args)
     else:
         logger.error("Invalid command")
         sys.exit(1)
