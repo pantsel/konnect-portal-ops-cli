@@ -85,8 +85,8 @@ class ApiProductVersion:
     Class representing a product version.
     """
     spec: str
-    gateway_service: GatewayService
-    portals: List[ApiProductVersionPortal]
+    gateway_service: GatewayService = field(default_factory=GatewayService)
+    portals: List[ApiProductVersionPortal] = field(default_factory=list[ApiProductVersionPortal])
     name: str = None
 
 @dataclass

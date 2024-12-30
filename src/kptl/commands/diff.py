@@ -72,10 +72,11 @@ class DiffCommand:
         remote_state.versions = sorted([ApiProductVersion(
             name=v['name'],
             spec=self._get_encoded_api_product_version_spec_content(api_product['id'], v['id']),
-            gateway_service=GatewayService({
-                "id": v['gateway_service']['id'],
-                "control_plane_id": v['gateway_service']['control_plane_id']
-            } if v['gateway_service'] else None),
+            gateway_service=GatewayService(
+                id = v['gateway_service']['id'],
+                control_plane_id = v['gateway_service']['control_plane_id']
+            )
+             if v['gateway_service'] else GatewayService(),
             portals=sorted([ApiProductVersionPortal(
                 portal_id=p['portal_id'],
                 portal_name=p['portal_name'],
@@ -134,23 +135,36 @@ class DiffCommand:
         Get a summary of the changes between the old and new state dictionaries.
         """
         diff = DeepDiff(old, new)
-        summary = []
+        summary = {
+            "added": [],
+            "removed": [],
+            "updated": []
+        }
 
         if not diff:
-            return f"Summary:\n==================\nNo changes detected.\n"
+            return "Summary:\n==================\nNo changes detected.\n"
 
-        if 'dictionary_item_added' in diff:
-            summary.append(GREEN(f"Added: {len(diff['dictionary_item_added'])} items"))
-        if 'dictionary_item_removed' in diff:
-            summary.append(RED(f"Removed: {len(diff['dictionary_item_removed'])} items"))
-        if 'values_changed' in diff:
-            summary.append(YELLOW(f"Updated [+-]: {len(diff['values_changed'])} items"))
-        if 'iterable_item_added' in diff:
-            summary.append(GREEN(f"Added [+]: {len(diff['iterable_item_added'])} items"))
-        if 'iterable_item_removed' in diff:
-            summary.append(RED(f"Removed [-]: {len(diff['iterable_item_removed'])} items"))
+        change_types = {
+            'dictionary_item_added': 'added',
+            'dictionary_item_removed': 'removed',
+            'values_changed': 'updated',
+            'iterable_item_added': 'added',
+            'iterable_item_removed': 'removed',
+            'type_changes': 'updated'
+        }
 
-        human_readable_summary = "\n".join(summary)
+        for diff_key, summary_key in change_types.items():
+            if diff_key in diff:
+                for key in diff[diff_key]:
+                    color_func = GREEN if summary_key == 'added' else RED if summary_key == 'removed' else YELLOW
+                    summary[summary_key].append(color_func(f"  - {key.replace('root', '')}"))
+
+        human_readable_summary = ""
+        for change_type, items in summary.items():
+            if items:
+                color_func = GREEN if change_type == 'added' else RED if change_type == 'removed' else YELLOW
+                human_readable_summary += color_func(f"{change_type.capitalize()} ({len(items)}):\n")
+                human_readable_summary += "\n".join(items) + "\n"
 
         return f"Summary:\n==================\n{human_readable_summary}"
 
@@ -168,6 +182,12 @@ class DiffCommand:
         for version in new_state_dict.get('versions', []):
             for portal in version.get('portals', []):
                 portal.pop('portal_id', None)
+            
+            # Remove gateway service if it doesn't have an ID or control plane ID.
+            # gateway_service = version.get('gateway_service')
+            # if gateway_service and not gateway_service.get('id') and not gateway_service.get('control_plane_id'):
+            #     version.pop('gateway_service', None)
+                
 
         # We only need documents data (pages) to show in diff.
         if new_state_dict.get('documents', None):

@@ -172,3 +172,4 @@ cython_debug/
 
 .kontext.yaml
 .config.yaml
+.tests/
