@@ -4,6 +4,7 @@ import sys
 from kptl.config import logger
 from kptl.konnect.api import KonnectApi
 
+
 class DeleteCommand:
     def __init__(self, konnect: KonnectApi):
         self.konnect = konnect
@@ -20,7 +21,8 @@ class DeleteCommand:
         """
         Confirm deletion of the API product.
         """
-        response = input(f"Are you sure you want to delete the API product '{api_name}'? (yes/no): ")
+        response = input(f"Are you sure you want to delete the API product '{
+                         api_name}'? (yes/no): ")
         return response.lower() == "yes"
 
     def should_delete_api_product(self, args: argparse.Namespace, api_name: str) -> bool:
@@ -33,5 +35,5 @@ class DeleteCommand:
         if not args.yes and not self.confirm_deletion(api_name):
             logger.Logger().info("Delete operation cancelled.")
             sys.exit(0)
-        
+
         return True

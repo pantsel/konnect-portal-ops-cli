@@ -9,36 +9,39 @@ import re
 from typing import Any, Dict
 from kptl.helpers import utils
 
+
 def extract_hierarchy_info(file_name):
     """
     Extracts leading numbers from the file name, e.g., "1.2_filename.md" -> "1.2".
-    
+
     Args:
         file_name (str): The name of the file to process.
-    
+
     Returns:
         re.Match or None: A regex match object containing leading numbers from the file name.
     """
     match = re.match(r'^(\d+)(?:\.(\d+))?', file_name)
     return match
 
+
 def extract_sort_key(file_path):
     """
     Extracts sorting key from file name, e.g., "1.2_filename.md" -> (1, 2).
-    
+
     Args:
         file_path (str): The path of the file to process.
-    
+
     Returns:
         tuple: A tuple containing the sorting key.
     """
     match = extract_hierarchy_info(os.path.basename(file_path))
     return (int(match.group(1)), int(match.group(2)) if match and match.group(2) else 0) if match else (float('inf'), 0)
 
+
 def parse_directory(directory: str) -> Dict[str, Any]:
     """
     Parse the directory to generate pages with metadata and parent-child relationships.
-    
+
     File Naming Conventions:
     - Leading numbers indicate order and hierarchy, e.g., "1_filename.md", "1.1_child_filename.md".
     - "__unpublished" suffix indicates unpublished status.
@@ -75,32 +78,35 @@ def parse_directory(directory: str) -> Dict[str, Any]:
     for file_path in sorted((os.path.join(root, file) for root, _, files in os.walk(directory) for file in files if file.endswith('.md')), key=extract_sort_key):
         with open(file_path, 'r', encoding='utf-8') as f:
             content = f.read().strip()  # Read and strip content of the file
-        
+
         file_name = os.path.basename(file_path)  # Get the file name
-        
+
         # Match leading numbers and extract hierarchy info
         match = extract_hierarchy_info(file_name)
-        
+
         # Generate title and slug
         title, slug = generate_title_and_slug(file_name, match)
-        
+
         # Determine parent slug if the file represents a child page
-        parent_slug = parent_pages.get(match.group(1)) if match and match.group(2) else None
-        
+        parent_slug = parent_pages.get(match.group(
+            1)) if match and match.group(2) else None
+
         # If the file is a parent page, store its slug
         if match and not match.group(2):
             parent_pages[match.group(1)] = slug
-        
+
         # Append the page information to the pages list
         pages.append({
-            "slug": slug,  # Cleanup: Remove leading '-' if exists. This is to handle cases where there is no leading number.
-            "title": title.title(), 
-            "content": utils.encode_content(content), 
+            # Cleanup: Remove leading '-' if exists. This is to handle cases where there is no leading number.
+            "slug": slug,
+            "title": title.title(),
+            "content": utils.encode_content(content),
             "status": "unpublished" if "__unpublished" in file_name else "published",
             "parent_slug": parent_slug
         })
-    
-    return pages 
+
+    return pages
+
 
 def generate_title_and_slug(file_name, match):
     """
@@ -121,18 +127,21 @@ def generate_title_and_slug(file_name, match):
         ('Example file', 'example-file')
     """
     # Remove '__unpublished' and replace underscores with spaces, capitalize the title
-    title_with_numbers = os.path.splitext(file_name)[0].replace('__unpublished', '').replace('_', ' ').capitalize()
-    
+    title_with_numbers = os.path.splitext(file_name)[0].replace(
+        '__unpublished', '').replace('_', ' ').capitalize()
+
     # Remove leading numbers from the title
     title = re.sub(r'^\d+(?:\.\d+)?\s*', '', title_with_numbers).capitalize()
-    
+
     # Create slug prefix from matched numbers, e.g., "1.2_filename.md" -> "1-2"
     slug_prefix = match.group(0).replace('.', '-') if match else ''
-    
+
     # Generate slug using the prefix and slugified title
-    slug = slug_prefix + '-' + utils.slugify(title).lstrip('-') # Cleanup: Remove leading '-' if exists. This is to handle cases where there is no leading number.
-    
-    return title,slug
+    # Cleanup: Remove leading '-' if exists. This is to handle cases where there is no leading number.
+    slug = slug_prefix + '-' + utils.slugify(title).lstrip('-')
+
+    return title, slug
+
 
 def get_slug_tail(slug: str) -> str:
     """
