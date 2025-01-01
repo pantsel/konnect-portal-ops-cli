@@ -84,11 +84,11 @@ Delete the API Product and its associations.
 kptl delete [product-name-or-id] [flags]
 ```
 
----
-
 #### Flags <!-- omit in toc -->
 
 ``--yes``: Skip the delete confirmation prompt.
+
+---
 
 ### kptl explain
 
