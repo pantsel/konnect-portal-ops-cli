@@ -35,8 +35,8 @@ TEST_STATE = f"""
     versions:
         - spec: {SPEC_V1_PATH}
           gateway_service:
-            id: test-id
-            control_plane_id: test-control-plane-id
+            id: 29fed700-e143-4b7a-9c68-8f3a817db8e5
+            control_plane_id: ed0d3e81-d723-40dc-9f99-356fce9e79ff
           portals:
             - portal_name: {PORTAL_DEV}
             - portal_name: {PORTAL_PROD}
@@ -144,8 +144,8 @@ def test_sync(sync_command: List[str], tmp_path: pytest.TempPathFactory) -> None
     assert product_version_v2 is not None
 
     # Assert product versions are linked to gateway service
-    assert product_version_v1["gateway_service"]["id"] == "test-id"
-    assert product_version_v1["gateway_service"]["control_plane_id"] == "test-control-plane-id"
+    assert product_version_v1["gateway_service"]["id"] == "29fed700-e143-4b7a-9c68-8f3a817db8e5"
+    assert product_version_v1["gateway_service"]["control_plane_id"] == "ed0d3e81-d723-40dc-9f99-356fce9e79ff"
 
 
     # Assert product publish status to dev and prod portals

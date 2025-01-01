@@ -17,9 +17,9 @@ class SyncCommand:
         """
         Sync the API product with Konnect.
         """
-        state_content = utils.read_file_content(args.state)
-        state_parsed = yaml.safe_load(state_content)
-        product_state = ApiProductState().from_dict(state_parsed)
+        state = utils.load_state(args.state)
+
+        product_state = ApiProductState().from_dict(state)
 
         self.logger.info("Product info: %s",
                          dataclasses.asdict(product_state.info))
