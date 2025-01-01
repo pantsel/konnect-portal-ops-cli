@@ -2,8 +2,10 @@
 Module for API product client.
 """
 
+from kptl.config.logger import Logger
 from typing import Any, Dict, Optional
 import requests
+import urllib.parse
 
 
 class ApiProductClient:
@@ -18,6 +20,7 @@ class ApiProductClient:
             'Content-Type': 'application/json'
         }
         self.proxies = proxies
+        self.logger = Logger()
 
     def _handle_response(self, response: requests.Response) -> Any:
         """
@@ -40,6 +43,7 @@ class ApiProductClient:
         Create a new API product.
         """
         url = f"{self.base_url}/api-products"
+        self.logger.debug(f"POST {url}")
         response = requests.post(
             url, headers=self.headers, json=data, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -49,6 +53,8 @@ class ApiProductClient:
         List all API products.
         """
         url = f"{self.base_url}/api-products"
+        query = f"?{urllib.parse.urlencode(params)}" if params else ""
+        self.logger.debug(f"GET {url}{query}")
         response = requests.get(url, headers=self.headers,
                                 params=params, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -58,6 +64,7 @@ class ApiProductClient:
         Get an API product by ID.
         """
         url = f"{self.base_url}/api-products/{api_product_id}"
+        self.logger.debug(f"GET {url}")
         response = requests.get(url, headers=self.headers,
                                 proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -67,6 +74,7 @@ class ApiProductClient:
         Update an existing API product.
         """
         url = f"{self.base_url}/api-products/{api_product_id}"
+        self.logger.debug(f"PATCH {url}")
         response = requests.patch(
             url, headers=self.headers, json=data, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -76,6 +84,7 @@ class ApiProductClient:
         Delete an API product by ID.
         """
         url = f"{self.base_url}/api-products/{api_product_id}"
+        self.logger.debug(f"DELETE {url}")
         response = requests.delete(
             url, headers=self.headers, proxies=self.proxies, timeout=10)
         self._handle_response(response)
@@ -85,6 +94,7 @@ class ApiProductClient:
         Create a new document for an API product.
         """
         url = f"{self.base_url}/api-products/{api_product_id}/documents"
+        self.logger.debug(f"POST {url}")
         response = requests.post(
             url, headers=self.headers, json=data, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -94,6 +104,8 @@ class ApiProductClient:
         List all documents for an API product.
         """
         url = f"{self.base_url}/api-products/{api_product_id}/documents"
+        query = f"?{urllib.parse.urlencode(params)}" if params else ""
+        self.logger.debug(f"GET {url}{query}")
         response = requests.get(url, headers=self.headers,
                                 params=params, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -103,6 +115,7 @@ class ApiProductClient:
         Get a document for an API product by ID.
         """
         url = f"{self.base_url}/api-products/{api_product_id}/documents/{document_id}"
+        self.logger.debug(f"GET {url}")
         response = requests.get(url, headers=self.headers,
                                 proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -112,6 +125,7 @@ class ApiProductClient:
         Update an existing document for an API product.
         """
         url = f"{self.base_url}/api-products/{api_product_id}/documents/{document_id}"
+        self.logger.debug(f"PATCH {url}")
         response = requests.patch(
             url, headers=self.headers, json=data, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -121,6 +135,7 @@ class ApiProductClient:
         Delete a document for an API product by ID.
         """
         url = f"{self.base_url}/api-products/{api_product_id}/documents/{document_id}"
+        self.logger.debug(f"DELETE {url}")
         response = requests.delete(
             url, headers=self.headers, proxies=self.proxies, timeout=10)
         self._handle_response(response)
@@ -130,6 +145,7 @@ class ApiProductClient:
         Create a new version for an API product.
         """
         url = f"{self.base_url}/api-products/{api_product_id}/product-versions"
+        self.logger.debug(f"POST {url}")
         response = requests.post(
             url, headers=self.headers, json=data, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -139,6 +155,8 @@ class ApiProductClient:
         List all versions for an API product.
         """
         url = f"{self.base_url}/api-products/{api_product_id}/product-versions"
+        query = f"?{urllib.parse.urlencode(params)}" if params else ""
+        self.logger.debug(f"GET {url}{query}")
         response = requests.get(url, headers=self.headers,
                                 params=params, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -147,8 +165,8 @@ class ApiProductClient:
         """
         Get a version for an API product by ID.
         """
-        url = f"{
-            self.base_url}/api-products/{api_product_id}/product-versions/{version_id}"
+        url = f"{self.base_url}/api-products/{api_product_id}/product-versions/{version_id}"
+        self.logger.debug(f"GET {url}")
         response = requests.get(url, headers=self.headers,
                                 proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -157,8 +175,8 @@ class ApiProductClient:
         """
         Update an existing version for an API product.
         """
-        url = f"{
-            self.base_url}/api-products/{api_product_id}/product-versions/{version_id}"
+        url = f"{self.base_url}/api-products/{api_product_id}/product-versions/{version_id}"
+        self.logger.debug(f"PATCH {url}")
         response = requests.patch(
             url, headers=self.headers, json=data, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -167,8 +185,8 @@ class ApiProductClient:
         """
         Delete a version for an API product by ID.
         """
-        url = f"{
-            self.base_url}/api-products/{api_product_id}/product-versions/{version_id}"
+        url = f"{self.base_url}/api-products/{api_product_id}/product-versions/{version_id}"
+        self.logger.debug(f"DELETE {url}")
         response = requests.delete(
             url, headers=self.headers, proxies=self.proxies, timeout=10)
         self._handle_response(response)
@@ -177,8 +195,8 @@ class ApiProductClient:
         """
         Create a new specification for a version of an API product.
         """
-        url = f"{self.base_url}/api-products/{
-            api_product_id}/product-versions/{version_id}/specifications"
+        url = f"{self.base_url}/api-products/{api_product_id}/product-versions/{version_id}/specifications"
+        self.logger.debug(f"POST {url}")
         response = requests.post(
             url, headers=self.headers, json=data, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -187,8 +205,8 @@ class ApiProductClient:
         """
         List all specifications for a version of an API product.
         """
-        url = f"{self.base_url}/api-products/{
-            api_product_id}/product-versions/{version_id}/specifications"
+        url = f"{self.base_url}/api-products/{api_product_id}/product-versions/{version_id}/specifications"
+        self.logger.debug(f"GET {url}")
         response = requests.get(url, headers=self.headers,
                                 proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -197,8 +215,8 @@ class ApiProductClient:
         """
         Get a specification for a version of an API product by ID.
         """
-        url = f"{self.base_url}/api-products/{api_product_id}/product-versions/{
-            version_id}/specifications/{spec_id}"
+        url = f"{self.base_url}/api-products/{api_product_id}/product-versions/{version_id}/specifications/{spec_id}"
+        self.logger.debug(f"GET {url}")
         response = requests.get(url, headers=self.headers,
                                 proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -207,8 +225,8 @@ class ApiProductClient:
         """
         Update an existing specification for a version of an API product.
         """
-        url = f"{self.base_url}/api-products/{api_product_id}/product-versions/{
-            version_id}/specifications/{spec_id}"
+        url = f"{self.base_url}/api-products/{api_product_id}/product-versions/{version_id}/specifications/{spec_id}"
+        self.logger.debug(f"PATCH {url}")
         response = requests.patch(
             url, headers=self.headers, json=data, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -217,8 +235,8 @@ class ApiProductClient:
         """
         Delete a specification for a version of an API product by ID.
         """
-        url = f"{self.base_url}/api-products/{api_product_id}/product-versions/{
-            version_id}/specifications/{spec_id}"
+        url = f"{self.base_url}/api-products/{api_product_id}/product-versions/{version_id}/specifications/{spec_id}"
+        self.logger.debug(f"DELETE {url}")
         response = requests.delete(
             url, headers=self.headers, proxies=self.proxies, timeout=10)
         self._handle_response(response)

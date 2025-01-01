@@ -2,8 +2,11 @@
 This module provides a client for managing portal operations.
 """
 
+from kptl.config.logger import Logger
+
 from typing import Any, Dict, Optional, List
 import requests
+import urllib.parse
 
 
 class PortalManagementClient:
@@ -18,6 +21,7 @@ class PortalManagementClient:
             'Content-Type': 'application/json'
         }
         self.proxies = proxies
+        self.logger = Logger()
 
     def _handle_response(self, response: requests.Response) -> Any:
         if response.status_code in {200, 201, 204}:
@@ -34,6 +38,8 @@ class PortalManagementClient:
         List all portals.
         """
         url = f'{self.base_url}/portals'
+        query = f'?{urllib.parse.urlencode(params)}' if params else ''
+        self.logger.debug(f'GET {url}{query}')
         response = requests.get(url, headers=self.headers,
                                 params=params, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -43,6 +49,7 @@ class PortalManagementClient:
         Create a new portal.
         """
         url = f'{self.base_url}/portals'
+        self.logger.debug(f'POST {url}')
         response = requests.post(
             url, headers=self.headers, json=data, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -52,6 +59,7 @@ class PortalManagementClient:
         Get portal details by ID.
         """
         url = f'{self.base_url}/portals/{portal_id}'
+        self.logger.debug(f'GET {url}')
         response = requests.get(url, headers=self.headers,
                                 proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -61,6 +69,7 @@ class PortalManagementClient:
         Update portal details by ID.
         """
         url = f'{self.base_url}/portals/{portal_id}'
+        self.logger.debug(f'PATCH {url}')
         response = requests.patch(
             url, headers=self.headers, json=data, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -70,6 +79,8 @@ class PortalManagementClient:
         Delete portal by ID.
         """
         url = f'{self.base_url}/portals/{portal_id}'
+        query = f'?{urllib.parse.urlencode(params)}' if params else ''
+        self.logger.debug(f'DELETE {url}{query}')
         response = requests.delete(
             url, headers=self.headers, params=params, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -79,6 +90,8 @@ class PortalManagementClient:
         List all products for a portal.
         """
         url = f'{self.base_url}/portals/{portal_id}/products'
+        query = f'?{urllib.parse.urlencode(params)}' if params else ''
+        self.logger.debug(f'GET {url}{query}')
         response = requests.get(url, headers=self.headers,
                                 params=params, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -88,6 +101,8 @@ class PortalManagementClient:
         List all product versions for a portal.
         """
         url = f'{self.base_url}/portals/{portal_id}/product-versions'
+        query = f'?{urllib.parse.urlencode(params)}' if params else ''
+        self.logger.debug(f'GET {url}{query}')
         response = requests.get(url, headers=self.headers,
                                 params=params, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -97,6 +112,7 @@ class PortalManagementClient:
         Create a new product version for a portal.
         """
         url = f'{self.base_url}/portals/{portal_id}/product-versions'
+        self.logger.debug(f'POST {url}')
         response = requests.post(
             url, headers=self.headers, json=data, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -105,8 +121,8 @@ class PortalManagementClient:
         """
         Get product version details by ID for a portal.
         """
-        url = f'{
-            self.base_url}/portals/{portal_id}/product-versions/{product_version_id}'
+        url = f'{self.base_url}/portals/{portal_id}/product-versions/{product_version_id}'
+        self.logger.debug(f'GET {url}')
         response = requests.get(url, headers=self.headers,
                                 proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -115,8 +131,8 @@ class PortalManagementClient:
         """
         Update product version details by ID for a portal.
         """
-        url = f'{
-            self.base_url}/portals/{portal_id}/product-versions/{product_version_id}'
+        url = f'{self.base_url}/portals/{portal_id}/product-versions/{product_version_id}'
+        self.logger.debug(f'PATCH {url}')
         response = requests.patch(
             url, headers=self.headers, json=data, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -125,8 +141,8 @@ class PortalManagementClient:
         """
         Replace product version details by ID for a portal.
         """
-        url = f'{
-            self.base_url}/portals/{portal_id}/product-versions/{product_version_id}'
+        url = f'{self.base_url}/portals/{portal_id}/product-versions/{product_version_id}'
+        self.logger.debug(f'PUT {url}')
         response = requests.put(url, headers=self.headers,
                                 json=data, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
@@ -135,8 +151,8 @@ class PortalManagementClient:
         """
         Delete product version by ID for a portal.
         """
-        url = f'{
-            self.base_url}/portals/{portal_id}/product-versions/{product_version_id}'
+        url = f'{self.base_url}/portals/{portal_id}/product-versions/{product_version_id}'
+        self.logger.debug(f'DELETE {url}')
         response = requests.delete(
             url, headers=self.headers, proxies=self.proxies, timeout=10)
         return self._handle_response(response)
