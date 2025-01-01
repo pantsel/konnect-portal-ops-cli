@@ -11,9 +11,11 @@ Before using the CLI, ensure you have your developer portals set up on Konnect. 
 - [Installation](#installation)
 - [Usage](#usage)
   - [Available Commands](#available-commands)
-    - [`sync`](#sync)
-    - [`delete`](#delete)
-    - [`explain`](#explain)
+    - [`kptl sync`](#kptl-sync)
+    - [`kptl delete`](#kptl-delete)
+    - [`kptl explain`](#kptl-explain)
+    - [`kptl validate`](#kptl-validate)
+    - [`kptl diff`](#kptl-diff)
   - [Common Arguments](#common-arguments)
   - [Examples](#examples)
     - [Sync API Product State](#sync-api-product-state)
@@ -67,7 +69,7 @@ kptl [command] [options]
 
 ### Available Commands
 
-#### `sync`
+#### `kptl sync`
 
 Synchronize the predefined API Product state with Konnect.
 
@@ -75,7 +77,7 @@ Synchronize the predefined API Product state with Konnect.
 kptl sync state_file.yaml --config .config.yaml
 ```
 
-#### `delete`
+#### `kptl delete`
 
 Delete the API Product and its associations.
 
@@ -89,12 +91,28 @@ To skip the interactive confirmation prompt, use the `--yes` flag:
 kptl delete product_name_or_id --config .config.yaml --yes
 ```
 
-#### `explain`
+#### `kptl explain`
 
 Explain the API Product state file and the operations that will be performed on Konnect.
 
 ```shell
 kptl explain state_file.yaml
+```
+
+#### `kptl validate`
+
+Validate the API Product state file.
+
+```shell
+kptl validate state_file.yaml
+```
+
+#### `kptl diff`
+
+Show the differences between the API Product state file and the current state on Konnect.
+
+```shell
+kptl diff state_file.yaml --config .config.yaml
 ```
 
 ### Common Arguments
@@ -120,19 +138,17 @@ info:
   name: HTTPBin API
   description: A simple API Product for requests to httpbin
 portals:
-  - name: dev_portal
-  - name: prod_portal
+  - portal_name: dev_portal
+  - portal_name: prod_portal
 versions:
-  - name: "1.0.0"
-    spec: examples/api-specs/v1/httpbin.yaml
+  - spec: examples/api-specs/v1/httpbin.yaml
     portals:
-      - name: dev_portal
-      - name: prod_portal
-  - name: "2.0.0"
-    spec: examples/api-specs/v2/httpbin.yaml
+      - portal_name: dev_portal
+      - portal_name: prod_portal
+  - spec: examples/api-specs/v2/httpbin.yaml
     portals:
-      - name: dev_portal
-      - name: prod_portal
+      - portal_name: dev_portal
+      - portal_name: prod_portal
 ```
 
 To sync the API Product state with Konnect, run:
@@ -151,9 +167,8 @@ versions:
   - name: "1.0.0"
     spec: examples/api-specs/v1/httpbin.yaml
     portals:
-      - name: dev_portal
-        config:
-          publish_status: unpublished
+      - portal_name: dev_portal
+        publish_status: unpublished
 ```
 
 Then run the sync command:
@@ -172,9 +187,8 @@ versions:
   - name: "1.0.0"
     spec: examples/api-specs/v1/httpbin.yaml
     portals:
-      - name: dev_portal
-        config:
-          deprecated: true
+      - portal_name: dev_portal
+        deprecated: true
 ```
 
 Then run the sync command:
@@ -270,21 +284,15 @@ Defines the synchronization settings and directory for the API documentation.
 
 ```yaml
 portals:
-  - name: dev_portal
-    config:
-      publish_status: published
-  - name: prod_portal
-    config:
-      publish_status: unpublished
+  - portal_name: dev_portal
+  - portal_name: prod_portal
 ```
 
 Lists the portals where the API product will be published, along with their publication status.
 
 - **portals**: (Optional) Lists the portals where the API product will be published.
-  - **id**: (Required - if `name` is not set) The ID of the portal. ID takes precedence over name for related operations.
-  - **name**: (Required - if `id` is not set) The name of the portal. At least one of `id` or `name` is required.
-  - **config**: (Optional) Configuration for the portal.
-    - **publish_status**: (Optional) The publication status of the portal. Default is `published`.
+  - **portal_id**: (Required - if `portal_name` is not set) The ID of the portal. ID takes precedence over name for related operations.
+  - **portal_name**: (Required - if `portal_id` is not set) The name of the portal. At least one of `portal_id` or `portal_name` is required.
 
 ### Versions
 
@@ -296,44 +304,36 @@ versions:
       id: null
       control_plane_id: null
     portals:
-      - name: dev_portal
-        config:
-          deprecated: true
-          publish_status: published
-          auth_strategy_ids: []
-          application_registration:
-            enabled: false
-            auto_approve: false
-      - name: prod_portal
-        config:
-          deprecated: true
-          publish_status: published
-          auth_strategy_ids: []
-          application_registration:
-            enabled: false
-            auto_approve: false
+      - portal_name: dev_portal
+        deprecated: true
+        publish_status: published
+        auth_strategy_ids: []
+        application_registration_enabled: false
+        auto_approve_registration: false
+      - portal_name: prod_portal
+        deprecated: true
+        publish_status: published
+        auth_strategy_ids: []
+        application_registration_enabled: false
+        auto_approve_registration: false
   - name: "2.0.0"
     spec: examples/api-specs/v2/httpbin.yaml
     gateway_service:
       id: null
       control_plane_id: null
     portals:
-      - name: dev_portal
-        config:
-          deprecated: false
-          publish_status: published
-          auth_strategy_ids: []
-          application_registration:
-            enabled: false
-            auto_approve: false
-      - name: prod_portal
-        config:
-          deprecated: false
-          publish_status: published
-          auth_strategy_ids: []
-          application_registration:
-            enabled: false
-            auto_approve: false
+      - portal_name: dev_portal
+        deprecated: false
+        publish_status: published
+        auth_strategy_ids: []
+        application_registration_enabled: false
+        auto_approve_registration: false
+      - portal_name: prod_portal
+        deprecated: false
+        publish_status: published
+        auth_strategy_ids: []
+        application_registration_enabled: false
+        auto_approve_registration: false
 ```
 
 Defines the different versions of the API product, including their specifications, gateway service details, and portal configurations. Each version can have different settings for deprecation, publication status, authentication strategies, and application registration.
@@ -345,15 +345,13 @@ Defines the different versions of the API product, including their specification
     - **id**: (Optional) The ID of the gateway service.
     - **control_plane_id**: (Optional) The control plane ID of the gateway service.
   - **portals**: (Optional) Lists the portals where the version will be published.
-    - **id**: (Required - if `name` is not set) The ID of the portal. ID takes precedence over name for related operations.
-    - **name**: (Required - if `id` is not set) The name of the portal. At least one of `id` or `name` is required.
-    - **config**: (Optional) Configuration for the portal.
-      - **deprecated**: (Optional) A boolean indicating whether the version is deprecated. Default is `false`.
-      - **publish_status**: (Optional) The publication status of the version. Default is `published`.
-      - **auth_strategy_ids**: (Optional) A list of authentication strategy IDs.
-      - **application_registration**: (Optional) Settings for application registration.
-        - **enabled**: (Optional) A boolean indicating whether application registration is enabled. Default is `false`.
-        - **auto_approve**: (Optional) A boolean indicating whether application registration is auto-approved. Default is `false`.
+    - **portal_id**: (Required - if `portal_name` is not set) The ID of the portal. ID takes precedence over name for related operations.
+    - **portal_name**: (Required - if `portal_id` is not set) The name of the portal. At least one of `portal_id` or `portal_name` is required.
+    - **deprecated**: (Optional) A boolean indicating whether the version is deprecated. Default is `false`.
+    - **publish_status**: (Optional) The publication status of the version. Default is `published`.
+    - **auth_strategy_ids**: (Optional) A list of authentication strategy IDs.
+    - **application_registration_enabled**: (Optional) A boolean indicating whether app registration is enabled. Default is `false`.
+    - **auto_approve_registration**: (Optional) A boolean indicating whether app registration is auto-approved. Default is `false`.
 
 ## Logging
 
@@ -368,6 +366,7 @@ To change the log level, set the `LOG_LEVEL` environment variable to one of the 
 - Python 3.7+
 - `PyYaml`: For parsing YAML-based files.
 - `requests`: For making HTTP requests to the Konnect API.
+- `deepdiff`: For calculating the differences between two objects.
 
 1. Clone the repository:
 
