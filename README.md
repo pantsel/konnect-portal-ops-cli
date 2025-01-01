@@ -10,16 +10,16 @@ Before using the CLI, ensure you have your developer portals set up on Konnect. 
 - [Features](#features)
 - [Installation](#installation)
 - [Available Commands](#available-commands)
-  - [`kptl sync`](#kptl-sync)
+  - [kptl sync](#kptl-sync)
     - [Syntax](#syntax)
-  - [`kptl delete`](#kptl-delete)
+  - [kptl delete](#kptl-delete)
     - [Syntax](#syntax-1)
     - [Flags](#flags)
-  - [`kptl explain`](#kptl-explain)
+  - [kptl explain](#kptl-explain)
     - [Syntax](#syntax-2)
-  - [`kptl validate`](#kptl-validate)
+  - [kptl validate](#kptl-validate)
     - [Syntax](#syntax-3)
-  - [`kptl diff`](#kptl-diff)
+  - [kptl diff](#kptl-diff)
     - [Syntax](#syntax-4)
 - [Common Flags](#common-flags)
 - [Examples](#examples)
@@ -68,7 +68,7 @@ Before using the CLI, ensure you have your developer portals set up on Konnect. 
 
 ## Available Commands
 
-### `kptl sync`
+### kptl sync
 
 Synchronize the predefined API Product state with Konnect.
 
@@ -78,7 +78,7 @@ Synchronize the predefined API Product state with Konnect.
 kptl sync [filename] [flags]
 ```
 
-### `kptl delete`
+### kptl delete
 
 Delete the API Product and its associations.
 
@@ -92,7 +92,7 @@ kptl delete [product-name-or-id] [flags]
 
 ``--yes``: Skip the delete confirmation prompt.
 
-### `kptl explain`
+### kptl explain
 
 Explain the API Product state file and the operations that will be performed on Konnect.
 
@@ -102,9 +102,9 @@ Explain the API Product state file and the operations that will be performed on 
 kptl explain [filename] [flags]
 ```
 
-### `kptl validate`
+### kptl validate
 
-Validate the API Product state file.
+Validate the local API Product state file.
 
 #### Syntax
 
@@ -112,7 +112,7 @@ Validate the API Product state file.
 kptl validate [filename] [flags]
 ```
 
-### `kptl diff`
+### kptl diff
 
 Show the differences between the local API Product state file and the current state on Konnect.
 
