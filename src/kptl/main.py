@@ -64,6 +64,11 @@ def get_parser_args() -> argparse.Namespace:
         'explain', help='Explain the actions that will be performed on Konnect')
     describe_parser.add_argument(
         "state", type=str, help="Path to the API product state file")
+    
+    validate_parser = subparsers.add_parser(
+        'validate', help='Validate the API product state file')
+    validate_parser.add_argument(
+        "state", type=str, help="Path to the API product state file")
 
     return parser.parse_args()
 
@@ -76,6 +81,9 @@ def main() -> None:
 
     if args.command == 'explain':
         ExplainCommand().execute(args)
+        sys.exit(0)
+    elif args.command == 'validate':
+        utils.load_state(args.state)
         sys.exit(0)
 
     config = utils.read_config_file(args.config)
