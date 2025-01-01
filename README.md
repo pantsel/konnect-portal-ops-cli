@@ -9,20 +9,25 @@ Before using the CLI, ensure you have your developer portals set up on Konnect. 
 ## Table of Contents <!-- omit in toc -->
 - [Features](#features)
 - [Installation](#installation)
-- [Usage](#usage)
-  - [Available Commands](#available-commands)
-    - [`kptl sync`](#kptl-sync)
-    - [`kptl delete`](#kptl-delete)
-    - [`kptl explain`](#kptl-explain)
-    - [`kptl validate`](#kptl-validate)
-    - [`kptl diff`](#kptl-diff)
-  - [Common Arguments](#common-arguments)
-  - [Examples](#examples)
-    - [Sync API Product State](#sync-api-product-state)
-    - [Unpublish API Product Versions](#unpublish-api-product-versions)
-    - [Deprecate API Product Versions](#deprecate-api-product-versions)
-    - [Link Gateway Services to API Product Versions](#link-gateway-services-to-api-product-versions)
-    - [Manage API Products Documentation](#manage-api-products-documentation)
+- [Available Commands](#available-commands)
+  - [`kptl sync`](#kptl-sync)
+    - [Syntax](#syntax)
+  - [`kptl delete`](#kptl-delete)
+    - [Syntax](#syntax-1)
+    - [Syntax](#syntax-2)
+  - [`kptl explain`](#kptl-explain)
+    - [Syntax](#syntax-3)
+  - [`kptl validate`](#kptl-validate)
+    - [Syntax](#syntax-4)
+  - [`kptl diff`](#kptl-diff)
+    - [Syntax](#syntax-5)
+- [Common Flags](#common-flags)
+- [Examples](#examples)
+  - [Sync API Product State](#sync-api-product-state)
+  - [Unpublish API Product Versions](#unpublish-api-product-versions)
+  - [Deprecate API Product Versions](#deprecate-api-product-versions)
+  - [Link Gateway Services to API Product Versions](#link-gateway-services-to-api-product-versions)
+  - [Manage API Products Documentation](#manage-api-products-documentation)
 - [State File Explanation](#state-file-explanation)
   - [Version](#version)
   - [Info](#info)
@@ -61,61 +66,63 @@ Before using the CLI, ensure you have your developer portals set up on Konnect. 
     https_proxy: https://proxy.example.com:8080 # Optional
     ```
 
-## Usage
+## Available Commands
 
-```shell
-kptl [command] [options]
-```
-
-### Available Commands
-
-#### `kptl sync`
+### `kptl sync`
 
 Synchronize the predefined API Product state with Konnect.
 
+#### Syntax
+
 ```shell
-kptl sync state_file.yaml --config .config.yaml
+kptl sync [filename] [flags]
 ```
 
-#### `kptl delete`
+### `kptl delete`
 
 Delete the API Product and its associations.
 
-```shell
-kptl delete product_name_or_id --config .config.yaml
-```
-
-To skip the interactive confirmation prompt, use the `--yes` flag:
+#### Syntax
 
 ```shell
-kptl delete product_name_or_id --config .config.yaml --yes
+kptl delete [product-name-or-id] [flags]
 ```
 
-#### `kptl explain`
+#### Syntax
+
+``--yes``: Skip the delete confirmation prompt.
+
+### `kptl explain`
 
 Explain the API Product state file and the operations that will be performed on Konnect.
 
+#### Syntax
+
 ```shell
-kptl explain state_file.yaml
+kptl explain [filename] [flags]
 ```
 
-#### `kptl validate`
+### `kptl validate`
 
 Validate the API Product state file.
 
-```shell
-kptl validate state_file.yaml
-```
-
-#### `kptl diff`
-
-Show the differences between the API Product state file and the current state on Konnect.
+#### Syntax
 
 ```shell
-kptl diff state_file.yaml --config .config.yaml
+kptl validate [filename] [flags]
 ```
 
-### Common Arguments
+### `kptl diff`
+
+Show the differences between the local API Product state file and the current state on Konnect.
+
+#### Syntax
+
+```shell
+kptl diff [filename] [flags]
+```
+
+## Common Flags
 
 | Option            | Required                         | Description                                                                |
 | ----------------- | -------------------------------- | -------------------------------------------------------------------------- |
@@ -125,9 +132,9 @@ kptl diff state_file.yaml --config .config.yaml
 | `--http-proxy`    | No                               | HTTP proxy URL.                                                            |
 | `--https-proxy`   | No                               | HTTPS proxy URL.                                                           |
 
-### Examples
+## Examples
 
-#### Sync API Product State
+### Sync API Product State
 
 Example state file:
 
@@ -157,7 +164,7 @@ To sync the API Product state with Konnect, run:
 kptl sync state.yaml --config .config.yaml
 ```
 
-#### Unpublish API Product Versions
+### Unpublish API Product Versions
 
 To unpublish an API Product version from a portal, update the state file to set the `publish_status` to `unpublished` for the desired portal.
 
@@ -177,7 +184,7 @@ Then run the sync command:
 kptl sync state.yaml --config .config.yaml
 ```
 
-#### Deprecate API Product Versions
+### Deprecate API Product Versions
 
 To deprecate an API Product version from a portal, update the state file to set `deprecated` to `true` for the desired portal.
 
@@ -197,7 +204,7 @@ Then run the sync command:
 kptl sync state.yaml --config .config.yaml
 ```
 
-#### Link Gateway Services to API Product Versions
+### Link Gateway Services to API Product Versions
 
 To link a Gateway Service to an API Product version, update the state file to include the `gateway_service` section with the appropriate `id` and `control_plane_id`.
 
@@ -217,7 +224,7 @@ Then run the sync command:
 kptl sync state.yaml --config .config.yaml
 ```
 
-#### Manage API Products Documentation
+### Manage API Products Documentation
 
 To manage API Product documents, ensure all related documents are present in a directory. The ordering and inheritance of documents are based on file name prefixes (e.g., `1_, 1.1_, 1.2_, 2_, 3_, 3.1_`). By default, all documents get published. To unpublish a document, add the `__unpublished` tag at the end of the file name. Existing API Product documents not present in the documents folder will be deleted.
 
