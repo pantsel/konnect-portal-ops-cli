@@ -14,13 +14,13 @@ Before using the CLI, ensure you have your developer portals set up on Konnect. 
     - [Syntax](#syntax)
   - [`kptl delete`](#kptl-delete)
     - [Syntax](#syntax-1)
-    - [Syntax](#syntax-2)
+    - [Flags](#flags)
   - [`kptl explain`](#kptl-explain)
-    - [Syntax](#syntax-3)
+    - [Syntax](#syntax-2)
   - [`kptl validate`](#kptl-validate)
-    - [Syntax](#syntax-4)
+    - [Syntax](#syntax-3)
   - [`kptl diff`](#kptl-diff)
-    - [Syntax](#syntax-5)
+    - [Syntax](#syntax-4)
 - [Common Flags](#common-flags)
 - [Examples](#examples)
   - [Sync API Product State](#sync-api-product-state)
@@ -88,7 +88,7 @@ Delete the API Product and its associations.
 kptl delete [product-name-or-id] [flags]
 ```
 
-#### Syntax
+#### Flags
 
 ``--yes``: Skip the delete confirmation prompt.
 
