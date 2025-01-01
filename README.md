@@ -72,6 +72,8 @@ Synchronize the predefined API Product state with Konnect.
 kptl sync [filename] [flags]
 ```
 
+---
+
 ### kptl delete
 
 Delete the API Product and its associations.
@@ -81,6 +83,8 @@ Delete the API Product and its associations.
 ```shell
 kptl delete [product-name-or-id] [flags]
 ```
+
+---
 
 #### Flags <!-- omit in toc -->
 
@@ -96,6 +100,8 @@ Explain the API Product state file and the operations that will be performed on 
 kptl explain [filename] [flags]
 ```
 
+--- 
+
 ### kptl validate
 
 Validate the local API Product state file.
@@ -105,6 +111,8 @@ Validate the local API Product state file.
 ```shell
 kptl validate [filename] [flags]
 ```
+
+---
 
 ### kptl diff
 
