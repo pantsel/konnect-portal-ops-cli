@@ -48,6 +48,31 @@ TEST_STATE = f"""
             - portal_name: {PORTAL_PROD}
     """
 
+TEST_STATE_INVALID = f"""
+    _version: not_semver
+    info:
+        description: A simple API Product for requests to /httpbin
+    documents:
+        sync: true
+    portals:
+        - portal_name: {PORTAL_DEV}
+        - portal_name: {PORTAL_PROD}
+    versions:
+        - spec: {SPEC_V1_PATH}
+          gateway_service:
+            id: 29fed700-e143-4b7a-9c68-8f3a817db8e5
+            control_plane_id: ed0d3e81-d723-40dc-9f99-356fce9e79ff
+          portals:
+            - portal_name: {PORTAL_DEV}
+            - portal_name: {PORTAL_PROD}
+              publish_status: published  
+              deprecated: true
+        - spec: {SPEC_V2_PATH}
+          portals:
+            - portal_name: {PORTAL_DEV}
+            - portal_name: portal_that_does_not_exist_in_product_portals
+    """
+
 konnect: KonnectHelper = KonnectHelper(TEST_SERVER_URL, DOCS_PATH)
 
 # ==========================================
@@ -106,6 +131,13 @@ def test_explain(cli_command: List[str], tmp_path: pytest.TempPathFactory) -> No
     state.write_text(TEST_STATE)
     result = subprocess.run(cli_command + ["explain", tmp_path / "state.yaml"], capture_output=True, text=True, check=True)
     assert result.returncode == 0
+
+def test_validate(cli_command: List[str], tmp_path: pytest.TempPathFactory) -> None:
+    """Test the validate command."""
+    state = tmp_path / "state.yaml"
+    state.write_text(TEST_STATE_INVALID)
+    result = subprocess.run(cli_command + ["validate", tmp_path / "state.yaml"], capture_output=True, text=True, check=False)
+    assert result.returncode == 1
 
 def test_sync(sync_command: List[str], tmp_path: pytest.TempPathFactory) -> None:
     """Test state."""

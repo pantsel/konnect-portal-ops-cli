@@ -1,5 +1,6 @@
 import re
 from uuid import UUID
+import json
 
 
 class ProductStateValidator:
