@@ -36,9 +36,8 @@ class DiffCommand:
         """
         Execute the diff command.
         """
-        state_content = utils.read_file_content(args.state)
-        state_parsed = yaml.safe_load(state_content)
-        local_state = ApiProductState().from_dict(state_parsed)
+        state = utils.load_state(args.state)
+        local_state = ApiProductState().from_dict(state)
 
         should_sync_docs = local_state.documents and local_state.documents.sync and local_state.documents.directory
 

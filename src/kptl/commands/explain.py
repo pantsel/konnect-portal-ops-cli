@@ -13,9 +13,8 @@ class ExplainCommand:
         """
         Explain the actions that will be performed on Konnect.
         """
-        state_content = utils.read_file_content(args.state)
-        state_parsed = yaml.safe_load(state_content)
-        product_state = ApiProductState().from_dict(state_parsed)
+        state = utils.load_state(args.state)
+        product_state = ApiProductState().from_dict(state)
 
         expl = self.explain_product_state(product_state)
 
